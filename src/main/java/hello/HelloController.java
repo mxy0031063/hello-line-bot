@@ -28,6 +28,8 @@ import lombok.Value;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,6 +43,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import retrofit2.Response;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -63,6 +67,13 @@ import java.util.UUID;
 @Slf4j
 @RestController
 public class HelloController {
+
+    /**
+     * 日志对象
+     */
+    private final static Logger log = LoggerFactory
+            .getLogger(HelloController.class);
+
     @Autowired
     private LineMessagingService lineMessagingService;
 
@@ -94,7 +105,8 @@ public class HelloController {
     }
 
     @RequestMapping("/")
-    public String index() {
+        public String index(HttpServletRequest request , HttpServletResponse response) {
+
         Greeter greeter = new Greeter();
         return greeter.sayHello();
     }
@@ -463,5 +475,25 @@ public class HelloController {
     public static class DownloadedContent {
         Path path;
         String uri;
+
+        public DownloadedContent(Path tempFile, String uri) {
+
+        }
+
+        public Path getPath() {
+            return path;
+        }
+
+        public void setPath(Path path) {
+            this.path = path;
+        }
+
+        public String getUri() {
+            return uri;
+        }
+
+        public void setUri(String uri) {
+            this.uri = uri;
+        }
     }
 }
