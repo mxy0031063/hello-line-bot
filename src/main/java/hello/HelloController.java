@@ -51,10 +51,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Package : hello
@@ -101,23 +98,23 @@ public class HelloController {
 
     @RequestMapping("/")
         public String index(HttpServletRequest request , HttpServletResponse response) {
-
         Greeter greeter = new Greeter();
         return greeter.sayHello();
     }
 
-    @RequestMapping("/greeting")
-    public String greeting(@RequestParam(value="targetId") String targetId, @RequestParam(value="message", defaultValue = "Hello!") String message) {
+    @RequestMapping("/line")
+    public String lineFilter(@RequestParam(value="targetId") String targetId,HttpServletRequest request , HttpServletResponse response){
+//        reply();
+        Map map = request.getParameterMap();
         if (ObjectUtils.isEmpty(targetId)) {
-            return "Error in sending messages : targetId isn't given.";
+            return "發送訊息錯誤 沒有targetID";
         }
 
-        TextMessage textMessage = new TextMessage(message);
+        TextMessage textMessage = new TextMessage(map.toString());
         PushMessage pushMessage = new PushMessage(
                 targetId,
                 textMessage
         );
-
         Response<BotApiResponse> apiResponse =
                 null;
         try {
@@ -129,6 +126,34 @@ public class HelloController {
             e.printStackTrace();
             return String.format("Error in sending messages : %s", e.toString());
         }
+    }
+
+    @RequestMapping("/greeting")
+    public String greeting(@RequestParam(value="targetId") String targetId,@RequestParam(value="replyToken") String replyToken,@RequestParam(value="message", defaultValue = "Hello!") String message) {
+        Message message1 = new TextMessage("pushMessageTest");
+        reply(replyToken,message1);
+//        if (ObjectUtils.isEmpty(targetId)) {
+//            return "Error in sending messages : targetId isn't given.";
+//        }
+//
+//        TextMessage textMessage = new TextMessage(message);
+//        PushMessage pushMessage = new PushMessage(
+//                targetId,
+//                textMessage
+//        );
+//
+//        Response<BotApiResponse> apiResponse =
+//                null;
+//        try {
+//            apiResponse = lineMessagingService
+//                    .pushMessage(pushMessage)
+//                    .execute();
+//            return String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code());
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            return String.format("Error in sending messages : %s", e.toString());
+//        }
+        return "greeting";
     }
 
     @EventMapping
