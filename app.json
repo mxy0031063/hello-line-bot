@@ -1,0 +1,17 @@
+{
+  "addons": [
+
+  ],
+  "buildpacks": [
+
+  ],
+  "description": "",
+  "env": {
+  },
+  "formation": {
+  },
+  "name": "hello-line-bot",
+  "scripts": {
+  },
+  "stack": "heroku-18"
+}
