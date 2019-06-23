@@ -68,11 +68,6 @@ import java.util.UUID;
 @RestController
 public class HelloController {
 
-    /**
-     * 日志对象
-     */
-    private final static Logger log = LoggerFactory
-            .getLogger(HelloController.class);
 
     @Autowired
     private LineMessagingService lineMessagingService;
