@@ -9,6 +9,6 @@ package hello;
  */
 public class Greeter {
     public String sayHello() {
-        return "Hello, fuck!";
+        return "Hello, 易哲";
     }
 }
