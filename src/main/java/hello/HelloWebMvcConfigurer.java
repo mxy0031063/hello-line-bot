@@ -17,11 +17,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @Configuration
 @Slf4j
 public class HelloWebMvcConfigurer extends WebMvcConfigurerAdapter {
-    /**
-     * 日志对象
-     */
-    private final static Logger log = LoggerFactory
-            .getLogger(HelloWebMvcConfigurer.class);
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {

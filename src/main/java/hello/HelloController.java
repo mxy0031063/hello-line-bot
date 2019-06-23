@@ -479,16 +479,9 @@ public class HelloController {
             return path;
         }
 
-        public void setPath(Path path) {
-            this.path = path;
-        }
-
         public String getUri() {
             return uri;
         }
 
-        public void setUri(String uri) {
-            this.uri = uri;
-        }
     }
 }
