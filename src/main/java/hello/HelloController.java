@@ -472,6 +472,8 @@ public class HelloController {
         String uri;
 
         public DownloadedContent(Path tempFile, String uri) {
+            path = tempFile ;
+            this.uri = uri ;
 
         }
 
