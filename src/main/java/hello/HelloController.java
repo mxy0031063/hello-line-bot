@@ -51,6 +51,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -69,11 +71,13 @@ public class HelloController {
 
     private static final int PUSH_AMOUNT = 2 ;
 
-    private static final String WEATHER_PATH_ALL = "https://www.cwb.gov.tw/Data/radar/CV2_3600.png";
+    private static final String WEATHER_PATH_RADAR = "https://www.cwb.gov.tw/Data/radar/CV2_3600.png";
 
+    private static final String WEATHER_PATH_UVI  ="https://www.cwb.gov.tw/Data/UVI/UVI.png";
 
     @Autowired
     private LineMessagingService lineMessagingService;
+
 
     private static String createUri(String path) {
         return ServletUriComponentsBuilder.fromCurrentContextPath()
@@ -224,9 +228,64 @@ public class HelloController {
                 break;
             }
 
+            case "doTemperature" :{
+                showWeather(weatherPath(1));
+                break;
+            }
+            case "doUVI" :{
+                showWeather(WEATHER_PATH_UVI);
+                break;
+            }
+            case "doRainfall" :{
+                showWeather(weatherPath(2));
+                break;
+            }
+            case "doRadar" :{
+                showWeather(WEATHER_PATH_RADAR);
+                break;
+            }
+
             default:
                 this.replyText(replyToken, "Got postback event : " + event.getPostbackContent().getData());
         }
+    }
+
+    private String weatherPath(int i) {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Taipei"));
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String path ;
+        switch (i){
+            case 1 :
+                DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd_hh");
+                LocalDateTime case1Date = localDateTime.minusMinutes(40); //獲取40分鐘前的時間
+                String date = dtf.format(case1Date)+"00";
+                path = "https://www.cwb.gov.tw/Data/temperature/"+date+".GTP8.jpg";
+                return path;
+            case 2 :
+                LocalDateTime case2Date = localDateTime.minusMinutes(30); //獲取30分鐘前的時間
+                DateTimeFormatter dtf2 = DateTimeFormatter.ofPattern("yyyy-MM-dd_hh");
+                String date2 = dtf2.format(case2Date);
+                //https://www.cwb.gov.tw/Data/rainfall/2019-06-25_1730.QZJ8.jpg
+                int min = localDateTime.getMinute();
+                if (min>30){
+                    // 00
+                    path = "https://www.cwb.gov.tw/Data/rainfall/"+date2+"00.QZJ8.jpg";
+                }else {
+                    // 30
+                    path = "https://www.cwb.gov.tw/Data/rainfall/"+date2+"30.QZJ8.jpg";
+                }
+                return path;
+            default:
+                return "/static/buttons/ERROR.png";
+        }
+    }
+
+    private void showWeather(String path) {
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(path).build();
+        okhttp3.Response response = client.newCall(request).execute();
+        DownloadedContent jpg = saveContent("jpg", response.body());
+        this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
     }
 
     @EventMapping
@@ -316,6 +375,7 @@ public class HelloController {
         flowPush(replyToken);
         // 判斷指令
         if (text.contains("安安-天氣")) {
+            //改成模板 按模版 選擇想要觀看的東西
             doWeather(replyToken,text,event,content);
         }else if (text.contains("--help")||text.contains("-幫助")){
             handleTextContent(replyToken,event,content);
@@ -323,14 +383,38 @@ public class HelloController {
     }
 
     private void doWeather(String replyToken, String text, Event event, TextMessageContent content) throws IOException{
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder().url(WEATHER_PATH_ALL).build();
-        okhttp3.Response response = client.newCall(request).execute();
-        DownloadedContent jpg = saveContent("jpg", response.body());
-        this.reply(replyToken, Arrays.asList(
-                new ImageMessage(jpg.getUri(), jpg.getUri()),//天氣圖
-                new TextMessage("天氣圖奉上")//狀態消息
-        ));
+        //改成模版
+        String imageUrl1 = createUri("/static/buttons/Weather.png");
+        CarouselTemplate carouselTemplate = new CarouselTemplate(
+                Arrays.asList(
+                        new CarouselColumn(
+                                imageUrl1,
+                                "天氣詳細",
+                                "氣溫，紫外線，雨量，雷達回波",
+                                Arrays.asList(
+                                        new PostbackAction(
+                                                "氣溫",
+                                                "doTemperature"
+                                        ),
+                                        new PostbackAction(
+                                                "紫外線",
+                                                "doUVI"
+                                        ),
+                                        new PostbackAction(
+                                                "雨量",
+                                                "doRainfall"
+                                        ),
+                                        new PostbackAction(
+                                                "雷達回波",
+                                                "doRadar"
+                                        )
+
+                                )
+                        )
+                )
+        );
+        TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
+        this.reply(replyToken, templateMessage);
     }
 
     private void flowPush(String replyToken) {
