@@ -317,7 +317,7 @@ public class HelloController {
         // 判斷指令
         if (text.contains("安安-天氣")) {
             doWeather(replyToken,text,event,content);
-        }else {
+        }else if (text.contains("--help")||text.contains("-幫助")){
             handleTextContent(replyToken,event,content);
         }
     }
