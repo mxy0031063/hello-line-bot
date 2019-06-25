@@ -403,12 +403,7 @@ public class HelloController {
                                         new PostbackAction(
                                                 "雨量",
                                                 "doRainfall"
-                                        ),
-                                        new PostbackAction(
-                                                "雷達回波",
-                                                "doRadar"
                                         )
-
                                 )
                         )
                 )
