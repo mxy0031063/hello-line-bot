@@ -280,7 +280,7 @@ public class HelloController {
         }
     }
 
-    private void showWeather(String replyToken,String path) {
+    private void showWeather(String replyToken,String path)throws IOException {
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder().url(path).build();
         okhttp3.Response response = client.newCall(request).execute();
