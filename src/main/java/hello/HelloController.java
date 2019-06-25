@@ -65,6 +65,12 @@ import java.util.*;
 @RestController
 public class HelloController {
 
+    private static List<String> messagePush = new ArrayList<>();
+
+    private static final int PUSH_AMOUNT = 2 ;
+
+    private static final String WEATHER_PATH_ALL = "https://www.cwb.gov.tw/Data/radar/CV2_3600.png";
+
 
     @Autowired
     private LineMessagingService lineMessagingService;
@@ -164,7 +170,7 @@ public class HelloController {
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) throws IOException{
         log.info("Got text event: {}", event);
-        handleTextContent(event.getReplyToken(), event, event.getMessage());
+        abyssLineBot(event.getReplyToken(), event, event.getMessage());
     }
 
     @EventMapping
@@ -303,6 +309,52 @@ public class HelloController {
         return response.body();
     }
 
+
+    private void abyssLineBot(String replyToken, Event event, TextMessageContent content) throws IOException{
+        String text = content.getText(); // 傳進來的文字
+        messagePush.add(text);  //消息存入
+        flowPush(replyToken);
+        // 判斷指令
+        if (text.contains("安安-天氣")) {
+            doWeather(replyToken,text,event,content);
+        }else {
+            handleTextContent(replyToken,event,content);
+        }
+    }
+
+    private void doWeather(String replyToken, String text, Event event, TextMessageContent content) {
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(WEATHER_PATH_ALL).build();
+        okhttp3.Response response = client.newCall(request).execute();
+        DownloadedContent jpg = saveContent("jpg", response.body());
+        this.reply(replyToken, Arrays.asList(
+                new ImageMessage(jpg.getUri(), jpg.getUri()),//天氣圖
+                new TextMessage("天氣圖奉上")//狀態消息
+        ));
+    }
+
+    private void flowPush(String replyToken) {
+        // pushMessage
+        Map<String,Integer>map = new HashMap<>();
+        for (String str : messagePush) {
+            if (map.containsKey(str)){
+                map.put(str,map.get(str)+1);
+            }else {
+                map.put(str,1);
+            }
+        }
+        map.keySet().forEach((key)->{
+            if (map.get(key) > PUSH_AMOUNT){
+                // 推送消息
+                this.replyText(replyToken,key);
+                messagePush.clear();
+            }
+        });
+        if (messagePush.size() > 10){
+            messagePush.clear();
+        }
+    }
+
     private void handleTextContent(String replyToken, Event event, TextMessageContent content) throws IOException {
         String text = content.getText();
         String helpText = "你可以輸入消息以查看結果:\n(0)help,\n(1)profile,\n(2)bye,\n(3)confirm,\n(4)buttons,\n(5)carousel,\n(6)imagemap.";
@@ -384,14 +436,14 @@ public class HelloController {
                         "Hello, my button",
                         Arrays.asList(
                                 new URIAction("Go to line.me",
-                                              "https://line.me"),
-                                new PostbackAction("Say hello 1",
-                                                   "Hello 你好!"),
+                                              "https://line.me"),   // 網址
+                                new PostbackAction("Say hello 1",       // 點按鈕發送後台一段文字
+                                                    "Hello 你好!"),
                                 new PostbackAction("Say hello 2",
-                                                   "你好!!",
-                                                   "Hello 你好!!"),
+                                                   "你好!!",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                   "Hello 你好!!"),       // 用戶輸出     -- 前台可見
                                 new MessageAction("Say message",
-                                                  "Rice=米")
+                                                  "Rice=米")         // 用戶輸出  -- 前台可見
                         )
                 );
                 TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Button function in your platform. :(", buttonsTemplate);
