@@ -394,16 +394,13 @@ public class HelloController {
                                 Arrays.asList(
                                         new PostbackAction(
                                                 "氣溫",
-                                                "氣溫",
                                                 "doTemperature"
                                         ),
                                         new PostbackAction(
                                                 "紫外線",
-                                                "紫外線",
                                                 "doUVI"
                                         ),
                                         new PostbackAction(
-                                                "雨量",
                                                 "雨量",
                                                 "doRainfall"
                                         )
@@ -415,7 +412,6 @@ public class HelloController {
                                 "雷達回波",
                                 Arrays.asList(
                                         new PostbackAction(
-                                                "雷達回波",
                                                 "雷達回波",
                                                 "doRadar"
                                         )
