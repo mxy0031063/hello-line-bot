@@ -229,19 +229,19 @@ public class HelloController {
             }
 
             case "doTemperature" :{
-                showWeather(weatherPath(1));
+                showWeather(replyToken,weatherPath(1));
                 break;
             }
             case "doUVI" :{
-                showWeather(WEATHER_PATH_UVI);
+                showWeather(replyToken,WEATHER_PATH_UVI);
                 break;
             }
             case "doRainfall" :{
-                showWeather(weatherPath(2));
+                showWeather(replyToken,weatherPath(2));
                 break;
             }
             case "doRadar" :{
-                showWeather(WEATHER_PATH_RADAR);
+                showWeather(replyToken,WEATHER_PATH_RADAR);
                 break;
             }
 
@@ -280,7 +280,7 @@ public class HelloController {
         }
     }
 
-    private void showWeather(String path) {
+    private void showWeather(String replyToken,String path) {
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder().url(path).build();
         okhttp3.Response response = client.newCall(request).execute();
