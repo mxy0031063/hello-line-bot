@@ -384,43 +384,29 @@ public class HelloController {
 
     private void doWeather(String replyToken, String text, Event event, TextMessageContent content) throws IOException{
         //改成模版
-        String imageUrl1 = createUri("/static/buttons/Weather.png");
-        CarouselTemplate carouselTemplate = new CarouselTemplate(
+        String imageUrl = createUri("/static/buttons/Weather.png");
+        ButtonsTemplate buttonsTemplate = new ButtonsTemplate(
+                imageUrl,
+                "今日天氣",
+                " ",
                 Arrays.asList(
-                        new CarouselColumn(
-                                imageUrl1,
-                                "天氣詳細",
-                                "氣溫，紫外線，雨量，雷達回波",
-                                Arrays.asList(
-                                        new PostbackAction(
-                                                "氣溫",
-                                                "doTemperature"
-                                        ),
-                                        new PostbackAction(
-                                                "紫外線",
-                                                "doUVI"
-                                        ),
-                                        new PostbackAction(
-                                                "雨量",
-                                                "doRainfall"
-                                        )
-                                )
-                        ),
-                        new CarouselColumn(
-                                imageUrl1,
-                                "天氣詳細",
-                                "雷達回波",
-                                Arrays.asList(
-                                        new PostbackAction(
-                                                "雷達回波",
-                                                "doRadar"
-                                        )
-                                )
-                        )
+                        new PostbackAction("氣溫",
+                                "doTemperature",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                "氣溫"),       // 用戶輸出     -- 前台可見
+                        new PostbackAction("紫外線",
+                                "doUVI",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                "紫外線"),       // 用戶輸出     -- 前台可見
+                        new PostbackAction("雨量",
+                                "doRainfall",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                "雨量"),       // 用戶輸出     -- 前台可見
+                        new PostbackAction("雷達回波",
+                                "doRadar",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                "雷達回波")
                 )
         );
-        TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
+        TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Button function in your platform. :(", buttonsTemplate);
         this.reply(replyToken, templateMessage);
+        /** ----------------------------------------------------------- */
     }
 
     private void flowPush(String replyToken) {
