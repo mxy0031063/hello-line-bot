@@ -322,7 +322,7 @@ public class HelloController {
         }
     }
 
-    private void doWeather(String replyToken, String text, Event event, TextMessageContent content) {
+    private void doWeather(String replyToken, String text, Event event, TextMessageContent content) throws IOException{
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder().url(WEATHER_PATH_ALL).build();
         okhttp3.Response response = client.newCall(request).execute();
