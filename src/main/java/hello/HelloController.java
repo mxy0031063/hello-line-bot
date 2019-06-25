@@ -305,7 +305,7 @@ public class HelloController {
 
     private void handleTextContent(String replyToken, Event event, TextMessageContent content) throws IOException {
         String text = content.getText();
-        String helpText = "You can input the following messages to see each results:\n(0)help,\n(1)profile,\n(2)bye,\n(3)confirm,\n(4)buttons,\n(5)carousel,\n(6)imagemap.";
+        String helpText = "你可以輸入消息以查看結果:\n(0)help,\n(1)profile,\n(2)bye,\n(3)confirm,\n(4)buttons,\n(5)carousel,\n(6)imagemap.";
 
         log.info("Got text message from {}: {}", replyToken, text);
         switch (text) {
@@ -316,7 +316,7 @@ public class HelloController {
             case "profile": case "1": {
                 String userId = event.getSource().getUserId();
                 if (userId != null) {
-                    UserProfileResponse userProfile = getUserProfile(userId);
+                    UserProfileResponse userProfile = getUserProfile(userId); //獲得用戶資訊
                     String pictureUrlURL = userProfile.getPictureUrl() == null ? "(Not Set)" : userProfile.getPictureUrl();
                     String displayName = userProfile.getDisplayName() == null ? "(Not Set)" : userProfile.getDisplayName();
                     String displayStatus = userProfile.getStatusMessage() == null ? "(Not Set)" : userProfile.getStatusMessage();
@@ -325,9 +325,9 @@ public class HelloController {
                     okhttp3.Response response = client.newCall(request).execute();
                     DownloadedContent jpg = saveContent("jpg", response.body());
                     this.reply(replyToken, Arrays.asList(
-                            new ImageMessage(jpg.getUri(), jpg.getUri()),
-                            new TextMessage("Hi, " + displayName),
-                            new TextMessage("Your status is : " + displayStatus)
+                            new ImageMessage(jpg.getUri(), jpg.getUri()),//用戶頭像
+                            new TextMessage("Hi, " + displayName),//用戶名
+                            new TextMessage("Your status is : " + displayStatus)//狀態消息
                     ));
                 } else {
                     this.replyText(replyToken, "Bot can only get a user's profile when 1:1 chat");
@@ -388,7 +388,7 @@ public class HelloController {
                                 new PostbackAction("Say hello 1",
                                                    "Hello 你好!"),
                                 new PostbackAction("Say hello 2",
-                                                   "Hello 你好!!",
+                                                   "你好!!",
                                                    "Hello 你好!!"),
                                 new MessageAction("Say message",
                                                   "Rice=米")
