@@ -379,7 +379,21 @@ public class HelloController {
             doWeather(replyToken,text,event,content);
         }else if (text.contains("--help")||text.contains("-幫助")){
             handleTextContent(replyToken,event,content);
+        } else if (text.contains("test")) {
+            testOkHttp(replyToken,event,content);
         }
+    }
+
+    private void testOkHttp(String replyToken, Event event, TextMessageContent content) throws IOException{
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url("https://www.cpc.com.tw/GetOilPriceJson.aspx?type=TodayOilPriceString").build();
+        okhttp3.Response response = client.newCall(request).execute();
+        String message = response.message();
+
+        this.reply(replyToken, Arrays.asList(
+                new TextMessage("message : " + message),//用戶名
+                new TextMessage("response.body() : " + response.body().string())//狀態消息
+        ));
     }
 
     private void doWeather(String replyToken, String text, Event event, TextMessageContent content) throws IOException{
