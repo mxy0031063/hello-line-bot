@@ -374,10 +374,10 @@ public class HelloController {
         messagePush.add(text);  //消息存入
         flowPush(replyToken);
         // 判斷指令
-        if (text.contains("安安-天氣")) {
+        if (text.contains("安安-天氣")||text.contains("天氣")) {
             //改成模板 按模版 選擇想要觀看的東西
             doWeather(replyToken,text,event,content);
-        }else if (text.contains("--help")||text.contains("-幫助")){
+        }else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
         } else if (text.contains("油價")) {
             doOilPrice(replyToken,event,content);
