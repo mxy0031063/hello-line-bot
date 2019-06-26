@@ -48,12 +48,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Package : hello
@@ -74,6 +76,8 @@ public class HelloController {
     private static final String WEATHER_PATH_RADAR = "https://www.cwb.gov.tw/Data/radar/CV2_3600.png";
 
     private static final String WEATHER_PATH_UVI  ="https://www.cwb.gov.tw/Data/UVI/UVI.png";
+
+    private TimerUilts timerUilts = new TimerUilts();
 
     @Autowired
     private LineMessagingService lineMessagingService;
@@ -370,17 +374,65 @@ public class HelloController {
 
 
     private void abyssLineBot(String replyToken, Event event, TextMessageContent content) throws IOException{
-        String text = content.getText(); // 傳進來的文字
+        String text = content.getText().trim(); // 傳進來的文字
         messagePush.add(text);  //消息存入
         flowPush(replyToken);
         // 判斷指令
-        if (text.contains("安安-天氣")||text.contains("天氣")) {
+        if (text.contains("安安-天氣")||text.equals("天氣")) {
             //改成模板 按模版 選擇想要觀看的東西
             doWeather(replyToken,text,event,content);
-        }else if (text.contains("--service")){
+        } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
         } else if (text.contains("油價")) {
             doOilPrice(replyToken,event,content);
+        } else if (text.matches("[0-9]{1,10}-.{1,3}+等於多少+.{1,3}")){
+            /** 匯率 ****-{錢幣}等於多少{錢幣}? */
+            doCurrency(replyToken,event,content);
+        }
+    }
+
+    private void doCurrency(String replyToken, Event event, TextMessageContent content)throws IOException {
+        // 獲得訊息
+        String textMessage = content.getText();
+        // 獲得多少錢
+        String money = textMessage.split("-")[0];
+        BigDecimal moneyCurrFrom = new BigDecimal(money);
+        // 獲得來源幣種
+        int currFromIndex = (money+"-").getBytes().length;
+        String currFrom = textMessage.substring(textMessage.indexOf(money+"-")+currFromIndex,textMessage.indexOf("等於多少"));
+        // 獲得目標幣種
+        String currTo = textMessage.substring(textMessage.indexOf("等於多少")+4);
+        // 獲得匯率
+        Map<String, String> exrateMap = timerUilts.getCurrExrateMap();
+        // 把來源金額轉美金
+        String currFromExrate = timerUilts.getKeyTextChanage().get(currFrom); // 轉為國際代碼
+        if (currFromExrate==null) {
+            this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
+            return;
+        }
+        BigDecimal moneyCurrTo = null ;
+        if (!currFromExrate.equals("USD")){
+            // 來源幣種不是美金 要轉換
+            // Map格式 USDXXX 獲得匯率
+            String exrateFrom = exrateMap.get("USD"+currFromExrate);
+            // 來源金額 = 多少美金?
+            moneyCurrTo = moneyCurrFrom.divide(new BigDecimal(exrateFrom),3,BigDecimal.ROUND_HALF_UP);
+        }else {
+            // 來源金額是美金
+            moneyCurrTo = moneyCurrFrom ;
+        }
+        // 目標幣種
+        String currToExrate = timerUilts.getKeyTextChanage().get(currTo); // 轉為國際代碼
+        if (currToExrate.equals("USD")){
+            // 是美金 直接輸出
+            this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
+        }else {
+            // 獲得匯率
+            String exrateTo = exrateMap.get("USD"+currToExrate);
+            // 不是美金 轉換
+            BigDecimal total = moneyCurrTo.multiply(new BigDecimal(exrateTo));
+            total.setScale(3,BigDecimal.ROUND_HALF_UP);
+            this.replyText(replyToken,"約等於 "+total.toString()+" 元");
         }
     }
 
