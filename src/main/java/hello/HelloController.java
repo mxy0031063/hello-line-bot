@@ -422,14 +422,14 @@ public class HelloController {
         String upDownPrice = returnText.substring(
                 upDownPriceIndex,upDownPriceEndIndex
         );
-        outText.append("本週汽油價格 "+upOrDown+" -> "+upDownPrice+" 元");
+        outText.append("本週汽油價格 "+upOrDown+" -> "+upDownPrice+" 元\n");
         /** 實施日期 */
         int priceUpdateDateIndex = returnText.indexOf("PriceUpdate")+14;
         int endIndex = priceUpdateDateIndex+5;
         String oilPriceUpdate = returnText.substring(
                 priceUpdateDateIndex, endIndex
         );
-        outText.append("實施日期  : "+oilPriceUpdate);
+        outText.append("實施日期  : "+oilPriceUpdate+"\n");
         outText.append("以上資料來源  :  中油");
         this.reply(replyToken, new TextMessage(outText.toString()));
     }
