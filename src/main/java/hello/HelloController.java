@@ -379,21 +379,59 @@ public class HelloController {
             doWeather(replyToken,text,event,content);
         }else if (text.contains("--help")||text.contains("-幫助")){
             handleTextContent(replyToken,event,content);
-        } else if (text.contains("test")) {
-            testOkHttp(replyToken,event,content);
+        } else if (text.contains("油價")) {
+            doOilPrice(replyToken,event,content);
         }
     }
 
-    private void testOkHttp(String replyToken, Event event, TextMessageContent content) throws IOException{
+    private void doOilPrice(String replyToken, Event event, TextMessageContent content) throws IOException{
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder().url("https://www.cpc.com.tw/GetOilPriceJson.aspx?type=TodayOilPriceString").build();
         okhttp3.Response response = client.newCall(request).execute();
         String message = response.message();
-
-        this.reply(replyToken, Arrays.asList(
-                new TextMessage("message : " + message),//用戶名
-                new TextMessage("response.body() : " + response.body().string())//狀態消息
-        ));
+        StringBuffer outText = new StringBuffer();
+        if (!message.equals("OK")){
+            /** 返回不正確提前退出 */
+            this.reply(replyToken, new TextMessage("哎呀 ! 資料發生錯誤了"));
+            return;
+        }
+        String returnText = response.body().string();
+        /** 現在的油價 */
+        outText.append("本日油價 : \n");
+        List<String> oilName = new ArrayList<>();
+        oilName.add("92無鉛汽油");
+        oilName.add("95無鉛汽油");
+        oilName.add("98無鉛汽油");
+        oilName.add("酒精汽油");
+        oilName.add("超級柴油");
+        oilName.add("液化石油氣");
+        for (int i = 1; i <= 6 ; i++) {
+            String item = "sPrice"+i;
+            int index = returnText.indexOf(item);
+            String oilPrice = returnText.substring(index+10, index + 14);
+            outText.append(oilName.get(i-1)+" -> "+oilPrice+"\n");
+        }
+        /** 公布的油價 漲或跌 */
+        int upDownIndex = returnText.indexOf("class=\\\"sys\\\"")+19;
+        int upDownEndIndex = upDownIndex+2 ;
+        String upOrDown = returnText.substring(
+                upDownIndex,upDownEndIndex
+        );
+        int upDownPriceIndex = returnText.indexOf("class=\\\"rate\\")+33;
+        int upDownPriceEndIndex = upDownPriceIndex+3;
+        String upDownPrice = returnText.substring(
+                upDownPriceIndex,upDownPriceEndIndex
+        );
+        outText.append("本週汽油價格 "+upOrDown+" -> "+upDownPrice+" 元");
+        /** 實施日期 */
+        int priceUpdateDateIndex = returnText.indexOf("PriceUpdate")+14;
+        int endIndex = priceUpdateDateIndex+5;
+        String oilPriceUpdate = returnText.substring(
+                priceUpdateDateIndex, endIndex
+        );
+        outText.append("實施日期  : "+oilPriceUpdate);
+        outText.append("以上資料來源  :  中油");
+        this.reply(replyToken, new TextMessage(outText.toString()));
     }
 
     private void doWeather(String replyToken, String text, Event event, TextMessageContent content) throws IOException{
