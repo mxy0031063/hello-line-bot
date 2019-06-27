@@ -424,7 +424,7 @@ public class HelloController {
         }
         // 目標幣種
         String currToExrate = timerUilts.getKeyTextChanage().get(currTo); // 轉為國際代碼
-        this.replyText(replyToken, currFrom+" <**> "+currFromExrate+" <**> \n"+timerUilts.getKeyTextChanage().keySet().toString());
+        this.replyText(replyToken, currFrom+" <**> "+currToExrate+" <**> \n"+timerUilts.getKeyTextChanage().keySet().toString()+"\n"+exrateMap.keySet());
 //        if (currToExrate.equals("USD")){
 //            // 是美金 直接輸出
 //            this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
