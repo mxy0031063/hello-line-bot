@@ -432,7 +432,13 @@ public class HelloController {
             // 獲得匯率
             String exrateTo = exrateMap.get("USD"+currToExrate);
             // 不是美金 轉換
+            if (exrateTo == null){
+                this.replyText(replyToken,"錯誤");
+            }
             BigDecimal exrate = new BigDecimal(exrateTo);
+            if (exrate == null) {
+                this.replyText(replyToken,"錯誤\n"+exrate.toString()+"\n"+"USD"+currToExrate+"\n"+exrateMap.keySet());
+            }
             exrate.setScale(2);
             BigDecimal total = moneyCurrTo.multiply(exrate);
             this.replyText(replyToken,"約等於 "+total.toString()+" 元");
