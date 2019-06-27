@@ -388,8 +388,7 @@ public class HelloController {
             doOilPrice(replyToken,event,content);
         } else if (text.matches("[0-9]{1,10}[-|\\s]?.{1,3}等於多少.{1,3}")){
             /** 匯率 ****-{錢幣}等於多少{錢幣}? */
-            this.reply(replyToken, new TextMessage("func is doing"));
-            //doCurrency(replyToken,event,content);
+            doCurrency(replyToken,event,content);
         }
     }
 
@@ -397,11 +396,11 @@ public class HelloController {
         // 獲得訊息
         String textMessage = content.getText();
         // 獲得多少錢
-        String money = textMessage.split("-")[0];
+        String money = textMessage.split("[-|\\s]")[0];
         BigDecimal moneyCurrFrom = new BigDecimal(money);
         // 獲得來源幣種
-        int currFromIndex = (money+"-").getBytes().length;
-        String currFrom = textMessage.substring(textMessage.indexOf(money+"-")+currFromIndex,textMessage.indexOf("等於多少"));
+        int currFromIndex = (money).length()+1;
+        String currFrom = textMessage.substring(textMessage.indexOf(money)+currFromIndex,textMessage.indexOf("等於多少"));
         // 獲得目標幣種
         String currTo = textMessage.substring(textMessage.indexOf("等於多少")+4);
         // 獲得匯率
