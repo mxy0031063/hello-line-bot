@@ -436,10 +436,11 @@ public class HelloController {
             this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
         } else {
             String abaa = exrateMap.get("USD" + currToExrate);
-            BigDecimal exrate = new BigDecimal(abaa);
-            exrate = exrate.setScale(3, BigDecimal.ROUND_HALF_EVEN);
-            BigDecimal total = moneyCurrTo.multiply(exrate);
-            this.replyText(replyToken, "約等於 " + total.toString() + " 元");
+            this.replyText(replyToken,abaa);
+//            BigDecimal exrate = new BigDecimal(abaa);
+//            exrate = exrate.setScale(3, BigDecimal.ROUND_HALF_EVEN);
+//            BigDecimal total = moneyCurrTo.multiply(exrate);
+//            this.replyText(replyToken, "約等於 " + total.toString() + " 元");
         }
     }
 
