@@ -435,7 +435,7 @@ public class HelloController {
             if (exrateTo == null){
                 this.replyText(replyToken,"錯誤");
             }
-            this.replyText(replyToken,exrateTo);
+            this.replyText(replyToken,exrateMap.get("USD"+currToExrate));
             BigDecimal exrate = new BigDecimal(exrateTo);
             if (exrate.toString() == null) {
                 this.replyText(replyToken,"錯誤\n"+exrate.toString()+"\n"+"USD"+currToExrate+"\n"+exrateMap.keySet());
