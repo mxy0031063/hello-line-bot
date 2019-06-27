@@ -428,17 +428,14 @@ public class HelloController {
             this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
             return;
         }
-        if (currToExrate.equals("USD")){
+        if (currToExrate.equals("USD")||currToExrate.equals(currFromExrate)){
             // 是美金 直接輸出
             this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
-        }else {
-            BigDecimal exrate = new BigDecimal(exrateMap.get("USD"+currToExrate));
-            if (exrate.toString() == null) {
-                this.replyText(replyToken,"錯誤\n"+exrate.toString()+"\n"+"USD"+currToExrate+"\n"+exrateMap.keySet());
-            }
-            exrate = exrate.setScale(3,BigDecimal.ROUND_HALF_EVEN);
+        } else {
+            BigDecimal exrate = new BigDecimal(exrateMap.get("USD" + currToExrate));
+            exrate = exrate.setScale(3, BigDecimal.ROUND_HALF_EVEN);
             BigDecimal total = moneyCurrTo.multiply(exrate);
-            this.replyText(replyToken,"約等於 "+total.toString()+" 元");
+            this.replyText(replyToken, "約等於 " + total.toString() + " 元");
         }
     }
 
