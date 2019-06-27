@@ -64,7 +64,7 @@ public class TimerUilts implements ApplicationRunner{
                 /* 任務列表 */
                 findCurrExrate();
             }
-        },1000,1000*60*20);
+        },0,1000*60*20);
     }
 
     /**

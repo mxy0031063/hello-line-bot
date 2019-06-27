@@ -77,7 +77,8 @@ public class HelloController {
 
     private static final String WEATHER_PATH_UVI  ="https://www.cwb.gov.tw/Data/UVI/UVI.png";
 
-    private TimerUilts timerUilts = new TimerUilts();
+    @Autowired
+    private TimerUilts timerUilts ;
 
     @Autowired
     private LineMessagingService lineMessagingService;
