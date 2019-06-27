@@ -408,7 +408,7 @@ public class HelloController {
         // 把來源金額轉美金
         String currFromExrate = timerUilts.getKeyTextChanage().get(currFrom); // 轉為國際代碼
         if (currFromExrate==null) {
-            this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
+            this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ "+currFrom);
             return;
         }
         BigDecimal moneyCurrTo = null ;
@@ -417,14 +417,17 @@ public class HelloController {
             // Map格式 USDXXX 獲得匯率
             String exrateFrom = exrateMap.get("USD"+currFromExrate);
             // 來源金額 = 多少美金?
-            moneyCurrTo = moneyCurrFrom.divide(new BigDecimal(exrateFrom),3,BigDecimal.ROUND_HALF_UP);
+            moneyCurrTo = moneyCurrFrom.divide(new BigDecimal(exrateFrom),3,BigDecimal.ROUND_UP);
         }else {
             // 來源金額是美金
             moneyCurrTo = moneyCurrFrom ;
         }
         // 目標幣種
         String currToExrate = timerUilts.getKeyTextChanage().get(currTo); // 轉為國際代碼
-
+        if (currToExrate==null) {
+            this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ " +currTo);
+            return;
+        }
         if (currToExrate.equals("USD")){
             // 是美金 直接輸出
             this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
