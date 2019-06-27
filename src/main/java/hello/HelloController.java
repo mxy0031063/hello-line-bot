@@ -429,19 +429,12 @@ public class HelloController {
             // 是美金 直接輸出
             this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
         }else {
-            // 獲得匯率
-            String exrateTo = exrateMap.get("USD"+currToExrate);
-            // 不是美金 轉換
-            if (exrateTo == null){
-                this.replyText(replyToken,"錯誤");
-            }
-            this.replyText(replyToken,exrateMap.get("USD"+currToExrate));
-            BigDecimal exrate = new BigDecimal(exrateTo);
+            BigDecimal exrate = new BigDecimal(exrateMap.get("USD"+currToExrate));
             if (exrate.toString() == null) {
                 this.replyText(replyToken,"錯誤\n"+exrate.toString()+"\n"+"USD"+currToExrate+"\n"+exrateMap.keySet());
             }
-            BigDecimal a = exrate.setScale(3,BigDecimal.ROUND_HALF_EVEN);
-            BigDecimal total = moneyCurrTo.multiply(a);
+            exrate = exrate.setScale(3,BigDecimal.ROUND_HALF_EVEN);
+            BigDecimal total = moneyCurrTo.multiply(exrate);
             this.replyText(replyToken,"約等於 "+total.toString()+" 元");
         }
     }
