@@ -435,7 +435,8 @@ public class HelloController {
             // 是美金 直接輸出
             this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
         } else {
-            BigDecimal exrate = new BigDecimal(exrateMap.get("USD" + currToExrate));
+            String abaa = exrateMap.get("USD" + currToExrate);
+            BigDecimal exrate = new BigDecimal(abaa);
             exrate = exrate.setScale(3, BigDecimal.ROUND_HALF_EVEN);
             BigDecimal total = moneyCurrTo.multiply(exrate);
             this.replyText(replyToken, "約等於 " + total.toString() + " 元");
