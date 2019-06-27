@@ -386,7 +386,7 @@ public class HelloController {
             handleTextContent(replyToken,event,content);
         } else if (text.contains("油價")) {
             doOilPrice(replyToken,event,content);
-        } else if (text.matches("[0-9]{1,10}-.{1,3}+等於多少+.{1,3}")){
+        } else if (text.matches("[0-9]{1,10}[-|\\s]?.{1,3}等於多少.{1,3}")){
             /** 匯率 ****-{錢幣}等於多少{錢幣}? */
             this.reply(replyToken, new TextMessage("func is doing"));
             //doCurrency(replyToken,event,content);
