@@ -417,7 +417,8 @@ public class HelloController {
             // Map格式 USDXXX 獲得匯率
             //String exrateFrom = exrateMap.get("USD"+currFromExrate);
             // 來源金額 = 多少美金?
-            moneyCurrTo = moneyCurrFrom.divide(new BigDecimal(exrateMap.get("USD"+currFromExrate)),3,BigDecimal.ROUND_UP);
+            BigDecimal exrateF = new BigDecimal(exrateMap.get("USD"+currFromExrate));
+            moneyCurrTo = moneyCurrFrom.divide(exrateF,BigDecimal.ROUND_HALF_UP);
         }else {
             // 來源金額是美金
             moneyCurrTo = moneyCurrFrom ;
