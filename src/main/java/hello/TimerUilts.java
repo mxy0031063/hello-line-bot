@@ -18,12 +18,13 @@ import java.util.TimerTask;
 public class TimerUilts implements ApplicationRunner{
 
     /** 匯率表 */
-    private Map<String,String>currExrateMap = new HashMap<>();
+    private static Map<String,String>currExrateMap = new HashMap<>();
 
     /** 關鍵字轉換 */
-    private Map<String, String>keyTextChanage = new HashMap<>();
+    private static Map<String, String>keyTextChanage = new HashMap<>();
 
-    public TimerUilts(){
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
         keyTextChanage.put("美金","USD");
         keyTextChanage.put("美元","USD");
         keyTextChanage.put("台幣","TWD");
@@ -53,10 +54,6 @@ public class TimerUilts implements ApplicationRunner{
         keyTextChanage.put("法瑯","CHF");
         keyTextChanage.put("比索","PHP");
         keyTextChanage.put("瑞典幣","SEK");
-    }
-
-    @Override
-    public void run(ApplicationArguments args) throws Exception {
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
