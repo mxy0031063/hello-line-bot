@@ -403,8 +403,6 @@ public class HelloController {
         String currFrom = textMessage.substring(textMessage.indexOf(money)+currFromIndex,textMessage.indexOf("等於多少"));
         // 獲得目標幣種
         String currTo = textMessage.substring(textMessage.indexOf("等於多少")+4);
-        // 獲得匯率
-        Map<String, String> exrateMap = timerUilts.getCurrExrateMap();
         // 把來源金額轉美金
         String currFromExrate = timerUilts.getKeyTextChanage().get(currFrom); // 轉為國際代碼
         if (currFromExrate==null) {
@@ -415,7 +413,7 @@ public class HelloController {
         if (!currFromExrate.equals("USD")){
             // 來源幣種不是美金 要轉換
             // Map格式 USDXXX 獲得匯率
-            String exrateFrom = exrateMap.get("USD"+currFromExrate);
+            String exrateFrom = timerUilts.getCurrExrateMap().get("USD"+currFromExrate);
             // 來源金額 = 多少美金?
             BigDecimal bigDecimal = new BigDecimal(exrateFrom);
             moneyCurrTo = moneyCurrFrom.divide(bigDecimal,3,BigDecimal.ROUND_HALF_UP);
@@ -430,12 +428,12 @@ public class HelloController {
             return;
         }
         if (currToExrate.equals(currFromExrate)){
-            this.replyText(replyToken,"are u joke me ?"+exrateMap.keySet());
+            this.replyText(replyToken,"are u joke me ?"+timerUilts.getCurrExrateMap().keySet());
         }else if(currToExrate.equals("USD")){
             // 是美金 直接輸出
             this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
         } else {
-            String abaa = exrateMap.get("USD" + currToExrate);
+            String abaa = timerUilts.getCurrExrateMap().get("USD" + currToExrate);
 //            this.replyText(replyToken,abaa);
             BigDecimal exrate = new BigDecimal(abaa);
             exrate = exrate.setScale(3, BigDecimal.ROUND_HALF_EVEN);
