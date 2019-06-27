@@ -424,19 +424,19 @@ public class HelloController {
         }
         // 目標幣種
         String currToExrate = timerUilts.getKeyTextChanage().get(currTo); // 轉為國際代碼
-        this.replyText(replyToken, moneyCurrTo.toString()+"\n"+money+"\n"+moneyCurrFrom.toString());
-//        if (currToExrate.equals("USD")){
-//            // 是美金 直接輸出
-//            this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
-//        }else {
-//            // 獲得匯率
-//            String exrateTo = exrateMap.get("USD"+currToExrate);
-//            // 不是美金 轉換
-//            BigDecimal exrate = new BigDecimal(exrateTo);
-//            exrate.setScale(2);
-//            BigDecimal total = moneyCurrTo.multiply(exrate);
-//            this.replyText(replyToken,"約等於 "+total.toString()+" 元");
-//        }
+
+        if (currToExrate.equals("USD")){
+            // 是美金 直接輸出
+            this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
+        }else {
+            // 獲得匯率
+            String exrateTo = exrateMap.get("USD"+currToExrate);
+            // 不是美金 轉換
+            BigDecimal exrate = new BigDecimal(exrateTo);
+            exrate.setScale(2);
+            BigDecimal total = moneyCurrTo.multiply(exrate);
+            this.replyText(replyToken,"約等於 "+total.toString()+" 元");
+        }
     }
 
     private void doOilPrice(String replyToken, Event event, TextMessageContent content) throws IOException{
