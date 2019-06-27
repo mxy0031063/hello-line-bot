@@ -429,7 +429,9 @@ public class HelloController {
             this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
             return;
         }
-        if (currToExrate.equals("USD")||currToExrate.equals(currFromExrate)){
+        if (currToExrate.equals(currFromExrate)){
+            this.replyText(replyToken,"are u joke me ?");
+        }else if(currToExrate.equals("USD")){
             // 是美金 直接輸出
             this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
         } else {
