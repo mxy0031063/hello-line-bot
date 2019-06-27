@@ -430,7 +430,7 @@ public class HelloController {
             return;
         }
         if (currToExrate.equals(currFromExrate)){
-            this.replyText(replyToken,"are u joke me ?");
+            this.replyText(replyToken,"are u joke me ?"+exrateMap.keySet());
         }else if(currToExrate.equals("USD")){
             // 是美金 直接輸出
             this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
