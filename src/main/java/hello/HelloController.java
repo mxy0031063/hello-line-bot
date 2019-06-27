@@ -415,9 +415,9 @@ public class HelloController {
         if (!currFromExrate.equals("USD")){
             // 來源幣種不是美金 要轉換
             // Map格式 USDXXX 獲得匯率
-            String exrateFrom = exrateMap.get("USD"+currFromExrate);
+            //String exrateFrom = exrateMap.get("USD"+currFromExrate);
             // 來源金額 = 多少美金?
-            moneyCurrTo = moneyCurrFrom.divide(new BigDecimal(exrateFrom),3,BigDecimal.ROUND_UP);
+            moneyCurrTo = moneyCurrFrom.divide(new BigDecimal(exrateMap.get("USD"+currFromExrate)),3,BigDecimal.ROUND_UP);
         }else {
             // 來源金額是美金
             moneyCurrTo = moneyCurrFrom ;
