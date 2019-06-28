@@ -404,73 +404,77 @@ public class HelloController {
      * @param content
      */
     private void doConstellation(String replyToken, Event event, TextMessageContent content) {
-        String imageUrl1 = createUri("/static/buttons/figure1.jpg");
-        String imageUrl2 = createUri("/static/buttons/figure2.jpg");
-        String imageUrl3 = createUri("/static/buttons/figure3.jpg");
+        String imageUrl1 = createUri("/static/Constellation/ConTempleEarth.jpg");
+        String imageUrl2 = createUri("/static/Constellation/ConTempleFire.jpg");
+        String imageUrl3 = createUri("/static/Constellation/ConTempleWater.jpg");
+        String imageUrl4 = createUri("/static/Constellation/ConTempleWind.jpg");
         CarouselTemplate carouselTemplate = new CarouselTemplate(
                 Arrays.asList(
                         new CarouselColumn(
-                                imageUrl1,
-                                "12 星座運勢",
-                                "123",
+                                imageUrl4,
+                                " 風 象 星 座 ",
+                                "-- 智慧派 --",
                                 Arrays.asList(
                                         new PostbackAction(" 水 瓶 座 ",
                                                 "今日運勢－水瓶座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "水瓶座"),
-                                        new PostbackAction(" 雙 魚 座 ",
-                                                "今日運勢－雙魚座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "雙魚座"),
-                                        new PostbackAction(" 牡 羊 座 ",
-                                                "今日運勢－牡羊座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "牡羊座")
+                                        new PostbackAction(" 天 秤 座 ",
+                                                "今日運勢－天秤座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "天秤座"),
+                                        new PostbackAction(" 雙 子 座 ",
+                                                "今日運勢－雙子座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "雙子座")
                                 )
                         ),
                         new CarouselColumn(
-                                imageUrl2,
-                                "12 星座運勢",
-                                "123",
+                                imageUrl1,
+                                " 土 象 星 座 ",
+                                "-- 實際派 --",
                                 Arrays.asList(
                                         new PostbackAction(" 金 牛 座 ",
                                                 "今日運勢－金牛座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "金牛座"),
-                                        new PostbackAction(" 雙 子 座 ",
-                                                "今日運勢－雙子座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "雙子座"),
-                                        new PostbackAction(" 巨 蟹 座 ",
-                                                "今日運勢－巨蟹座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "巨蟹座")
+                                        new PostbackAction(" 處 女 座 ",
+                                                "今日運勢－處女座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "處女座"),
+                                        new PostbackAction(" 魔 蠍 座 ",
+                                                "今日運勢－魔蠍座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "魔蠍座")
+
+
                                 )
                         ),
                         new CarouselColumn(
-                                imageUrl3,
-                                "12 星座運勢",
-                                "123",
+                                imageUrl2,
+                                "　火　象　星　座　",
+                                "-- 精力派 --",
                                 Arrays.asList(
                                         new PostbackAction(" 獅 子 座 ",
                                                 "今日運勢－獅子座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "獅子座"),
-                                        new PostbackAction(" 處 女 座 ",
-                                                "今日運勢－處女座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "處女座"),
-                                        new PostbackAction(" 天 秤 座 ",
-                                                "今日運勢－天秤座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "天秤座")
+                                        new PostbackAction(" 牡 羊 座 ",
+                                                "今日運勢－牡羊座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "牡羊座"),
+                                        new PostbackAction(" 射 手 座 ",
+                                                "今日運勢－射手座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "射手座")
                                 )
                         ),
                         new CarouselColumn(
                                 imageUrl3,
-                                "12 星座運勢",
-                                "123",
+                                " 水 象 星 座 ",
+                                "-- 情感派 --",
                                 Arrays.asList(
                                         new PostbackAction(" 天 蠍 座 ",
                                                 "今日運勢－天蠍座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "天蠍座"),
-                                        new PostbackAction(" 射 手 座 ",
-                                                "今日運勢－射手座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "射手座"),
-                                        new PostbackAction(" 魔 蠍 座 ",
-                                                "今日運勢－魔蠍座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "魔蠍座")
+                                        new PostbackAction(" 雙 魚 座 ",
+                                                "今日運勢－雙魚座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "雙魚座"),
+
+                                        new PostbackAction(" 巨 蟹 座 ",
+                                                "今日運勢－巨蟹座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "巨蟹座")
                                 )
                         )
                 )
