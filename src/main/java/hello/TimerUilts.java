@@ -53,7 +53,7 @@ public class TimerUilts implements ApplicationRunner{
         keyTextChanage.put("澳幣","AUD");
         keyTextChanage.put("歐元","EUR");
         keyTextChanage.put("英鎊","GBP");
-        keyTextChanage.put("比特幣","AUD");
+        keyTextChanage.put("比特幣","BTC");
         keyTextChanage.put("加拿大幣","CAD");
         keyTextChanage.put("瑞士法郎","CHF");
         keyTextChanage.put("法郎","CHF");
