@@ -1,5 +1,6 @@
 package hello;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.io.ByteStreams;
 import com.linecorp.bot.client.LineMessagingService;
@@ -77,6 +78,11 @@ public class HelloController {
     private static final String WEATHER_PATH_RADAR = "https://www.cwb.gov.tw/Data/radar/CV2_3600.png";
 
     private static final String WEATHER_PATH_UVI  ="https://www.cwb.gov.tw/Data/UVI/UVI.png";
+    /*
+    星座 API 地址
+    Return JSON
+     */
+    public static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
 
     @Autowired
     private TimerUilts timerUilts ;
@@ -281,8 +287,23 @@ public class HelloController {
         }
     }
 
-    private void showConStellation(String replyToken, String data) {
-        JSONObject jsonObject = timerUilts.getConstellation(data);
+    private void showConStellation(String replyToken, String data) throws IOException{
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(CONSTELLATION_PATH).build();
+        okhttp3.Response response = client.newCall(request).execute();
+        String returnText = response.body().string();
+        JSONArray pageReturn = JSONArray.parseArray(returnText);//返回的星座列表
+        JSONObject jsonObject = null ;
+        for (int i = 0; i < pageReturn.size(); i++) {
+            JSONObject item = pageReturn.getJSONObject(i);
+            if (item.getString("name").equals(data)){
+                jsonObject = item ;
+            }
+        }
+        if (jsonObject == null){
+            this.replyText(replyToken,"系統錯誤");
+            return;
+        }
         StringBuffer outputText = new StringBuffer();
         outputText.append("今日短評 : "+jsonObject.getString("TODAY_WORD")+"\n");
         outputText.append("幸運數字 : "+jsonObject.getString("LUCKY_NUMERAL")+"\n");

@@ -17,12 +17,6 @@ import java.util.*;
 @Order(value = 1)
 public class TimerUilts implements ApplicationRunner{
     /*
-    星座 API 地址
-    Return JSON
-     */
-    public static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
-
-    /*
     匯率 api 地址
     Return JSON
      */
@@ -34,8 +28,6 @@ public class TimerUilts implements ApplicationRunner{
     /** 關鍵字轉換 */
     private static Map<String, String>keyTextChanage = new HashMap<>();
 
-    /** 星座列表 */
-    private static List<JSONObject> jsonObjectList = new ArrayList<>();
 
     @Override
     public void run(ApplicationArguments args) throws IOException {
@@ -69,26 +61,8 @@ public class TimerUilts implements ApplicationRunner{
         keyTextChanage.put("比索","PHP");
         keyTextChanage.put("瑞典幣","SEK");
         findCurrExrate();
-        findConstellation();
     }
 
-    /**
-     * 找星座
-     */
-    private void findConstellation(){
-        try{
-            OkHttpClient client = new OkHttpClient();
-            Request request = new Request.Builder().url(CONSTELLATION_PATH).build();
-            okhttp3.Response response = client.newCall(request).execute();
-            String returnText = response.body().string();
-            JSONArray pageReturn = JSONArray.parseArray(returnText);//返回的星座列表
-            for (int i = 0; i < pageReturn.size(); i++) {
-                jsonObjectList.add((JSONObject)pageReturn.get(i));
-            }
-        }catch (IOException e){
-            e.printStackTrace();
-        }
-    }
 
 
     /**
@@ -132,15 +106,6 @@ public class TimerUilts implements ApplicationRunner{
         return keyTextChanage;
     }
 
-    public JSONObject getConstellation(String arg){
-        findConstellation();
-        for (JSONObject item : jsonObjectList) {
-            if (item.get("name").equals(arg)) {
-                return item ;
-            }
-        }
-        return null ;
-    }
 
 
 }
