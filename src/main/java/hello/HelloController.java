@@ -412,7 +412,7 @@ public class HelloController {
                         new CarouselColumn(
                                 imageUrl1,
                                 "12 星座運勢",
-                                "",
+                                "123",
                                 Arrays.asList(
                                         new PostbackAction(" 水 瓶 座 ",
                                                 "今日運勢－水瓶座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
@@ -428,7 +428,7 @@ public class HelloController {
                         new CarouselColumn(
                                 imageUrl2,
                                 "12 星座運勢",
-                                "",
+                                "123",
                                 Arrays.asList(
                                         new PostbackAction(" 金 牛 座 ",
                                                 "今日運勢－金牛座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
@@ -444,7 +444,7 @@ public class HelloController {
                         new CarouselColumn(
                                 imageUrl3,
                                 "12 星座運勢",
-                                "",
+                                "123",
                                 Arrays.asList(
                                         new PostbackAction(" 獅 子 座 ",
                                                 "今日運勢－獅子座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
@@ -460,7 +460,7 @@ public class HelloController {
                         new CarouselColumn(
                                 imageUrl3,
                                 "12 星座運勢",
-                                "",
+                                "123",
                                 Arrays.asList(
                                         new PostbackAction(" 天 蠍 座 ",
                                                 "今日運勢－天蠍座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
