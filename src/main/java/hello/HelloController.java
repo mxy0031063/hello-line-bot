@@ -309,7 +309,7 @@ public class HelloController {
         outputText.append("幸運數字 : "+jsonObject.getString("LUCKY_NUMERAL")+"\n");
         outputText.append("幸運色 : "+jsonObject.getString("LUCKY_COLOR")+"\n");
         outputText.append("小確幸時間 : "+jsonObject.getString("LUCKY_TIME")+"\n");
-        outputText.append("開運方位 : "+jsonObject.getString("LUCKY_DIRECTION   ")+"\n");
+        outputText.append("開運方位 : "+jsonObject.getString("LUCKY_DIRECTION")+"\n");
         outputText.append("幸運星座 : "+jsonObject.getString("LUCKY_ASTRO")+"\n\n");
         outputText.append("整體運勢 : "+jsonObject.getString("STAR_ENTIRETY")+"\n");
         outputText.append(jsonObject.getString("DESC_ENTIRETY")+"\n");
