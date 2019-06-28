@@ -301,7 +301,7 @@ public class HelloController {
             }
         }
         if (jsonObject == null){
-            this.replyText(replyToken,"系統錯誤");
+            this.replyText(replyToken,data+" -- "+pageReturn.getJSONObject(0).toJSONString()+"\n\n"+jsonObject.toJSONString());
             return;
         }
         StringBuffer outputText = new StringBuffer();
