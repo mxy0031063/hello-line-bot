@@ -1,5 +1,8 @@
 package hello;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.JSONPObject;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.springframework.boot.ApplicationArguments;
@@ -8,14 +11,22 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 @Component
 @Order(value = 1)
 public class TimerUilts implements ApplicationRunner{
+    /*
+    星座 API 地址
+    Return JSON
+     */
+    public static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
+
+    /*
+    匯率 api 地址
+    Return JSON
+     */
+    public static final String EXRATE_PATH = "https://tw.rter.info/capi.php";
 
     /** 匯率表 */
     private static Map<String,String>currExrateMap = new HashMap<>();
@@ -23,8 +34,11 @@ public class TimerUilts implements ApplicationRunner{
     /** 關鍵字轉換 */
     private static Map<String, String>keyTextChanage = new HashMap<>();
 
+    /** 星座列表 */
+    private static List<JSONObject> jsonObjectList = new ArrayList<>();
+
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) throws IOException {
         keyTextChanage.put("美金","USD");
         keyTextChanage.put("美元","USD");
         keyTextChanage.put("台幣","TWD");
@@ -54,30 +68,43 @@ public class TimerUilts implements ApplicationRunner{
         keyTextChanage.put("法瑯","CHF");
         keyTextChanage.put("比索","PHP");
         keyTextChanage.put("瑞典幣","SEK");
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                /* 任務列表 */
-                findCurrExrate();
-            }
-        },0,1000*60*20);
+        findCurrExrate();
     }
+
+    /**
+     * 找星座
+     */
+    private void findConstellation(){
+        try{
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder().url(CONSTELLATION_PATH).build();
+            okhttp3.Response response = client.newCall(request).execute();
+            String returnText = response.body().string();
+            JSONArray pageReturn = JSONArray.parseArray(returnText);//返回的星座列表
+            for (int i = 0; i < pageReturn.size(); i++) {
+                jsonObjectList.add((JSONObject)pageReturn.get(i));
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
 
     /**
      * 每 20 分鐘更新一次 匯率
      */
-    private void findCurrExrate() {
-        try{
-            // 發送請求
-            OkHttpClient client = new OkHttpClient();
-            Request request = new Request.Builder().url("https://tw.rter.info/capi.php").build();
-            okhttp3.Response response = client.newCall(request).execute();
-            String returnText = response.body().string();
-            stringToMap4Exrate(returnText);
-        }catch (IOException e){
+    private void findCurrExrate(){
+       try {
+           // 發送請求
+           OkHttpClient client = new OkHttpClient();
+           Request request = new Request.Builder().url(EXRATE_PATH).build();
+           okhttp3.Response response = client.newCall(request).execute();
+           String returnText = response.body().string();
+           stringToMap4Exrate(returnText);
+       }catch (IOException e){
+           e.printStackTrace();
+       }
 
-        }
     }
 
     private void stringToMap4Exrate(String returnText) {
@@ -96,11 +123,23 @@ public class TimerUilts implements ApplicationRunner{
     }
 
     public Map<String, String> getCurrExrateMap() {
+        findCurrExrate();
         return currExrateMap;
     }
 
     public Map<String, String> getKeyTextChanage() {
         return keyTextChanage;
     }
+
+    public JSONObject getConstellation(String arg){
+        findConstellation();
+        for (JSONObject item : jsonObjectList) {
+            if (item.get("name").equals(arg)) {
+                return item ;
+            }
+        }
+        return null ;
+    }
+
 
 }

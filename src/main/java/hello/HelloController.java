@@ -1,5 +1,6 @@
 package hello;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.io.ByteStreams;
 import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.model.PushMessage;
@@ -379,19 +380,113 @@ public class HelloController {
         messagePush.add(text);  //消息存入
         flowPush(replyToken);
         // 判斷指令
-        if (text.contains("安安-天氣")||text.equals("天氣")) {
+        if (text.contains("安安-天氣")||text.equals("!天氣")) {
             //改成模板 按模版 選擇想要觀看的東西
             doWeather(replyToken,text,event,content);
         } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
-        } else if (text.contains("油價")) {
+        } else if (text.contains("!油價")) {
+            /** 找油價 */
             doOilPrice(replyToken,event,content);
         } else if (text.matches("[0-9]{1,10}[-|\\s]?.{1,3}等於多少.{1,3}")){
             /** 匯率 ****-{錢幣}等於多少{錢幣}? */
             doCurrency(replyToken,event,content);
+        } else if (text.contains("!星座")) {
+            doConstellation(replyToken,event,content);
         }
     }
 
+    /**
+     *  發送發票中獎號碼
+     *
+     * @param replyToken
+     * @param event
+     * @param content
+     */
+    private void doConstellation(String replyToken, Event event, TextMessageContent content) {
+        String imageUrl1 = createUri("/static/buttons/figure1.jpg");
+        String imageUrl2 = createUri("/static/buttons/figure2.jpg");
+        String imageUrl3 = createUri("/static/buttons/figure3.jpg");
+        CarouselTemplate carouselTemplate = new CarouselTemplate(
+                Arrays.asList(
+                        new CarouselColumn(
+                                imageUrl1,
+                                "12 星座運勢",
+                                "",
+                                Arrays.asList(
+                                        new PostbackAction(" 水 瓶 座 ",
+                                                "今日運勢－水瓶座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "水瓶座"),
+                                        new PostbackAction(" 雙 魚 座 ",
+                                                "今日運勢－雙魚座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "雙魚座"),
+                                        new PostbackAction(" 牡 羊 座 ",
+                                                "今日運勢－牡羊座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "牡羊座")
+                                )
+                        ),
+                        new CarouselColumn(
+                                imageUrl2,
+                                "12 星座運勢",
+                                "",
+                                Arrays.asList(
+                                        new PostbackAction(" 金 牛 座 ",
+                                                "今日運勢－金牛座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "金牛座"),
+                                        new PostbackAction(" 雙 子 座 ",
+                                                "今日運勢－雙子座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "雙子座"),
+                                        new PostbackAction(" 巨 蟹 座 ",
+                                                "今日運勢－巨蟹座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "巨蟹座")
+                                )
+                        ),
+                        new CarouselColumn(
+                                imageUrl3,
+                                "12 星座運勢",
+                                "",
+                                Arrays.asList(
+                                        new PostbackAction(" 獅 子 座 ",
+                                                "今日運勢－獅子座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "獅子座"),
+                                        new PostbackAction(" 處 女 座 ",
+                                                "今日運勢－處女座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "處女座"),
+                                        new PostbackAction(" 天 秤 座 ",
+                                                "今日運勢－天秤座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "天秤座")
+                                )
+                        ),
+                        new CarouselColumn(
+                                imageUrl3,
+                                "12 星座運勢",
+                                "",
+                                Arrays.asList(
+                                        new PostbackAction(" 天 蠍 座 ",
+                                                "今日運勢－天蠍座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "天蠍座"),
+                                        new PostbackAction(" 射 手 座 ",
+                                                "今日運勢－射手座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "射手座"),
+                                        new PostbackAction(" 魔 蠍 座 ",
+                                                "今日運勢－魔蠍座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "魔蠍座")
+                                )
+                        )
+                )
+        );
+        TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
+        this.reply(replyToken, templateMessage);
+    }
+
+    /**
+     *  發送匯率金額
+     *
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
     private void doCurrency(String replyToken, Event event, TextMessageContent content)throws IOException {
         // 獲得訊息
         String textMessage = content.getText();
@@ -428,20 +523,28 @@ public class HelloController {
             return;
         }
         if (currToExrate.equals(currFromExrate)){
-            this.replyText(replyToken,"are u joke me ?"+timerUilts.getCurrExrateMap().keySet());
+            this.replyText(replyToken,"are u joke me ?");
         }else if(currToExrate.equals("USD")){
             // 是美金 直接輸出
             this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
         } else {
-            String abaa = timerUilts.getCurrExrateMap().get("USD" + currToExrate);
-//            this.replyText(replyToken,abaa);
-            BigDecimal exrate = new BigDecimal(abaa);
+            // 獲得目標匯率
+            String exrateTo = timerUilts.getCurrExrateMap().get("USD" + currToExrate);
+            BigDecimal exrate = new BigDecimal(exrateTo);
             exrate = exrate.setScale(3, BigDecimal.ROUND_HALF_EVEN);
             BigDecimal total = moneyCurrTo.multiply(exrate);
             this.replyText(replyToken, "約等於 " + total.toString() + " 元");
         }
     }
 
+    /**
+     *  發送油價
+     *
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
     private void doOilPrice(String replyToken, Event event, TextMessageContent content) throws IOException{
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder().url("https://www.cpc.com.tw/GetOilPriceJson.aspx?type=TodayOilPriceString").build();
@@ -492,6 +595,16 @@ public class HelloController {
         this.reply(replyToken, new TextMessage(outText.toString()));
     }
 
+    /**
+     *
+     * 發送天氣消息
+     *
+     * @param replyToken
+     * @param text
+     * @param event
+     * @param content
+     * @throws IOException
+     */
     private void doWeather(String replyToken, String text, Event event, TextMessageContent content) throws IOException{
         //改成模版
         String imageUrl = createUri("/static/buttons/Weather.png");
