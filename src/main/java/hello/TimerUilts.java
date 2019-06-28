@@ -69,6 +69,7 @@ public class TimerUilts implements ApplicationRunner{
         keyTextChanage.put("比索","PHP");
         keyTextChanage.put("瑞典幣","SEK");
         findCurrExrate();
+        findConstellation();
     }
 
     /**
