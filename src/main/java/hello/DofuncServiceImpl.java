@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import retrofit2.Response;
 
@@ -26,6 +27,7 @@ import java.math.BigDecimal;
 import java.util.*;
 
 @Slf4j
+@Service
 public class DofuncServiceImpl implements DofuncService {
 
     @Autowired
