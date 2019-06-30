@@ -331,7 +331,7 @@ public class HelloController {
      * @return
      */
     private String weatherPath(int i) {
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Taipei"));
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT+8:00"));
         LocalDateTime localDateTime = LocalDateTime.now();
         String path ;
         switch (i){
