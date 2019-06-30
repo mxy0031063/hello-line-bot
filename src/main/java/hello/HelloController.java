@@ -97,7 +97,7 @@ public class HelloController {
     private LineMessagingService lineMessagingService;
 
     @Autowired
-    private DofuncService service ;
+    private DofuncServiceImpl service ;
 
 
     private static String createUri(String path) {

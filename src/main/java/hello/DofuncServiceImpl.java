@@ -37,6 +37,8 @@ public class DofuncServiceImpl implements DofuncService {
 
     private static String oilReturnText ;
 
+    private static String currencyReturnText ;
+
 
 
 
@@ -81,8 +83,6 @@ public class DofuncServiceImpl implements DofuncService {
         if (oilReturnText == null){
             okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH) ;
             oilReturnText = response.body().string() ;
-            this.replyText(replyToken,"***");
-            return;
         }
         String returnText = oilReturnText ;
         StringBuilder outText = new StringBuilder();
@@ -128,8 +128,13 @@ public class DofuncServiceImpl implements DofuncService {
 
     @Override
     public void doCurrency(String replyToken, Event event, TextMessageContent content) throws IOException{
-        okhttp3.Response response = timerUilts.clientHttp(EXRATE_PATH) ;
-        String returnText = response.body().string();
+
+        if (currencyReturnText == null ){
+            okhttp3.Response response = timerUilts.clientHttp(EXRATE_PATH) ;
+            currencyReturnText = response.body().string();
+        }
+        String returnText = currencyReturnText ;
+
         Map<String,String> currExrateMap = new HashMap<>(); //匯率表
         String text = returnText.substring(1,returnText.length()-1);
         String[] strings = text.split(",");
