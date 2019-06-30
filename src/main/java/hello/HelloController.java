@@ -331,7 +331,6 @@ public class HelloController {
      * @return
      */
     private String weatherPath(int i) {
-//        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Taipei"));
         LocalDateTime localDateTime = LocalDateTime.now(TimeZone.getTimeZone("Asia/Taipei").toZoneId());
         String path ;
         switch (i){
@@ -340,7 +339,7 @@ public class HelloController {
                 LocalDateTime case1Date = localDateTime.minusMinutes(40); //獲取40分鐘前的時間
                 String date = dtf.format(case1Date)+"00";
                 path = "https://www.cwb.gov.tw/Data/temperature/"+date+".GTP8.jpg";
-                return localDateTime.toString();
+                return "data : "+date+"\n local : "+localDateTime.toString();
             case 2 :
                 LocalDateTime case2Date = localDateTime.minusMinutes(30); //獲取30分鐘前的時間
                 DateTimeFormatter dtf2 = DateTimeFormatter.ofPattern("yyyy-MM-dd_hh");
@@ -354,7 +353,7 @@ public class HelloController {
                     // 30
                     path = "https://www.cwb.gov.tw/Data/rainfall/"+date2+"30.QZJ8.jpg";
                 }
-                return localDateTime.toString();
+                return "data : "+date2+"\n local : "+localDateTime.toString();
             default:
                 return "/static/buttons/ERROR.png";
         }
