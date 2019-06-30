@@ -366,8 +366,8 @@ public class HelloController {
      * @throws IOException
      */
     private void showWeather(String replyToken,String path)throws IOException {
-        okhttp3.Response response = timerUilts.clientHttp(path);
-        DownloadedContent jpg = saveContent("jpg", response.body());
+//        okhttp3.Response response = timerUilts.clientHttp(path);
+//        DownloadedContent jpg = saveContent("jpg", response.body());
 //        this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
         this.replyText(replyToken,path);
     }
