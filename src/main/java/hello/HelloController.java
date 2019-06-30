@@ -368,7 +368,8 @@ public class HelloController {
     private void showWeather(String replyToken,String path)throws IOException {
         okhttp3.Response response = timerUilts.clientHttp(path);
         DownloadedContent jpg = saveContent("jpg", response.body());
-        this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
+//        this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
+        this.replyText(replyToken,path);
     }
 
     @EventMapping
@@ -454,8 +455,6 @@ public class HelloController {
 
     private void abyssLineBot(String replyToken, Event event, TextMessageContent content) throws IOException{
         String text = content.getText().trim(); // 傳進來的文字
-        messagePush.add(text);  //消息存入
-        flowPush(replyToken);
         // 判斷指令
         if (text.contains("安安-天氣")||text.equals("!天氣")) {
             //改成模板 按模版 選擇想要觀看的東西
@@ -470,6 +469,9 @@ public class HelloController {
             service.doCurrency(replyToken,event,content);
         } else if (text.contains("!星座")) {
             service.doConstellation(replyToken,event,content);
+        }else {
+            messagePush.add(text);  //消息存入
+            flowPush(replyToken);
         }
     }
     private void flowPush(String replyToken) {
