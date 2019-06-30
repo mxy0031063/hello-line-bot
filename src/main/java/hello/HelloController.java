@@ -335,16 +335,16 @@ public class HelloController {
         String path ;
         switch (i){
             case 1 :
-                DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd_hh");
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd_hh");
+                DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH");
+
                 LocalDateTime case1Date = localDateTime.minusMinutes(40); //獲取40分鐘前的時間
                 String date = dtf.format(case1Date)+"00";
-                String dataTest = localDateTime.format(dtf);
+                String dataTest = case1Date.format(dtf);
                 path = "https://www.cwb.gov.tw/Data/temperature/"+date+".GTP8.jpg";
                 return "dataTest : "+dataTest+"\n local : "+localDateTime.toString();
             case 2 :
                 LocalDateTime case2Date = localDateTime.minusMinutes(30); //獲取30分鐘前的時間
-                DateTimeFormatter dtf2 = DateTimeFormatter.ofPattern("yyyy-MM-dd_hh");
+                DateTimeFormatter dtf2 = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH");
                 String date2 = dtf2.format(case2Date);
                 //https://www.cwb.gov.tw/Data/rainfall/2019-06-25_1730.QZJ8.jpg
                 int min = localDateTime.getMinute();
