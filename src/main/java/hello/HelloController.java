@@ -331,8 +331,10 @@ public class HelloController {
      * @return
      */
     private String weatherPath(int i) {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT+8:00"));
-        LocalDateTime localDateTime = LocalDateTime.now();
+//        TimeZone.setDefault(TimeZone.getTimeZone("GMT+8:00"));
+//        TimeZone timeZone = TimeZone.getTimeZone("GMT+8:00");
+//        Calendar calendar = Calendar.getInstance(timeZone);
+        LocalDateTime localDateTime = LocalDateTime.now(TimeZone.getTimeZone("GMT+8:00").toZoneId());
         String path ;
         switch (i){
             case 1 :
