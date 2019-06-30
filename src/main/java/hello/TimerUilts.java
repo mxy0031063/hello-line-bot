@@ -16,15 +16,6 @@ import java.util.*;
 @Component
 @Order(value = 1)
 public class TimerUilts implements ApplicationRunner{
-    /*
-    匯率 api 地址
-    Return JSON
-     */
-    public static final String EXRATE_PATH = "https://tw.rter.info/capi.php";
-
-    /** 匯率表 */
-    private static Map<String,String>currExrateMap = new HashMap<>();
-
     /** 關鍵字轉換 */
     private static Map<String, String>keyTextChanage = new HashMap<>();
 
@@ -60,50 +51,23 @@ public class TimerUilts implements ApplicationRunner{
         keyTextChanage.put("法瑯","CHF");
         keyTextChanage.put("比索","PHP");
         keyTextChanage.put("瑞典幣","SEK");
-        findCurrExrate();
     }
 
-
-
-    /**
-     * 每 20 分鐘更新一次 匯率
-     */
-    private void findCurrExrate(){
-       try {
-           // 發送請求
-           OkHttpClient client = new OkHttpClient();
-           Request request = new Request.Builder().url(EXRATE_PATH).build();
-           okhttp3.Response response = client.newCall(request).execute();
-           String returnText = response.body().string();
-           stringToMap4Exrate(returnText);
-       }catch (IOException e){
-           e.printStackTrace();
-       }
-
-    }
-
-    private void stringToMap4Exrate(String returnText) {
-        Map<String,String> map = new HashMap<>();
-        String text = returnText.substring(1,returnText.length()-1);
-        String[] strings = text.split(",");
-        for (int i = 0;i < strings.length;i++){
-            if (i%2==0){
-                String[] mapKeySet = strings[i].split(":");
-                String str = mapKeySet[0];
-                String key = str.substring(str.indexOf("\"")+1,str.lastIndexOf("\"")).trim();
-                String value = mapKeySet[2].trim();
-                currExrateMap.put(key,value);
-            }
-        }
-    }
-
-    public Map<String, String> getCurrExrateMap() {
-        findCurrExrate();
-        return currExrateMap;
-    }
 
     public Map<String, String> getKeyTextChanage() {
         return keyTextChanage;
+    }
+
+    public okhttp3.Response clientHttp(String path) {
+        okhttp3.Response response = null ;
+        try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder().url(path).build();
+            response = client.newCall(request).execute();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return response;
     }
 
 
