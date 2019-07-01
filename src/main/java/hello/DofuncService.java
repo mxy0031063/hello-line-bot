@@ -20,6 +20,11 @@ public interface DofuncService {
     String EXRATE_PATH = "https://tw.rter.info/capi.php" ;
 
     /*
+    狄卡api 網址
+     */
+    String DCCARD_SEX_PATH = "https://www.dcard.tw/_api/forums/sex/posts?popular=true";
+
+    /*
     表特網址
      */
     String PTT_BEAUTY_URL = "https://www.ptt.cc/bbs/Beauty/index.html";
@@ -40,7 +45,7 @@ public interface DofuncService {
      */
     void doConstellation(String replyToken, Event event, TextMessageContent content) throws IOException;
     /**
-     * 處理抽卡-表特
+     * 處理抽卡
      */
     String doBeauty(Event event, TextMessageContent content) throws IOException;
 

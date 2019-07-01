@@ -1,5 +1,7 @@
 package hello;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.model.ReplyMessage;
 import com.linecorp.bot.model.action.PostbackAction;
@@ -45,6 +47,10 @@ public class DofuncServiceImpl implements DofuncService {
     private static String oilReturnText ;
 
     private static String currencyReturnText ;
+
+    static List<String> dccardSexList = new ArrayList<>();
+
+    static int dccardSexCount ;
 
 
 
@@ -293,21 +299,56 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public String doBeauty(Event event, TextMessageContent content) throws IOException {
         String text = content.getText();
-        if (grilImgUrlList.size()==0||manImgUrlList.size()==0){
+        if (grilImgUrlList.size()==0 || manImgUrlList.size()==0 || dccardSexList.size()==0) {
             beautyInit();
+            dccardSexInit(DCCARD_SEX_PATH);
         }
         Random random = new Random();
         int index ;
         String url ;
-        if (text.contains("抽帥哥")){
+        if (text.contains("帥哥")){
             index = random.nextInt(manImgUrlList.size());
             url = manImgUrlList.get(index);
+        }else if(text.contains("西施")){
+            index = random.nextInt(dccardSexList.size());
+            url = dccardSexList.get(index);
         }else {
             index = random.nextInt(grilImgUrlList.size());
             url = grilImgUrlList.get(index);
         }
         return url ;
     }
+
+    private void dccardSexInit(String path) throws IOException{
+        okhttp3.Response response = timerUilts.clientHttp(path);
+        String returnText =  response.body().string();
+        JSONArray page = JSONArray.parseArray(returnText);
+        String pageId = null;
+        for (int i = 0; i < page.size(); i++) {
+            JSONObject item = page.getJSONObject(i);
+            JSONArray media = item.getJSONArray("media");
+            if (media.size()==0){
+                continue;
+            }
+            String gender = item.getString("gender");
+            if (gender.equals("F")){
+                for (int j = 0; j < media.size(); j++) {
+                    dccardSexList.add(media.getJSONObject(j).getString("url"));
+                    if (dccardSexList.size() > 80){
+                        return;
+                    }
+                }
+            }
+            String str = item.getString("id");
+            if (str != null){
+                pageId = str;
+            }
+        }
+        String nextPath = "https://www.dcard.tw/_api/forums/sex/posts?popular=true&before="+pageId;
+        dccardSexInit(nextPath);
+    }
+
+
     private static void beautyInit() throws IOException{
         Document doc = jsoupClient(PTT_BEAUTY_URL);
         Elements lastPageArray = doc.getElementsByClass("btn-group-paging");
