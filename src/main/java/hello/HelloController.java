@@ -250,19 +250,19 @@ public class HelloController {
             }
 
             case "doTemperature" :{
-                showWeather(replyToken,weatherPath(1));
+                showImg(replyToken,weatherPath(1));
                 break;
             }
             case "doUVI" :{
-                showWeather(replyToken,WEATHER_PATH_UVI);
+                showImg(replyToken,WEATHER_PATH_UVI);
                 break;
             }
             case "doRainfall" :{
-                showWeather(replyToken,weatherPath(2));
+                showImg(replyToken,weatherPath(2));
                 break;
             }
             case "doRadar" :{
-                showWeather(replyToken,WEATHER_PATH_RADAR);
+                showImg(replyToken,WEATHER_PATH_RADAR);
                 break;
             }
             case "今日運勢－水瓶座" :{
@@ -366,7 +366,7 @@ public class HelloController {
      * @param path
      * @throws IOException
      */
-    private void showWeather(String replyToken,String path)throws IOException {
+    private void showImg(String replyToken,String path)throws IOException {
         okhttp3.Response response = timerUilts.clientHttp(path);
         DownloadedContent jpg = saveContent("jpg", response.body());
         this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
@@ -469,6 +469,9 @@ public class HelloController {
             service.doCurrency(replyToken,event,content);
         } else if (text.contains("!星座")) {
             service.doConstellation(replyToken,event,content);
+        }else if (text.contains("!抽")){
+            String beautyPath = service.doBeauty(event,content);
+            showImg(replyToken,beautyPath);
         }else {
             messagePush.add(text);  //消息存入
             flowPush(replyToken);

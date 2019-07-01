@@ -14,8 +14,10 @@ import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -34,6 +36,10 @@ public class DofuncServiceImpl implements DofuncService {
     private LineMessagingService lineMessagingService;
     @Autowired
     private TimerUilts timerUilts ;
+
+    private static List<String> grilImgUrlList = new ArrayList<>();
+
+    private static List<String> manImgUrlList = new ArrayList<>();
 
     private static String oilReturnText ;
 
@@ -277,16 +283,90 @@ public class DofuncServiceImpl implements DofuncService {
         this.reply(replyToken, templateMessage);
     }
 
+    /**
+     * 處理 表特抽卡
+     * @param event
+     * @param content
+     * @throws IOException
+     */
+    @Override
+    public String doBeauty(Event event, TextMessageContent content) throws IOException {
+        String text = content.getText();
+        if (grilImgUrlList.size()==0||manImgUrlList.size()==0){
+            beautyInit();
+        }
+        Random random = new Random();
+        int index ;
+        String url ;
+        if (text.contains("抽帥哥")){
+            index = random.nextInt(manImgUrlList.size());
+            url = manImgUrlList.get(index);
+        }else {
+            index = random.nextInt(grilImgUrlList.size());
+            url = grilImgUrlList.get(index);
+        }
+        return url ;
+    }
+    private static void beautyInit() throws IOException{
+        Document doc = Jsoup.connect(PTT_BEAUTY_URL).get();
+        Elements lastPageArray = doc.getElementsByClass("btn-group-paging");
+        Element lastPage = null ;
+        for (Element element : lastPageArray){
+            lastPage = element.getElementsByClass("btn").get(1);
+        }
+        String lastPageUrl = lastPage.attr("abs:href"); //獲得路徑
+        String lastPageIndex = lastPageUrl.substring(lastPageUrl.indexOf("index")+5,lastPageUrl.indexOf(".html"));
+        //  獲得當前頁碼
+        Integer nowPageIndex = Integer.parseInt(lastPageIndex)+1;
 
+        List<Integer> pageIndexArray = new ArrayList<>();
+        pageIndexArray.add(nowPageIndex);
+        // 獲得頁碼地址
+        for (int i = 1 ; i < 5 ; i++){
+            // 獲得最新頁面的往前5頁(包含本身)
+            pageIndexArray.add(nowPageIndex-i);
+        }
+        // 往網頁發送 獲取消息 並把抓下來的image url 存入
+        pageIndexArray.forEach((pageIndex)->{
+            String url =  "https://www.ptt.cc/bbs/Beauty/index"+pageIndex+".html";
+            Document pageDoc = null ;
+            try {
+                // 獲得表特版頁面
+                pageDoc = Jsoup.connect(url).get();
+                // 獲得標題組
+                Elements allPageTag = pageDoc.getElementsByClass("r-ent");
+                for (Element pageTag : allPageTag) {
+                    // 拿到標題組中的文字與網址
+                    Elements titles = pageTag.getElementsByClass("title").get(0).getElementsByTag("a");
+                    if (titles.size()==0){
+                        continue;
+                    }
+                    Element title = titles.get(0);
+                    String titleText = title.text();    // 獲得每個標籤的文字 有 [正妹] ,[公告] ,[神人] ,[帥哥] ,[廣告] ...etc
+                    String titleHref = title.attr("abs:href");
+                    if (titleText.contains("[正妹]")||titleText.contains("[帥哥]")){
+                        Document grilDoc = Jsoup.connect(titleHref).get();
+                        Elements img = grilDoc.getElementById("main-content").getElementsByAttributeValueContaining("href","https://i.imgur.com/");
+                        for (Element imgTag : img) {
+                            String str = imgTag.attr("href");
+                            // 過濾掉一些奇奇怪怪的圖片
+                            if (!str.contains(".jpg")){
+                                continue;
+                            }
+                            if (titleText.contains("[正妹]")){
+                                grilImgUrlList.add(str);
+                            }else if (titleText.contains("[帥哥]")){
+                                manImgUrlList.add(str);
+                            }
 
-
-
-
-
-
-
-
-
+                        }
+                    }
+                }
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+        });
+    }
 
 
 
