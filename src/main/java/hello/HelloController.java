@@ -469,7 +469,7 @@ public class HelloController {
             service.doCurrency(replyToken,event,content);
         } else if (text.contains("!星座")||text.contains("！星座")) {
             service.doConstellation(replyToken,event,content);
-        }else if (text.contains("!抽")||text.contains("！抽")){
+        }else if (text.contains("抽")||text.contains("！抽")){
             String beautyPath = service.doBeauty(event,content);
             showImg(replyToken,beautyPath);
         }else {
