@@ -309,7 +309,7 @@ public class DofuncServiceImpl implements DofuncService {
         if (text.contains("帥哥")){
             index = random.nextInt(manImgUrlList.size());
             url = manImgUrlList.get(index);
-        }else if(text.contains("西施")){
+        }else if(text.contains("西施")|| text.contains("西斯") || text.contains("sex")){
             index = random.nextInt(dccardSexList.size());
             url = dccardSexList.get(index);
         }else {
