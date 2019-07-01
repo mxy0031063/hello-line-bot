@@ -289,7 +289,7 @@ public class DofuncServiceImpl implements DofuncService {
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
         this.reply(replyToken, templateMessage);
     }
-
+    private static int doCount  ;
     /**
      * 處理 表特抽卡
      * @param event
@@ -298,10 +298,12 @@ public class DofuncServiceImpl implements DofuncService {
      */
     @Override
     public String doBeauty(Event event, TextMessageContent content) throws IOException {
+        doCount ++ ;
         String text = content.getText();
-        if (grilImgUrlList.size()==0 || manImgUrlList.size()==0 || dccardSexList.size()==0) {
+        if (grilImgUrlList.size()==0 || manImgUrlList.size()==0 || dccardSexList.size()==0 || doCount > 150) {
             beautyInit();
             dccardSexInit(DCCARD_SEX_PATH);
+            doCount = 0 ;
         }
         Random random = new Random();
         int index ;

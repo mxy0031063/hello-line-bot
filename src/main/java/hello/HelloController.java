@@ -393,19 +393,19 @@ public class HelloController {
     @EventMapping
     public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) {
         log.info("Got image event: {}", event);
-        replyText(event.getReplyToken(), event.getMessage().toString());
+//        replyText(event.getReplyToken(), event.getMessage().toString());
     }
 
     @EventMapping
     public void handleAudioMessageEvent(MessageEvent<AudioMessageContent> event) {
         log.info("Got audio event: {}", event);
-        replyText(event.getReplyToken(), event.getMessage().toString());
+//        replyText(event.getReplyToken(), event.getMessage().toString());
     }
 
     @EventMapping
     public void handleVideoMessageEvent(MessageEvent<VideoMessageContent> event) {
         log.info("Got video event: {}", event);
-        replyText(event.getReplyToken(), event.getMessage().toString());
+//        replyText(event.getReplyToken(), event.getMessage().toString());
     }
 
     private void replyText(@NonNull String replyToken, @NonNull String message) {
