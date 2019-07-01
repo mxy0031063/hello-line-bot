@@ -456,20 +456,20 @@ public class HelloController {
     private void abyssLineBot(String replyToken, Event event, TextMessageContent content) throws IOException{
         String text = content.getText().trim(); // 傳進來的文字
         // 判斷指令
-        if (text.contains("安安-天氣")||text.equals("!天氣")) {
+        if (text.contains("安安-天氣")||text.equals("!天氣")||text.equals("！天氣")) {
             //改成模板 按模版 選擇想要觀看的東西
             service.doWeather(replyToken,event,content);
         } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
-        } else if (text.contains("!油價")) {
+        } else if (text.contains("!油價")||text.contains("！油價")) {
             /** 找油價 */
             service.doOliPrice(replyToken,event,content);
         } else if (text.matches("[0-9]{1,10}[-|\\s]?.{1,3}等於多少.{1,3}")){
             /** 匯率 ****-{錢幣}等於多少{錢幣}? */
             service.doCurrency(replyToken,event,content);
-        } else if (text.contains("!星座")) {
+        } else if (text.contains("!星座")||text.contains("！星座")) {
             service.doConstellation(replyToken,event,content);
-        }else if (text.contains("!抽")){
+        }else if (text.contains("!抽")||text.contains("！抽")){
             String beautyPath = service.doBeauty(event,content);
             showImg(replyToken,beautyPath);
         }else {
