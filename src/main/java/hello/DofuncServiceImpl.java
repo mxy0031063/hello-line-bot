@@ -14,6 +14,7 @@ import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -308,7 +309,7 @@ public class DofuncServiceImpl implements DofuncService {
         return url ;
     }
     private static void beautyInit() throws IOException{
-        Document doc = Jsoup.connect(PTT_BEAUTY_URL).get();
+        Document doc = jsoupClient(PTT_BEAUTY_URL);
         Elements lastPageArray = doc.getElementsByClass("btn-group-paging");
         Element lastPage = null ;
         for (Element element : lastPageArray){
@@ -332,7 +333,7 @@ public class DofuncServiceImpl implements DofuncService {
             Document pageDoc = null ;
             try {
                 // 獲得表特版頁面
-                pageDoc = Jsoup.connect(url).get();
+                pageDoc = jsoupClient(url);
                 // 獲得標題組
                 Elements allPageTag = pageDoc.getElementsByClass("r-ent");
                 for (Element pageTag : allPageTag) {
@@ -345,7 +346,7 @@ public class DofuncServiceImpl implements DofuncService {
                     String titleText = title.text();    // 獲得每個標籤的文字 有 [正妹] ,[公告] ,[神人] ,[帥哥] ,[廣告] ...etc
                     String titleHref = title.attr("abs:href");
                     if (titleText.contains("[正妹]")||titleText.contains("[帥哥]")){
-                        Document grilDoc = Jsoup.connect(titleHref).get();
+                        Document grilDoc = jsoupClient(titleHref);
                         Elements img = grilDoc.getElementById("main-content").getElementsByAttributeValueContaining("href","https://i.imgur.com/");
                         for (Element imgTag : img) {
                             String str = imgTag.attr("href");
@@ -369,15 +370,16 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
 
-
-
-
-
-
-
-
-
-
+    private static Document jsoupClient(String path)throws IOException{
+        Connection.Response response= Jsoup.connect(path)
+                .ignoreContentType(true)
+                .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
+                .referrer("http://www.google.com")
+                .timeout(12000)
+                .followRedirects(true)
+                .execute();
+        return response.parse();
+    }
 
 
     private static String createUri(String path) {
