@@ -493,7 +493,7 @@ public class HelloController {
             /** 抽卡 */
             String beautyPath = service.doBeauty(event,content);
             showImg(replyToken,beautyPath);
-        }else if(text.contains("!av")){
+        }else if(text.contains("!av")||text.contains("！av")){
             ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken,event,content);
             if (avSearch!=null){
                 showImg4AV(replyToken ,avSearch);
