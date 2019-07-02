@@ -372,6 +372,26 @@ public class HelloController {
         this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
     }
 
+    private void showImg4AV(String replyToken, ArrayList<ArrayList<String>> avSearch){
+        ArrayList<String> firstItem = avSearch.get(0);
+        String firstImg = firstItem.get(1);
+        List<Message>totol = new ArrayList<>();
+        if (firstImg.length()!=0){
+            okhttp3.Response response = timerUilts.clientHttp(firstImg);
+            DownloadedContent jpg = saveContent("jpg", response.body());
+            // 默認的第一張圖片
+            totol.add(new ImageMessage(jpg.getUri(), jpg.getUri()));
+        }
+        // 默認的一個URL
+        totol.add(new TextMessage(firstItem.get(0)));
+        totol.add(new TextMessage("\n\n\n 其他的結果 : \n"));
+        for (int i = 1; i < avSearch.size(); i++) {
+            // 其他結果
+            totol.add(new TextMessage(avSearch.get(i).get(0)+"\n"));
+        }
+        this.reply(replyToken,totol);
+    }
+
     @EventMapping
     public void handleStickerMessageEvent(MessageEvent<StickerMessageContent>  event) {
         log.info("Got sticker event: {}", event);
@@ -470,8 +490,14 @@ public class HelloController {
         } else if (text.contains("!星座")||text.contains("！星座")) {
             service.doConstellation(replyToken,event,content);
         }else if (text.contains("抽")||text.contains("！抽")){
+            /** 抽卡 */
             String beautyPath = service.doBeauty(event,content);
             showImg(replyToken,beautyPath);
+        }else if(text.contains("!av")){
+            ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken,event,content);
+            if (avSearch!=null){
+                showImg4AV(replyToken ,avSearch);
+            }
         }else {
             messagePush.add(text);  //消息存入
             flowPush(replyToken);

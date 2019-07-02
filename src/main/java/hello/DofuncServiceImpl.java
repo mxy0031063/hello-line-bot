@@ -321,6 +321,54 @@ public class DofuncServiceImpl implements DofuncService {
         return url ;
     }
 
+    /**
+     * 處理AV搜尋 - 並默認隨機返回一個搜尋結果
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
+    @Override
+    public ArrayList doAVsearch(String replyToken, Event event, TextMessageContent content) throws IOException {
+        // 存儲 返回的搜尋結果
+        ArrayList<ArrayList<String>> lists = new ArrayList<>();
+
+        String text = content.getText();
+        String searchText = text.substring(text.indexOf("!av")+4);
+
+        Document doc = jsoupClient(AV01_SEARCH_PATH + searchText);
+
+        Elements vedio =  doc.getElementsByClass("col-lg-4");
+        if (vedio == null){
+            this.replyText(replyToken,"沒有找到你要的關鍵字 \n 試著打女優作品或是名子 \n 你的關鍵字 : "+searchText);
+            return null;
+        }
+        for (Element element : vedio) {
+            ArrayList<String>list = new ArrayList<>();
+            Elements elements = element.getElementsByTag("a");
+            String vedioUrl = elements.get(0).absUrl("href");
+            String imgUrl = element.getElementsByTag("img").get(0).absUrl("src");
+            if (imgUrl.length()==0){
+                imgUrl = element.getElementsByTag("img").get(0).absUrl("data-src");
+            }
+            list.add(vedioUrl);
+            list.add(imgUrl);
+            lists.add(list);
+
+        }
+        int listSize = lists.size();
+        ArrayList<ArrayList<String>> returnList = new ArrayList<>();
+        // 元素小於三個直接給
+        if (listSize <= 3){
+            return lists ;
+        }
+        int[] index = timerUilts.getRandomArrayByValue(3,listSize);
+        for (int i = 0; i < index.length; i++) {
+            returnList.add(lists.get(index[i]));
+        }
+        return returnList ;
+    }
+
     private void dccardSexInit(String path) throws IOException{
         okhttp3.Response response = timerUilts.clientHttp(path);
         String returnText =  response.body().string();

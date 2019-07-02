@@ -71,5 +71,38 @@ public class TimerUilts implements ApplicationRunner{
     }
 
 
+    public int[] getRandomArrayByValue(int num,int scope){
+        //创建存储num个随机数的数据
+        int[] numArray=new int[num];
+        int lucky;//存生成的随机数
+
+        //是否继续
+        boolean isContinue=true;
+        for(int i=0;i<numArray.length;i++){
+            do {
+                lucky=(int)(Math.random()*scope);//获得随机数
+
+                //判断数组中是否已经存在了这个随机数
+                //--存在返回true，重新生成随机数  --不存在，返回false，停止循环，将该值赋值给数组
+                isContinue=isExistence(numArray, lucky);
+            } while (isContinue);
+
+            numArray[i]=lucky;
+        }
+
+        return numArray;
+    }
+
+    //方法二的辅助方法
+    public static boolean isExistence(int[] numArray,int lucky){
+        for (int i : numArray) {
+            if(i==lucky){
+                //存在返回true--生成新的随机数，直到随机数与放入数组numArray中的数不同为止
+                return true;
+            }
+        }
+
+        return false;
+    }
 
 }
