@@ -300,9 +300,10 @@ public class DofuncServiceImpl implements DofuncService {
     public String doBeauty(Event event, TextMessageContent content) throws IOException {
         doCount ++ ;
         String text = content.getText();
-        if (grilImgUrlList.size()==0 || manImgUrlList.size()==0 || dccardSexList.size()==0 || doCount > 150) {
+        if (grilImgUrlList.size()==0 || manImgUrlList.size()==0 || dccardSexList.size()==0 || doCount > 200) {
             beautyInit();
             dccardSexInit(DCCARD_SEX_PATH);
+            itubaInit();
             doCount = 0 ;
         }
         Random random = new Random();
@@ -319,6 +320,22 @@ public class DofuncServiceImpl implements DofuncService {
             url = grilImgUrlList.get(index);
         }
         return url ;
+    }
+
+    private void itubaInit() throws IOException{
+        String IMG_GRIL_PATH = "https://m.ituba.cc/meinvtupian/p";
+        int[] index = timerUilts.getRandomArrayByValue(10,500);
+        Document document ;
+        for (int num : index) {
+            document = jsoupClient(IMG_GRIL_PATH+num+".html");
+            Elements elements = document.select(".libox img");
+            for (Element element : elements) {
+                String url = element.absUrl("src");
+                if(url.length()!=0){
+                    grilImgUrlList.add(url);
+                }
+            }
+        }
     }
 
     /**
