@@ -302,7 +302,8 @@ public class DofuncServiceImpl implements DofuncService {
         String text = content.getText();
         if (grilImgUrlList.size()==0 || manImgUrlList.size()==0 || dccardSexList.size()==0 || doCount > 200) {
             beautyInit();
-            dccardSexInit(DCCARD_SEX_PATH);
+            dccardSexInit(DCCARD_SEX_PATH,80);
+            dccardSexInit(DCARD_SEX_NEW_PATH,150);
             itubaInit();
             doCount = 0 ;
         }
@@ -400,7 +401,7 @@ public class DofuncServiceImpl implements DofuncService {
         return returnList ;
     }
 
-    private void dccardSexInit(String path) throws IOException{
+    private void dccardSexInit(String path,int count) throws IOException{
         okhttp3.Response response = timerUilts.clientHttp(path);
         String returnText =  response.body().string();
         JSONArray page = JSONArray.parseArray(returnText);
@@ -415,7 +416,7 @@ public class DofuncServiceImpl implements DofuncService {
             if (gender.equals("F")){
                 for (int j = 0; j < media.size(); j++) {
                     dccardSexList.add(media.getJSONObject(j).getString("url"));
-                    if (dccardSexList.size() > 80){
+                    if (dccardSexList.size() > count){
                         return;
                     }
                 }
@@ -425,8 +426,11 @@ public class DofuncServiceImpl implements DofuncService {
                 pageId = str;
             }
         }
-        String nextPath = "https://www.dcard.tw/_api/forums/sex/posts?popular=true&before="+pageId;
-        dccardSexInit(nextPath);
+        if (path.contains("&before=")){
+            path = path.substring(0,path.indexOf("&before="));
+        }
+        String nextPath = path+"&before="+pageId;
+        dccardSexInit(nextPath,count);
     }
 
 

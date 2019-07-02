@@ -22,9 +22,13 @@ public interface DofuncService {
     String EXRATE_PATH = "https://tw.rter.info/capi.php" ;
 
     /*
-    狄卡api 網址
+    狄卡api 網址 熱門
      */
     String DCCARD_SEX_PATH = "https://www.dcard.tw/_api/forums/sex/posts?popular=true";
+    /*
+    狄卡 api 最新
+     */
+    String DCARD_SEX_NEW_PATH = "https://www.dcard.tw/_api/forums/sex/posts?popular=false";
 
     /*
     表特網址
