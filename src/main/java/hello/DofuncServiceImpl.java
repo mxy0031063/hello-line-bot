@@ -324,10 +324,23 @@ public class DofuncServiceImpl implements DofuncService {
 
     private void itubaInit() throws IOException{
         String IMG_GRIL_PATH = "https://m.ituba.cc/meinvtupian/p";
-        int[] index = timerUilts.getRandomArrayByValue(10,500);
+
+        int[] index = timerUilts.getRandomArrayByValue(2,500);
+        List<String> urlLiat = new ArrayList<>();
         Document document ;
         for (int num : index) {
-            document = jsoupClient(IMG_GRIL_PATH+num+".html");
+            urlLiat.add(IMG_GRIL_PATH+num+".html");
+        }
+        urlLiat.add("https://m.ituba.cc/tag/755_2.html");
+        urlLiat.add("https://m.ituba.cc/tag/755_3.html");
+        urlLiat.add("https://m.ituba.cc/belle/p2.html");
+        urlLiat.add("https://m.ituba.cc/belle/p3.html");
+        urlLiat.add("https://m.ituba.cc/belle/p4.html");
+        urlLiat.add("https://m.ituba.cc/tag/739.html");
+        urlLiat.add("https://m.ituba.cc/tag/802_1.html");
+        urlLiat.add("https://m.ituba.cc/tag/802_2.html");
+        for (String str : urlLiat) {
+            document = jsoupClient(str);
             Elements elements = document.select(".libox img");
             for (Element element : elements) {
                 String url = element.absUrl("src");
@@ -336,6 +349,7 @@ public class DofuncServiceImpl implements DofuncService {
                 }
             }
         }
+
     }
 
     /**
