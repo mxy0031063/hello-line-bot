@@ -384,7 +384,7 @@ public class HelloController {
         }
         // 默認的一個URL
         totol.add(new TextMessage(firstItem.get(0)));
-        totol.add(new TextMessage("\n\n\n 其他的結果 : \n"));
+        totol.add(new TextMessage("其他的結果 :"));
         for (int i = 1; i < avSearch.size(); i++) {
             // 其他結果
             totol.add(new TextMessage(avSearch.get(i).get(0)+"\n"));
