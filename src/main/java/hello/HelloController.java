@@ -494,15 +494,28 @@ public class HelloController {
             String beautyPath = service.doBeauty(event,content);
             showImg(replyToken,beautyPath);
         }else if(text.contains("!av")||text.contains("！av")){
+            /** 搜尋av */
             ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken,event,content);
             if (avSearch!=null){
                 showImg4AV(replyToken ,avSearch);
             }
+        }else if(text.contains("發財")||text.contains("發大財")||text.contains("韓國瑜")){
+            /** 發大財 */
+            doMakeRich(replyToken,event,content);
         }else {
             messagePush.add(text);  //消息存入
             flowPush(replyToken);
         }
     }
+
+    private void doMakeRich(String replyToken, Event event, TextMessageContent content) throws IOException{
+        Random random = new Random();
+        int index = random.nextInt(14);
+        String path = "/static/makeRich/"+index+".jpg";
+        String imageUrl = createUri(path);
+        showImg(replyToken,imageUrl);
+    }
+
     private void flowPush(String replyToken) {
         // pushMessage
         Map<String,Integer>map = new HashMap<>();
