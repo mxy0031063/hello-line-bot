@@ -511,7 +511,7 @@ public class HelloController {
     private void abyssLineBot(String replyToken, Event event, TextMessageContent content) throws IOException{
         String text = content.getText().trim(); // 傳進來的文字
         // 判斷指令
-        if (text.contains("安安-天氣")||text.equals("!天氣")||text.equals("！天氣")) {
+        if (text.contains("安安-天氣")||text.contains("!天氣")||text.contains("！天氣")) {
 
             Map<String, String> cityToId = timerUilts.getTempCity4Id();
             String city = null;
