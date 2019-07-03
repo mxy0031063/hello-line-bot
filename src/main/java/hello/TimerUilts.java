@@ -16,12 +16,19 @@ import java.util.*;
 @Component
 @Order(value = 1)
 public class TimerUilts implements ApplicationRunner{
+
+
     /** 關鍵字轉換 */
-    private static Map<String, String>keyTextChanage = new HashMap<>();
+    private static Map<String, String>  keyTextChanage = new HashMap<>();
+
+    /** 天氣程式轉ID */
+    private static Map<String, String>  tempCity4Id = new HashMap<>();
+
 
 
     @Override
     public void run(ApplicationArguments args) throws IOException {
+        /* keyTextChanage start */
         keyTextChanage.put("美金","USD");
         keyTextChanage.put("美元","USD");
         keyTextChanage.put("台幣","TWD");
@@ -51,11 +58,45 @@ public class TimerUilts implements ApplicationRunner{
         keyTextChanage.put("法瑯","CHF");
         keyTextChanage.put("比索","PHP");
         keyTextChanage.put("瑞典幣","SEK");
+        /* keyTextChanage end */
+        /* tempCity4Id start */
+        tempCity4Id.put("台中","66");
+        tempCity4Id.put("臺中","66");
+        tempCity4Id.put("台北","63");
+        tempCity4Id.put("臺北","63");
+        tempCity4Id.put("基隆","10017");
+        tempCity4Id.put("新北","65");
+        tempCity4Id.put("桃園","68");
+        tempCity4Id.put("新竹市","10018");
+        tempCity4Id.put("新竹縣","10004");
+        tempCity4Id.put("苗栗","10005");
+        tempCity4Id.put("彰化","10007");
+        tempCity4Id.put("南投","10008");
+        tempCity4Id.put("雲林","10009");
+        tempCity4Id.put("嘉義市","10020");
+        tempCity4Id.put("嘉義縣","10010");
+        tempCity4Id.put("台南","67");
+        tempCity4Id.put("臺南","67");
+        tempCity4Id.put("高雄","64");
+        tempCity4Id.put("屏東","10013");
+        tempCity4Id.put("宜蘭","10002");
+        tempCity4Id.put("花蓮","10005");
+        tempCity4Id.put("台東","10014");
+        tempCity4Id.put("臺東","10014");
+        tempCity4Id.put("澎湖","10016");
+        tempCity4Id.put("金門","09020");
+        tempCity4Id.put("連江","09007");
+        tempCity4Id.put("媽祖","09007");
+        /* tempCity4Id end */
     }
 
 
     public Map<String, String> getKeyTextChanage() {
         return keyTextChanage;
+    }
+
+    public Map<String, String> getTempCity4Id() {
+        return tempCity4Id;
     }
 
     public okhttp3.Response clientHttp(String path) {

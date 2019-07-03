@@ -1,5 +1,6 @@
 package hello;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.linecorp.bot.client.LineMessagingService;
@@ -401,6 +402,45 @@ public class DofuncServiceImpl implements DofuncService {
         return returnList ;
     }
 
+    /**
+     * 處理 城市天氣  目前做一天的
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
+    @Override
+    public void doCityTemp(String replyToken, Event event, TextMessageContent content,String city) throws IOException {
+        Document doc = jsoupClient(WEATHER_SEARCH_TODAY_PATH,false);
+        String str = doc.body().text();
+        String jsonString = str.substring(str.indexOf("{"),str.length()-1);
+        JSONObject jsonObject = JSON.parseObject(jsonString);
+        JSONArray jsonArray = jsonObject.getJSONArray(city);
+        StringBuilder outputText = new StringBuilder();
+        JSONObject[] jsonObjects = new JSONObject[3];
+        for (int i = 0; i < 3; i++) {
+            jsonObjects[i] = jsonArray.getJSONObject(i);
+        }
+        JSONObject[] temp = new JSONObject[3];
+        for (int i = 0; i < 3; i++) {
+            temp[i] = jsonObjects[i].getJSONObject("Temp").getJSONObject("C");
+        }
+        outputText
+                .append("今天白天 : ").append(jsonObjects[0].getString("TimeRange")).append("\n")
+                .append("       氣溫 : ").append(temp[0].getString("L")).append(" ～ ").append(temp[0].getString("H")).append("\n")
+                .append("       降雨機率 : ").append(jsonObjects[0].getString("PoP")).append(" %").append("\n")
+                .append("       舒適度 : ").append(jsonObjects[0].getString("CI")).append("\n")
+                .append("今天晚上 : ").append(jsonObjects[1].getString("TimeRange")).append("\n")
+                .append("       氣溫 : ").append(temp[1].getString("L")).append(" ～ ").append(temp[1].getString("H")).append("\n")
+                .append("       降雨機率 : ").append(jsonObjects[1].getString("PoP")).append(" %").append("\n")
+                .append("       舒適度 : ").append(jsonObjects[1].getString("CI")).append("\n")
+                .append("明天白天 : ").append(jsonObjects[2].getString("TimeRange")).append("\n")
+                .append("       氣溫 : ").append(temp[2].getString("L")).append(" ～ ").append(temp[2].getString("H")).append("\n")
+                .append("       降雨機率 : ").append(jsonObjects[2].getString("PoP")).append(" %").append("\n")
+                .append("       舒適度 : ").append(jsonObjects[2].getString("CI")).append("\n");
+        this.replyText(replyToken,outputText.toString());
+    }
+
     private void dccardSexInit(String path,int count) throws IOException{
         okhttp3.Response response = timerUilts.clientHttp(path);
         String returnText =  response.body().string();
@@ -503,6 +543,16 @@ public class DofuncServiceImpl implements DofuncService {
                 .referrer("http://www.google.com")
                 .timeout(12000)
                 .followRedirects(true)
+                .execute();
+        return response.parse();
+    }
+    private static Document jsoupClient(String path,boolean b)throws IOException{
+        Connection.Response response= Jsoup.connect(path)
+                .ignoreContentType(true)
+                .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
+                .referrer("http://www.google.com")
+                .timeout(12000)
+                .followRedirects(b)
                 .execute();
         return response.parse();
     }

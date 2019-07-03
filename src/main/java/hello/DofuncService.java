@@ -38,6 +38,10 @@ public interface DofuncService {
     AV搜尋網址
      */
     String AV01_SEARCH_PATH = "https://iw01.top/search/videos?search_query=";
+    /*
+    尋找城市天氣的 js
+     */
+    String WEATHER_SEARCH_TODAY_PATH = "https://www.cwb.gov.tw/Data/js/TableData_36hr_County_C.js?";
     /**
      * 處理天氣
      */
@@ -62,6 +66,10 @@ public interface DofuncService {
      * 處理AV搜尋
      */
     ArrayList doAVsearch(String replyToken, Event event, TextMessageContent content)throws IOException;
+    /**
+     * 處理城市天氣
+     */
+    void doCityTemp(String replyToken, Event event, TextMessageContent content, String city)throws IOException;
 
 
 }
