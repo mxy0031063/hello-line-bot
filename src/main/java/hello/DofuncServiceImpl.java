@@ -541,7 +541,7 @@ public class DofuncServiceImpl implements DofuncService {
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
                 .referrer("http://www.google.com")
-                .timeout(12000)
+                .timeout(10000)
                 .followRedirects(true)
                 .execute();
         return response.parse();
@@ -551,7 +551,7 @@ public class DofuncServiceImpl implements DofuncService {
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
                 .referrer("http://www.google.com")
-                .timeout(12000)
+                .timeout(10000)
                 .followRedirects(b)
                 .execute();
         return response.parse();

@@ -521,6 +521,7 @@ public class HelloController {
                 }
             }
             if (city != null){
+                log.info(city+"**************************************");
                 service.doCityTemp(replyToken,event,content,city);
             }else {
                 //改成模板 按模版 選擇想要觀看的東西
