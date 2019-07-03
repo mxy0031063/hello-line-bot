@@ -84,6 +84,14 @@ public class HelloController {
      */
     private static final String WEATHER_PATH_UVI  ="https://www.cwb.gov.tw/Data/UVI/UVI.png";
     /*
+    全台溫度圖
+     */
+    private static final String WEATHER_PATH_TEMP = "https://www.cwb.gov.tw/Data/temperature/temp_forPreview.jpg";
+    /*
+    全台雨量圖
+     */
+    private static final String WEATHER_PATH_RAIN = "https://www.cwb.gov.tw/Data/rainfall/QZJ_forPreview.jpg";
+    /*
     星座 API 地址
     Return JSON
      */
@@ -250,7 +258,7 @@ public class HelloController {
             }
 
             case "doTemperature" :{
-                showImg(replyToken,weatherPath(1));
+                showImg(replyToken,WEATHER_PATH_TEMP);
                 break;
             }
             case "doUVI" :{
@@ -258,7 +266,7 @@ public class HelloController {
                 break;
             }
             case "doRainfall" :{
-                showImg(replyToken,weatherPath(2));
+                showImg(replyToken,WEATHER_PATH_RAIN);
                 break;
             }
             case "doRadar" :{
@@ -327,9 +335,12 @@ public class HelloController {
 
     /**
      * 顯示出用戶選擇的天氣圖片  -- 圖片url
+     *
+     *  可能是過時方法 新版v8官網上已有固定地址JPG
      * @param i
      * @return
      */
+    @Deprecated
     private String weatherPath(int i) {
         LocalDateTime localDateTime = LocalDateTime.now(TimeZone.getTimeZone("Asia/Taipei").toZoneId());
         String path ;
