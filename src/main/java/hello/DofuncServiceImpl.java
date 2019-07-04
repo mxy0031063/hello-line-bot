@@ -49,7 +49,9 @@ public class DofuncServiceImpl implements DofuncService {
 
     private static String currencyReturnText ;
 
-    static List<String> dccardSexList = new ArrayList<>();
+    private static List<String> dccardSexList = new ArrayList<>();
+
+    private static Map<String,String> weatherMap = new HashMap();
 
     static int dccardSexCount ;
 
@@ -442,6 +444,37 @@ public class DofuncServiceImpl implements DofuncService {
         this.replyText(replyToken,outputText.toString());
     }
 
+    @Override
+    public void doWorldTemp(String replyToken, Event event, TextMessageContent content) throws IOException {
+        if (weatherMap.size() == 0){
+            inItWorldCityMap();
+        }
+        String text = content.getText();
+        String userInput = text.substring(text.indexOf("全球天氣")+5);
+        String cId = weatherMap.get(userInput);
+        log.info("doWorldTemp **  CID = "+cId+" ** userInput : "+userInput+"** weatherMap : "+weatherMap.size());
+        if (cId == null){
+            this.replyText(replyToken,"找不到你說的城市");
+            return ;
+        }
+        String cityPath = "http://worldweather.wmo.int/tc/json/";
+        Document document1 = jsoupClient(cityPath+cId+"_tc.xml");
+        String citySearch = document1.text();
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("你查詢的城市為 ：").append(userInput).append("\n");
+        JSONObject jsonObject = JSONObject.parseObject(citySearch);
+        JSONArray ja = jsonObject.getJSONObject("city").getJSONObject("forecast").getJSONArray("forecastDay");
+        for (int i = 0; i < ja.size(); i++) {
+            JSONObject json = ja.getJSONObject(i);
+            // 放入參數 時間 高低溫度 天氣描述
+            stringBuilder.append("天氣預報時間 ：").append(json.getString("forecastDate")).append("\n")
+                    .append("       溫度 ： ").append(json.getString("minTemp")).append("  ～  ").append(json.getString("maxTemp")).append("\n")
+                    .append("       天氣描述 ：").append(json.getString("weather")).append("\n\n");
+        }
+        this.replyText(replyToken,stringBuilder.toString());
+        return;
+    }
+
     private void dccardSexInit(String path,int count) throws IOException{
         okhttp3.Response response = timerUilts.clientHttp(path);
         String returnText =  response.body().string();
@@ -534,6 +567,30 @@ public class DofuncServiceImpl implements DofuncService {
                 e.printStackTrace();
             }
         });
+    }
+
+    private void inItWorldCityMap()throws IOException{
+        String path = "https://worldweather.wmo.int/tc/json/full_city_list.txt";
+        Document document = jsoupClient(path);
+        String text = document.text();
+        String[]item = text.split(" ");
+
+        Arrays.stream(item).forEach((str)->{
+            String city = str.substring(str.indexOf(";")+1);
+            if (city.startsWith("\"")){
+                city = city.replaceAll("\"","");
+                String[] strings = city.split(";");
+                if (!(strings.length < 2)){
+                    if (strings[0].contains(",")){
+                        strings[0] = strings[0].substring(0,strings[0].indexOf(","));
+                    }else if (strings[0].contains(" - ")){
+                        strings[0] = strings[0].substring(0,strings[0].indexOf(" - "));
+                    }
+                    weatherMap.put(strings[0],strings[1]);
+                }
+            }
+        });
+
     }
 
 

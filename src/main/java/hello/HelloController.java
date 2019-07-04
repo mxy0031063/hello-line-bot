@@ -512,7 +512,7 @@ public class HelloController {
         String text = content.getText().trim(); // 傳進來的文字
         // 判斷指令
         if (text.contains("安安-天氣")||text.contains("!天氣")||text.contains("！天氣")) {
-
+            // 台灣城市 start
             Map<String, String> cityToId = timerUilts.getTempCity4Id();
             String city = null;
             for (String key : cityToId.keySet()) {
@@ -520,13 +520,17 @@ public class HelloController {
                     city = cityToId.get(key);
                 }
             }
+            // 台灣城市 end
+            // 找台灣城市
             if (city != null){
-                log.info(city+"**************************************");
                 service.doCityTemp(replyToken,event,content,city);
-            }else {
-                //改成模板 按模版 選擇想要觀看的東西
-                service.doWeather(replyToken,event,content);
+                return;
             }
+            // 找不到城市就輸出
+            //改成模板 按模版 選擇想要觀看的東西
+            service.doWeather(replyToken,event,content);
+        } else if (text.contains("全球天氣")){
+            service.doWorldTemp(replyToken,event,content);
         } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
         } else if (text.contains("!油價")||text.contains("！油價")) {

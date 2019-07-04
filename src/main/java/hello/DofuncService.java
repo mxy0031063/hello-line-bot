@@ -70,6 +70,10 @@ public interface DofuncService {
      * 處理城市天氣
      */
     void doCityTemp(String replyToken, Event event, TextMessageContent content, String city)throws IOException;
+    /**
+     * 處理世界城市天氣
+     */
+    void doWorldTemp(String replyToken, Event event, TextMessageContent content)throws IOException;
 
 
 }
