@@ -585,6 +585,8 @@ public class DofuncServiceImpl implements DofuncService {
                         strings[0] = strings[0].substring(0,strings[0].indexOf(","));
                     }else if (strings[0].contains(" - ")){
                         strings[0] = strings[0].substring(0,strings[0].indexOf(" - "));
+                    }else if (strings[0].contains("，")){
+                        strings[0] = strings[0].substring(0,strings[0].indexOf("，"));
                     }
                     weatherMap.put(strings[0],strings[1]);
                 }
