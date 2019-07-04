@@ -308,6 +308,7 @@ public class DofuncServiceImpl implements DofuncService {
             itubaInit();
             doCount = 0 ;
         }
+        log.info("grilImgUrlList : "+grilImgUrlList.size()+"\n manImgUrlList : "+manImgUrlList.size()+"\n dccardSexList : "+dccardSexList.size()+"\n doCount : "+doCount);
         Random random = new Random();
         int index ;
         String url ;
