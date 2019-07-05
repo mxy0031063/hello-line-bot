@@ -498,9 +498,9 @@ public class DofuncServiceImpl implements DofuncService {
                 continue;
             }
             String tdTitle = td.get(0).text();
-            stringBuilder.append(tdTitle).append("  ： ");
+            stringBuilder.append(tdTitle).append("  ： ").append("\n");
             String desc = td.get(1).text();
-            stringBuilder.append(desc).append("\n");
+            stringBuilder.append(desc).append("\n\n");
         }
         this.replyText(replyToken,stringBuilder.toString());
     }
