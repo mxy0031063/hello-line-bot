@@ -42,6 +42,11 @@ public interface DofuncService {
     尋找城市天氣的 js
      */
     String WEATHER_SEARCH_TODAY_PATH = "https://www.cwb.gov.tw/Data/js/TableData_36hr_County_C.js?";
+    /*
+    發票地址
+     */
+    String INVOICE_PATH = "http://invoice.etax.nat.gov.tw/";
+
     /**
      * 處理天氣
      */
@@ -74,6 +79,15 @@ public interface DofuncService {
      * 處理世界城市天氣
      */
     void doWorldTemp(String replyToken, Event event, TextMessageContent content)throws IOException;
+    /**
+     * 處理發票顯示
+     */
+    void doInvoice(String replyToken, Event event, TextMessageContent content)throws IOException;
+    /**
+     * 處理發票兌獎
+     */
+    void doInvoice4Check(String replyToken, Event event, TextMessageContent content)throws IOException;
+
 
 
 }

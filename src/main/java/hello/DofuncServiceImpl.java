@@ -53,6 +53,8 @@ public class DofuncServiceImpl implements DofuncService {
 
     private static Map<String,String> weatherMap = new HashMap();
 
+    private static Map<String, Integer> prize = new HashMap<>();
+
     static int dccardSexCount ;
 
 
@@ -473,6 +475,137 @@ public class DofuncServiceImpl implements DofuncService {
         }
         this.replyText(replyToken,stringBuilder.toString());
         return;
+    }
+
+    /**
+     * 處理顯示發票邏輯
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
+    @Override
+    public void doInvoice(String replyToken, Event event, TextMessageContent content) throws IOException {
+        Document document = jsoupClient(INVOICE_PATH);
+        Element titleDate = document.select("#area1 h2").get(1);
+        String dataTime = titleDate.text();
+        Elements table =  document.select("#area1 table tr");
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(dataTime).append("\n");
+        for (Element item : table) {
+            Elements td = item.select("td");
+            if (td.size() == 0){
+                continue;
+            }
+            String tdTitle = td.get(0).text();
+            stringBuilder.append(tdTitle).append("  ： ");
+            String desc = td.get(1).text();
+            stringBuilder.append(desc).append("\n");
+        }
+        this.replyText(replyToken,stringBuilder.toString());
+    }
+
+    /**
+     * 處理發票兌獎
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
+    @Override
+    public void doInvoice4Check(String replyToken, Event event, TextMessageContent content) throws IOException {
+        if(prize.size() == 0){
+            inItPrize();
+        }
+        String number = content.getText();
+        String str = number.replaceAll("[!|！| ]","");
+        List<Integer> list = new ArrayList<>();
+        prize.keySet().forEach((key)->{
+            if (str.endsWith(key)){
+                list.add(prize.get(key));
+            }
+        });
+        if (list.size() == 0){
+            this.replyText(replyToken,"很遺憾 沒有中獎");
+        }else {
+            Integer now ;
+            Integer old = 0;
+            for (Integer money : list) {
+                now = money;
+                if (now > old){
+                    old = now ;
+                }
+            }
+            String outText ;
+            switch (old){
+                case 200 :{
+                    outText = "恭喜你 中了 二百元";
+                    break;
+                }
+                case 1000 :{
+                    outText = "恭喜你 中了 一千元  小確幸<3";
+                    break;
+                }
+                case 4000 :{
+                    outText = "恭喜你 中了 四千元  天啊!! 可以吃一頓大餐了";
+                    break;
+                }
+                case 10000 :{
+                    outText = "恭喜你 中了 一萬元  挖~這運氣也太好了吧!!";
+                    break;
+                }
+                case 40000 :{
+                    outText = "恭喜你 中了 四萬元   這..可以考慮出國一趟摟 !!";
+                    break;
+                }
+                case 200000 :{
+                    outText = "恭喜你 !!  中了頭獎 二十萬元  要不...考慮抖個幾千塊給我 ?";
+                    break;
+                }
+                case 2000000 :{
+                    outText = "恭喜你 !! 特獎 二百萬元 人生少奮鬥二年 可惡..羨慕";
+                    break;
+                }
+                case 10000000 :{
+                    outText = "天之驕子是你 ? 特別獎 一千萬元";
+                    break;
+                }
+                default:{
+                    this.replyText(replyToken,"出現錯誤了~");
+                    return;
+                }
+            }
+            this.replyText(replyToken,outText);
+        }
+
+    }
+
+    private void inItPrize() throws IOException{
+        Document document = jsoupClient(INVOICE_PATH);
+        Elements elements = document.select(".t18Red");
+        Integer specialDesc = 10000000;
+        Integer extraDesc = 2000000;
+        Integer firstDesc = 200000;
+        Integer secondDesc = 40000;
+        Integer thirdDesc = 10000;
+        Integer fourthDesc = 4000;
+        Integer fifthDesc = 1000;
+        Integer sixthDesc = 200;
+        prize.put(elements.get(0).text(),specialDesc);
+        prize.put(elements.get(1).text(),extraDesc);
+        String[] firstNum = elements.get(2).text().split("、");
+        for (String number : firstNum) {
+            prize.put(number,firstDesc);
+            prize.put(number.substring(1),secondDesc);
+            prize.put(number.substring(2),thirdDesc);
+            prize.put(number.substring(3),fourthDesc);
+            prize.put(number.substring(4),fifthDesc);
+            prize.put(number.substring(5),sixthDesc);
+        }
+        String[] pulsNum = elements.get(3).text().split("、");
+        for (String puls : pulsNum) {
+            prize.put(puls,sixthDesc);
+        }
     }
 
     private void dccardSexInit(String path,int count) throws IOException{

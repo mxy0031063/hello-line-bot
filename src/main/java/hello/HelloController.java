@@ -195,27 +195,6 @@ public class HelloController {
     public String greeting(@RequestParam(value="targetId") String targetId,@RequestParam(value="replyToken") String replyToken,@RequestParam(value="message", defaultValue = "Hello!") String message) {
         Message message1 = new TextMessage("pushMessageTest");
         reply(replyToken,message1);
-//        if (ObjectUtils.isEmpty(targetId)) {
-//            return "Error in sending messages : targetId isn't given.";
-//        }
-//
-//        TextMessage textMessage = new TextMessage(message);
-//        PushMessage pushMessage = new PushMessage(
-//                targetId,
-//                textMessage
-//        );
-//
-//        Response<BotApiResponse> apiResponse =
-//                null;
-//        try {
-//            apiResponse = lineMessagingService
-//                    .pushMessage(pushMessage)
-//                    .execute();
-//            return String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code());
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return String.format("Error in sending messages : %s", e.toString());
-//        }
         return "greeting";
     }
 
@@ -224,6 +203,12 @@ public class HelloController {
         log.info("Received message(Ignored): {}", event);
     }
 
+    /**
+     * 文字事件
+     *  此事件為關鍵 - 由此事件得到的事件元去調用入口方法
+     * @param event
+     * @throws IOException
+     */
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) throws IOException{
         log.info("Got text event: {}", event);
@@ -235,6 +220,10 @@ public class HelloController {
         log.info("Got unfollow event: {}", event);
     }
 
+    /**
+     * 被加為好友
+     * @param event
+     */
     @EventMapping
     public void handleFollowEvent(FollowEvent event) {
         log.info("Got follow event: {}", event);
@@ -247,6 +236,10 @@ public class HelloController {
         }
     }
 
+    /**
+     * 加入群組事件
+     * @param event
+     */
     @EventMapping
     public void handleJoinEvent(JoinEvent event) {
         log.info("Got join event: {}", event);
@@ -261,6 +254,12 @@ public class HelloController {
         }
     }
 
+    /**
+     * 處理 post 語意 其中post 值
+     * 大多是由模板給定的 -- 為用戶不可見
+     * @param event
+     * @throws IOException
+     */
     @EventMapping
     public void handlePostbackEvent(PostbackEvent event) throws IOException {
         log.info("Got postBack event: {}", event);
@@ -407,6 +406,11 @@ public class HelloController {
         this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
     }
 
+    /**
+     * 發送圖片 - AV 服務
+     * @param replyToken
+     * @param avSearch
+     */
     private void showImg4AV(String replyToken, ArrayList<ArrayList<String>> avSearch){
         ArrayList<String> firstItem = avSearch.get(0);
         String firstImg = firstItem.get(1);
@@ -427,12 +431,19 @@ public class HelloController {
         this.reply(replyToken,totol);
     }
 
+    /**
+     * 貼圖事件
+     * @param event
+     */
     @EventMapping
     public void handleStickerMessageEvent(MessageEvent<StickerMessageContent>  event) {
         log.info("Got sticker event: {}", event);
         handleSticker(event.getReplyToken(), event.getMessage());
     }
-
+    /**
+     *
+     * @param event
+     */
     @EventMapping
     public void handleLocationMessageEvent(MessageEvent<LocationMessageContent> event) {
         log.info("Got location event: {}", event);
@@ -445,18 +456,30 @@ public class HelloController {
         ));
     }
 
+    /**
+     * 圖片事件
+     * @param event
+     */
     @EventMapping
     public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) {
         log.info("Got image event: {}", event);
 //        replyText(event.getReplyToken(), event.getMessage().toString());
     }
 
+    /**
+     * 語音事件
+     * @param event
+     */
     @EventMapping
     public void handleAudioMessageEvent(MessageEvent<AudioMessageContent> event) {
         log.info("Got audio event: {}", event);
 //        replyText(event.getReplyToken(), event.getMessage().toString());
     }
 
+    /**
+     * 影片事件
+     * @param event
+     */
     @EventMapping
     public void handleVideoMessageEvent(MessageEvent<VideoMessageContent> event) {
         log.info("Got video event: {}", event);
@@ -507,6 +530,17 @@ public class HelloController {
         return response.body();
     }
 
+    /**
+     *  聊天機器人 入口方法
+     *      ------------------------
+     *      新增服務方法應從此入口判斷語意
+     *      調用實現類方法 除判斷語意邏輯外
+     *      不應有服務實現邏輯
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
 
     private void abyssLineBot(String replyToken, Event event, TextMessageContent content) throws IOException{
         String text = content.getText().trim(); // 傳進來的文字
@@ -554,12 +588,26 @@ public class HelloController {
         }else if(text.contains("發財")||text.contains("發大財")||text.contains("韓國瑜")){
             /** 發大財 */
             doMakeRich(replyToken,event,content);
+        }else if (text.matches("[!|！]?[0-9]{8}") || text.contains("發票")){
+            /** 發票兌獎 */
+            if (text.contains("發票")){
+                service.doInvoice(replyToken,event,content);
+            }else {
+                service.doInvoice4Check(replyToken,event,content);
+            }
         }else {
             messagePush.add(text);  //消息存入
             flowPush(replyToken);
         }
     }
 
+    /**
+     *  發財抽圖
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
     private void doMakeRich(String replyToken, Event event, TextMessageContent content) throws IOException{
         Random random = new Random();
         int index = random.nextInt(14);
@@ -568,6 +616,10 @@ public class HelloController {
         showImg(replyToken,imageUrl);
     }
 
+    /**
+     * 消息推送 - 重推 說話
+     * @param replyToken
+     */
     private void flowPush(String replyToken) {
         // pushMessage
         Map<String,Integer>map = new HashMap<>();
