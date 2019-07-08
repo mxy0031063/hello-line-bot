@@ -330,8 +330,12 @@ public class DofuncServiceImpl implements DofuncService {
             url = dccardSexList.get(index);
         }else {
             if (grilImgUrlList.size() < 1){
+                long start = System.currentTimeMillis();
                 beautyInit();
+                long beautyEnd = System.currentTimeMillis();
                 itubaInit();
+                long itubaEnd = System.currentTimeMillis();
+                log.info("\n 表特版加仔時間 ："+(beautyEnd-start)+"\n ituba 加載時間 ："+(itubaEnd-beautyEnd));
             }
             index = random.nextInt(grilImgUrlList.size());
             url = grilImgUrlList.get(index);
