@@ -43,9 +43,9 @@ public class DofuncServiceImpl implements DofuncService {
 
     private static List<String> grilImgUrlList = new ArrayList<>();
 
-    private static List<String> manImgUrlList = new ArrayList<>();
+    // private static List<String> manImgUrlList = new ArrayList<>();
 
-    private static String oilReturnText ;
+    // private static String oilReturnText ;
 
     private static String currencyReturnText ;
 
@@ -98,11 +98,12 @@ public class DofuncServiceImpl implements DofuncService {
 //            this.reply(replyToken, new TextMessage("哎呀 ! 資料發生錯誤了"));
 //            return;
 //        }
-        if (oilReturnText == null){
-            okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH) ;
-            oilReturnText = response.body().string() ;
-        }
-        String returnText = oilReturnText ;
+//        if (oilReturnText == null){
+//            okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH) ;
+//            oilReturnText =  response.body().string();
+//        }
+        okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH) ;
+        String returnText = response.body().string() ;
         StringBuilder outText = new StringBuilder();
 
 
@@ -303,29 +304,41 @@ public class DofuncServiceImpl implements DofuncService {
      */
     @Override
     public String doBeauty(Event event, TextMessageContent content) throws IOException {
-        doCount ++ ;
-        String text = content.getText();
-        if (grilImgUrlList.size()==0 || manImgUrlList.size()==0 || dccardSexList.size()==0 || doCount > 200) {
-            beautyInit();
-            dccardSexInit(DCCARD_SEX_PATH,80);
-            dccardSexInit(DCARD_SEX_NEW_PATH,150);
-            itubaInit();
+        /**
+         * clear 方法會把元素清空
+         * 目的 ：再次數超過上限201次時的當下進行 原有數據清空
+         *        為了讓內容的地址因多次調用APP端沒有進入休眠
+         *        而無法更新最新
+         */
+        if ( doCount > 200) {
+            dccardSexList.clear();
+            grilImgUrlList.clear();
             doCount = 0 ;
         }
-        log.info("grilImgUrlList : "+grilImgUrlList.size()+"\n manImgUrlList : "+manImgUrlList.size()+"\n dccardSexList : "+dccardSexList.size()+"\n doCount : "+doCount);
+
+        String text = content.getText();
         Random random = new Random();
         int index ;
         String url ;
-        if (text.contains("帥哥")){
-            index = random.nextInt(manImgUrlList.size());
-            url = manImgUrlList.get(index);
-        }else if(text.contains("西施")|| text.contains("西斯") || text.contains("sex")){
+        doCount ++ ;
+        if(text.contains("西施")|| text.contains("西斯") || text.contains("sex")){
+            if (dccardSexList.size() < 1) {
+                dccardSexInit(DCCARD_SEX_PATH,80);
+                dccardSexInit(DCARD_SEX_NEW_PATH,150);
+            }
             index = random.nextInt(dccardSexList.size());
             url = dccardSexList.get(index);
         }else {
+            if (grilImgUrlList.size() < 1){
+                beautyInit();
+                itubaInit();
+            }
             index = random.nextInt(grilImgUrlList.size());
             url = grilImgUrlList.get(index);
         }
+
+        log.info("抽卡集合元素 : "+grilImgUrlList.size()+"\n 西施集合元素 : "+dccardSexList.size()+"\n 執行次數 : "+doCount);
+
         return url ;
     }
 
@@ -609,6 +622,7 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     private void dccardSexInit(String path,int count) throws IOException{
+        log.info("DcardList finction INIT ...");
         okhttp3.Response response = timerUilts.clientHttp(path);
         String returnText =  response.body().string();
         JSONArray page = JSONArray.parseArray(returnText);
@@ -642,6 +656,7 @@ public class DofuncServiceImpl implements DofuncService {
 
 
     private static void beautyInit() throws IOException{
+        log.info("beautyList Function INIT ... ");
         Document doc = jsoupClient(PTT_BEAUTY_URL);
         Elements lastPageArray = doc.getElementsByClass("btn-group-paging");
         Element lastPage = null ;
@@ -678,7 +693,7 @@ public class DofuncServiceImpl implements DofuncService {
                     Element title = titles.get(0);
                     String titleText = title.text();    // 獲得每個標籤的文字 有 [正妹] ,[公告] ,[神人] ,[帥哥] ,[廣告] ...etc
                     String titleHref = title.attr("abs:href");
-                    if (titleText.contains("[正妹]")||titleText.contains("[帥哥]")){
+                    if (titleText.contains("[正妹]")){
                         Document grilDoc = jsoupClient(titleHref);
                         Elements img = grilDoc.getElementById("main-content").getElementsByAttributeValueContaining("href","https://i.imgur.com/");
                         for (Element imgTag : img) {
@@ -689,10 +704,7 @@ public class DofuncServiceImpl implements DofuncService {
                             }
                             if (titleText.contains("[正妹]")){
                                 grilImgUrlList.add(str);
-                            }else if (titleText.contains("[帥哥]")){
-                                manImgUrlList.add(str);
                             }
-
                         }
                     }
                 }
