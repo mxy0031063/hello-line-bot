@@ -26,6 +26,7 @@ import com.linecorp.bot.model.message.template.ConfirmTemplate;
 import com.linecorp.bot.model.profile.UserProfileResponse;
 import com.linecorp.bot.model.response.BotApiResponse;
 import hello.dao.TestDao;
+import hello.utils.JDBCUtil;
 import hello.utils.SQLSessionFactory;
 import lombok.NonNull;
 import lombok.Value;
@@ -57,6 +58,9 @@ import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -173,28 +177,41 @@ public class HelloController {
 
     @RequestMapping("/line")
     public String lineFilter(@RequestParam(value="targetId") String targetId,HttpServletRequest request , HttpServletResponse response){
-//        reply();
-        Map map = request.getParameterMap();
-        if (ObjectUtils.isEmpty(targetId)) {
-            return "發送訊息錯誤 沒有targetID";
+        Connection conn = null ;
+        Statement stat = null ;
+        ResultSet rs = null ;
+        StringBuilder sb = new StringBuilder();
+        try{
+            conn = JDBCUtil.getConnection();
+            stat = conn.createStatement();
+            String sql = "SELECT * FROM \"tableCreateTest\"";
+            rs = stat.executeQuery(sql);
+            while (rs.next()){
+                sb.append(rs.getString(1));
+                sb.append(rs.getString(2));
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            JDBCUtil.close(conn,stat,rs);
         }
 
-        TextMessage textMessage = new TextMessage(map.toString());
-        PushMessage pushMessage = new PushMessage(
-                targetId,
-                textMessage
-        );
-        Response<BotApiResponse> apiResponse =
-                null;
-        try {
-            apiResponse = lineMessagingService
-                    .pushMessage(pushMessage)
-                    .execute();
-            return String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return String.format("Error in sending messages : %s", e.toString());
-        }
+//        TextMessage textMessage = new TextMessage(map.toString());
+//        PushMessage pushMessage = new PushMessage(
+//                targetId,
+//                textMessage
+//        );
+//        Response<BotApiResponse> apiResponse =
+//                null;
+//        try {
+//            apiResponse = lineMessagingService
+//                    .pushMessage(pushMessage)
+//                    .execute();
+//            return String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code());
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            return String.format("Error in sending messages : %s", e.toString());
+//        }
     }
 
     @RequestMapping("/greeting")
