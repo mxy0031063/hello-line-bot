@@ -176,7 +176,7 @@ public class HelloController {
     }
 
     @RequestMapping("/line")
-    public String lineFilter(@RequestParam(value="targetId") String targetId,HttpServletRequest request , HttpServletResponse response){
+    public String lineFilter(){
         Connection conn = null ;
         Statement stat = null ;
         ResultSet rs = null ;
