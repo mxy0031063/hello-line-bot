@@ -25,11 +25,14 @@ import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.message.template.ConfirmTemplate;
 import com.linecorp.bot.model.profile.UserProfileResponse;
 import com.linecorp.bot.model.response.BotApiResponse;
+import hello.dao.TestDao;
+import hello.utils.SQLSessionFactory;
 import lombok.NonNull;
 import lombok.Value;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
+import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +46,7 @@ import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import redis.clients.jedis.Jedis;
 import retrofit2.Response;
 
 import javax.servlet.http.HttpServletRequest;
@@ -161,8 +165,10 @@ public class HelloController {
 
     @RequestMapping("/")
         public String index(HttpServletRequest request , HttpServletResponse response) {
-        Greeter greeter = new Greeter();
-        return greeter.sayHello();
+        SqlSession sqlSession = SQLSessionFactory.getSession();
+        TestDao testDao = sqlSession.getMapper(TestDao.class);
+        //Greeter greeter = new Greeter();
+        return testDao.funcTest().toString();
     }
 
     @RequestMapping("/line")

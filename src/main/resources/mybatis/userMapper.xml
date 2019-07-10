@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.postgresql.demo.dao.UserDao">
+    <resultMap id="UserMap" type="hello.dao">
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="age" property="age" jdbcType="VARCHAR"/>
+    </resultMap>
+    <sql id="selectAll">
+        name,age
+    </sql>
+    <select id="funcTest"  resultMap="UserMap">
+        SELECT
+        <include refid="selectAll"/>
+        FROM "tableCreateTest"
+    </select>
+
+
+</mapper>
+
