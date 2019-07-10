@@ -212,6 +212,7 @@ public class HelloController {
 //            e.printStackTrace();
 //            return String.format("Error in sending messages : %s", e.toString());
 //        }
+        return sb.toString();
     }
 
     @RequestMapping("/greeting")
