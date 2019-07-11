@@ -330,7 +330,7 @@ public class HelloController {
             }
             case "今日運勢－處女座" :{
             }
-            case "今日運勢－魔蠍座" :{
+            case "今日運勢－摩羯座" :{
             }
             case "今日運勢－獅子座" :{
             }
