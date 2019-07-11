@@ -87,6 +87,10 @@ public interface DofuncService {
      * 處理發票兌獎
      */
     void doInvoice4Check(String replyToken, Event event, TextMessageContent content)throws IOException;
+    /**
+     * 處理記帳功能
+     */
+    void doAccounting4User(String replyToken, Event event, TextMessageContent content)throws IOException;
 
 
 

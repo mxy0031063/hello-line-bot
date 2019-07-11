@@ -15,6 +15,7 @@ import com.linecorp.bot.model.message.template.ButtonsTemplate;
 import com.linecorp.bot.model.message.template.CarouselColumn;
 import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
+import hello.utils.JDBCUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
@@ -30,6 +31,7 @@ import retrofit2.Response;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
+import java.sql.*;
 import java.util.*;
 
 @Slf4j
@@ -250,9 +252,9 @@ public class DofuncServiceImpl implements DofuncService {
                                         new PostbackAction(" 處 女 座 ",
                                                 "今日運勢－處女座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "處女座"),
-                                        new PostbackAction(" 魔 蠍 座 ",
-                                                "今日運勢－魔蠍座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "魔蠍座")
+                                        new PostbackAction(" 摩 羯 座 ",
+                                                "今日運勢－摩羯座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "摩羯座")
 
 
                                 )
@@ -595,6 +597,97 @@ public class DofuncServiceImpl implements DofuncService {
             this.replyText(replyToken,outText);
         }
 
+    }
+
+    /**
+     * 處理記帳流程
+     */
+    @Override
+    public void doAccounting4User(String replyToken, Event event, TextMessageContent content) throws IOException {
+//        //獲得用戶ID
+//        String userId = event.getSource().getUserId();
+//        String text = content.getText();
+//        // 獲得用戶輸入的類型 錢 備註
+//        String[] strings = text.split(" ");
+//        String money = strings[0];  // $XX
+//        money = money.replaceAll("[$]","");
+//        String remorks = strings[1];
+//        String imgUrl1 = createUri("/static/AccountingImage/AccountingImage1.jpg");
+//        String imgUrl2 = createUri("/static/AccountingImage/AccountingImage2.jpg");
+//        // 創建模板
+//        CarouselTemplate carouselTemplate = new CarouselTemplate(
+//                Arrays.asList(
+//                        new CarouselColumn(
+//                                imgUrl1,
+//                                " 每天記帳 ",
+//                                " ",
+//                                Arrays.asList(
+//                                        new PostbackAction(" 飲 食 ",
+//                                                "今日運勢－水瓶座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+//                                                "水瓶座"),
+//                                        new PostbackAction(" 衣 褲 ",
+//                                                "今日運勢－天秤座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+//                                                "天秤座"),
+//                                        new PostbackAction(" 雙 子 座 ",
+//                                                "今日運勢－雙子座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+//                                                "雙子座")
+//                                )
+//                        ),
+//                        new CarouselColumn(
+//                                imgUrl2,
+//                                " 才能發大財 ",
+//                                " ",
+//                                Arrays.asList(
+//                                        new PostbackAction(" 水 瓶 座 ",
+//                                                "今日運勢－水瓶座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+//                                                "水瓶座"),
+//                                        new PostbackAction(" 天 秤 座 ",
+//                                                "今日運勢－天秤座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+//                                                "天秤座"),
+//                                        new PostbackAction(" 雙 子 座 ",
+//                                                "今日運勢－雙子座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+//                                                "雙子座")
+//                                )
+//                        )
+//
+//                )
+//        );
+//        //創建表 (表不存在創建 存在新增)
+//        String tableName = "Accounting_"+userId;
+//        java.sql.Connection conn = null ;
+//        Statement stat = null ;
+//        ResultSet rs = null ;
+//        PreparedStatement preparedStatement = null ;
+//        try{
+//            conn = JDBCUtil.getConnection();
+//            DatabaseMetaData mata = conn.getMetaData();
+//            String[] tableType = {"TABLE"};
+//            rs = mata.getTables(null,null,tableName,tableType);
+//            String sql = null ;
+//            if (!rs.next()){
+//                // 表不存在 create
+//                sql = "CREATE TABLE Accounting_?(" +
+//                        "        money_type TEXT NOT NULL ,\n" +
+//                        "        money TEXT NOT NULL ,\n" +
+//                        "        remarks TEXT NOT NULL ,\n" +
+//                        "        insert_date TEXT" +
+//                        "        )";
+//                preparedStatement = conn.prepareStatement(sql);
+//                preparedStatement.setString(1,tableName);
+//                preparedStatement.executeUpdate();
+//            }
+//            // 表存在 insert
+//            sql = "INSERT INTO ?(money_type,money,remarks,insert_date) VALUES (?,?,?,?)";
+//            preparedStatement = conn.prepareStatement(sql);
+//            preparedStatement.setString(1,tableName);
+//            preparedStatement.setString(2,"123");
+//            preparedStatement.executeUpdate();
+//            stat = conn.createStatement();
+//        }catch (SQLException ex){
+//            ex.printStackTrace();
+//        }finally {
+//
+//        }
     }
 
     private void inItPrize() throws IOException{
