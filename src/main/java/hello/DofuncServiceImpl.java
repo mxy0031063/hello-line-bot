@@ -718,7 +718,7 @@ public class DofuncServiceImpl implements DofuncService {
             sql = "INSERT INTO "+tableName+" (money_type,money,remarks,insert_date) VALUES ('"+moneyType+"','"+money+"','"+remorks+"','"+date+"')";
             int insertCount = stat.executeUpdate(sql);
             log.info("\nINSERT INTO : "+insertCount+"\n");
-            this.replyText(replyToken,"已為你新增 "+moneyType+" 金額 ："+money+" 時間 ："+data);
+            this.replyText(replyToken,"已為你新增 \n"+moneyType+" \n金額 ："+money+" \n時間 ："+date);
         }catch (SQLException ex){
             ex.printStackTrace();
         }finally {
