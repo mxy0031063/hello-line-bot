@@ -290,6 +290,10 @@ public class HelloController {
         String replyToken = event.getReplyToken();
         String data = event.getPostbackContent().getData();
         Source source = event.getSource();
+        if (data.startsWith("$")){
+            service.doDataBase4Accounting(replyToken,event,data);
+            return;
+        }
         switch (data) {
             case "bye:yes": {
                 this.replyText(replyToken, "Bye, see you again ...");

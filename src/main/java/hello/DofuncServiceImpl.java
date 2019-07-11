@@ -32,6 +32,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
@@ -633,13 +638,13 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 飲 食 ",
-                                                userId+"_"+money+"_"+remorks+"_1",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_飲食",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "吃的拉"),
                                         new PostbackAction(" 衣 褲 ",
-                                                userId+"_"+money+"_"+remorks+"_2",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_衣褲",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "穿的拉"),
                                         new PostbackAction(" 住 宿 ",
-                                                userId+"_"+money+"_"+remorks+"_3",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_住宿",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "住的拉")
                                 )
                         ),
@@ -649,13 +654,13 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 交 通 ",
-                                                userId+"_"+money+"_"+remorks+"_4",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_交通",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "行的拉"),
                                         new PostbackAction(" 遊 樂 ",
-                                                userId+"_"+money+"_"+remorks+"_5",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_遊樂",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "玩的拉"),
                                         new PostbackAction(" 不 好 說 ",
-                                                userId+"_"+money+"_"+remorks+"_6",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_不好說",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "噓......")
                                 )
                         )
@@ -664,42 +669,61 @@ public class DofuncServiceImpl implements DofuncService {
         );
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
         this.reply(replyToken,Arrays.asList(new TextMessage("收到 ! 選個分類吧~"), templateMessage));
-//        //創建表 (表不存在創建 存在新增)
-//        String tableName = "Accounting_"+userId;
-//        java.sql.Connection conn = null ;
-//        Statement stat = null ;
-//        ResultSet rs = null ;
-//        PreparedStatement preparedStatement = null ;
-//        try{
-//            conn = JDBCUtil.getConnection();
-//            DatabaseMetaData mata = conn.getMetaData();
-//            String[] tableType = {"TABLE"};
-//            rs = mata.getTables(null,null,tableName,tableType);
-//            String sql = null ;
-//            if (!rs.next()){
-//                // 表不存在 create
-//                sql = "CREATE TABLE Accounting_?(" +
-//                        "        money_type TEXT NOT NULL ,\n" +
-//                        "        money TEXT NOT NULL ,\n" +
-//                        "        remarks TEXT NOT NULL ,\n" +
-//                        "        insert_date TEXT" +
-//                        "        )";
-//                preparedStatement = conn.prepareStatement(sql);
-//                preparedStatement.setString(1,tableName);
-//                preparedStatement.executeUpdate();
-//            }
-//            // 表存在 insert
-//            sql = "INSERT INTO ?(money_type,money,remarks,insert_date) VALUES (?,?,?,?)";
-//            preparedStatement = conn.prepareStatement(sql);
-//            preparedStatement.setString(1,tableName);
-//            preparedStatement.setString(2,"123");
-//            preparedStatement.executeUpdate();
-//            stat = conn.createStatement();
-//        }catch (SQLException ex){
-//            ex.printStackTrace();
-//        }finally {
-//
-//        }
+    }
+
+    /**
+     * 處理記帳功能數據庫邏輯
+     * @param replyToken
+     * @param data
+     * @throws IOException
+     */
+    @Override
+    public void doDataBase4Accounting(String replyToken, Event event,String data) throws IOException {
+        String[]strings = data.split("_");
+        if (strings.length < 2){
+            this.replyText(replyToken,data);
+            return;
+        }
+        String userId = strings[1];
+        String money = strings[2];
+        String remorks = strings[3];
+        String moneyType = strings[4];
+        //創建表 (表不存在創建 存在新增)
+        String tableName = "Accounting_"+userId;
+        java.sql.Connection conn = null ;
+        Statement stat = null ;
+        ResultSet rs = null ;
+        try{
+            conn = JDBCUtil.getConnection();
+            DatabaseMetaData mata = conn.getMetaData();
+            String[] tableType = {"TABLE"};
+            rs = mata.getTables(null,null,tableName,tableType);
+            String sql = null ;
+            stat = conn.createStatement();
+            if (!rs.next()){
+                // 表不存在 create
+                sql = "CREATE TABLE "+tableName+"(" +
+                        "        money_type TEXT NOT NULL ,\n" +
+                        "        money TEXT NOT NULL ,\n" +
+                        "        remarks TEXT NOT NULL ,\n" +
+                        "        insert_date TEXT" +
+                        "        )";
+
+                log.info("\nCREATE TABLE : "+tableName+"\n");
+            }
+            ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy年MM月dd號_HH:mm:ss");
+            String date = dtf.format(zonedDateTime);
+            // 表存在 insert
+            sql = "INSERT INTO "+tableName+" (money_type,money,remarks,insert_date) VALUES ('"+moneyType+"','"+money+"','"+remorks+"','"+date+"')";
+            int insertCount = stat.executeUpdate(sql);
+            ing.info("\nINSERT INTO : "+insertCount+"\n");
+            this.replyText(replyToken,"已為你新增 "+moneyType+" 金額 ："+money+" 時間 ："+data);
+        }catch (SQLException ex){
+            ex.printStackTrace();
+        }finally {
+            JDBCUtil.close(conn,stat,rs);
+        }
     }
 
     private void inItPrize() throws IOException{
