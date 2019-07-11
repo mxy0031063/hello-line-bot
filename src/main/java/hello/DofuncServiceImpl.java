@@ -600,18 +600,28 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     /**
-     * 處理記帳流程
+     * 處理記帳流程 - 模板
      */
     @Override
     public void doAccounting4User(String replyToken, Event event, TextMessageContent content) throws IOException {
         //獲得用戶ID
         String userId = event.getSource().getUserId();
         String text = content.getText();
+        log.info("\n doAccounting4User :{ text - "+text+" } \n");
         // 獲得用戶輸入的類型 錢 備註
         String[] strings = text.split(" ");
+        String remorks = null ;
+        if (strings.length<2){
+            if (strings[0].startsWith("$") || strings[0].matches("[$][0-9]{1,20}")){
+                remorks = "沒有輸入備註";
+            }
+        }
+        if (remorks == null){
+            remorks = strings[1];
+        }
         String money = strings[0];  // $XX
-        money = money.replaceAll("[$]","");
-        String remorks = strings[1];
+        money = money.replaceAll("[^0-9]","");
+
         String imgUrl1 = createUri("/static/AccountingImage/AccountingImage1.jpg");
         String imgUrl2 = createUri("/static/AccountingImage/AccountingImage2.jpg");
         // 創建模板
@@ -623,14 +633,14 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 飲 食 ",
-                                                "今日運勢－水瓶座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "水瓶座"),
+                                                userId+"_"+money+"_"+remorks+"_1",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "吃的拉"),
                                         new PostbackAction(" 衣 褲 ",
-                                                "今日運勢－天秤座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "天秤座"),
+                                                userId+"_"+money+"_"+remorks+"_2",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "穿的拉"),
                                         new PostbackAction(" 住 宿 ",
-                                                "今日運勢－雙子座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "雙子座")
+                                                userId+"_"+money+"_"+remorks+"_3",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "住的拉")
                                 )
                         ),
                         new CarouselColumn(
@@ -639,55 +649,57 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 交 通 ",
-                                                "今日運勢－水瓶座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "水瓶座"),
+                                                userId+"_"+money+"_"+remorks+"_4",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "行的拉"),
                                         new PostbackAction(" 遊 樂 ",
-                                                "今日運勢－天秤座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "天秤座"),
+                                                userId+"_"+money+"_"+remorks+"_5",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "玩的拉"),
                                         new PostbackAction(" 不 好 說 ",
-                                                "今日運勢－雙子座",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "雙子座")
+                                                userId+"_"+money+"_"+remorks+"_6",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "噓......")
                                 )
                         )
 
                 )
         );
-        //創建表 (表不存在創建 存在新增)
-        String tableName = "Accounting_"+userId;
-        java.sql.Connection conn = null ;
-        Statement stat = null ;
-        ResultSet rs = null ;
-        PreparedStatement preparedStatement = null ;
-        try{
-            conn = JDBCUtil.getConnection();
-            DatabaseMetaData mata = conn.getMetaData();
-            String[] tableType = {"TABLE"};
-            rs = mata.getTables(null,null,tableName,tableType);
-            String sql = null ;
-            if (!rs.next()){
-                // 表不存在 create
-                sql = "CREATE TABLE Accounting_?(" +
-                        "        money_type TEXT NOT NULL ,\n" +
-                        "        money TEXT NOT NULL ,\n" +
-                        "        remarks TEXT NOT NULL ,\n" +
-                        "        insert_date TEXT" +
-                        "        )";
-                preparedStatement = conn.prepareStatement(sql);
-                preparedStatement.setString(1,tableName);
-                preparedStatement.executeUpdate();
-            }
-            // 表存在 insert
-            sql = "INSERT INTO ?(money_type,money,remarks,insert_date) VALUES (?,?,?,?)";
-            preparedStatement = conn.prepareStatement(sql);
-            preparedStatement.setString(1,tableName);
-            preparedStatement.setString(2,"123");
-            preparedStatement.executeUpdate();
-            stat = conn.createStatement();
-        }catch (SQLException ex){
-            ex.printStackTrace();
-        }finally {
-
-        }
+        TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
+        this.reply(replyToken,Arrays.asList(new TextMessage("收到 ! 選個分類吧~"), templateMessage));
+//        //創建表 (表不存在創建 存在新增)
+//        String tableName = "Accounting_"+userId;
+//        java.sql.Connection conn = null ;
+//        Statement stat = null ;
+//        ResultSet rs = null ;
+//        PreparedStatement preparedStatement = null ;
+//        try{
+//            conn = JDBCUtil.getConnection();
+//            DatabaseMetaData mata = conn.getMetaData();
+//            String[] tableType = {"TABLE"};
+//            rs = mata.getTables(null,null,tableName,tableType);
+//            String sql = null ;
+//            if (!rs.next()){
+//                // 表不存在 create
+//                sql = "CREATE TABLE Accounting_?(" +
+//                        "        money_type TEXT NOT NULL ,\n" +
+//                        "        money TEXT NOT NULL ,\n" +
+//                        "        remarks TEXT NOT NULL ,\n" +
+//                        "        insert_date TEXT" +
+//                        "        )";
+//                preparedStatement = conn.prepareStatement(sql);
+//                preparedStatement.setString(1,tableName);
+//                preparedStatement.executeUpdate();
+//            }
+//            // 表存在 insert
+//            sql = "INSERT INTO ?(money_type,money,remarks,insert_date) VALUES (?,?,?,?)";
+//            preparedStatement = conn.prepareStatement(sql);
+//            preparedStatement.setString(1,tableName);
+//            preparedStatement.setString(2,"123");
+//            preparedStatement.executeUpdate();
+//            stat = conn.createStatement();
+//        }catch (SQLException ex){
+//            ex.printStackTrace();
+//        }finally {
+//
+//        }
     }
 
     private void inItPrize() throws IOException{

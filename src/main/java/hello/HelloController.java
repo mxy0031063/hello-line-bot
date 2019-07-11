@@ -589,6 +589,8 @@ public class HelloController {
             service.doWeather(replyToken,event,content);
         } else if (text.contains("全球天氣")){
             service.doWorldTemp(replyToken,event,content);
+        } else if (text.matches("[$][0-9]{1,20}[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+            service.doAccounting4User(replyToken,event,content);
         } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
         } else if (text.contains("!油價")||text.contains("！油價")) {
@@ -599,27 +601,27 @@ public class HelloController {
             service.doCurrency(replyToken,event,content);
         } else if (text.contains("!星座")||text.contains("！星座")) {
             service.doConstellation(replyToken,event,content);
-        }else if (text.contains("抽")||text.contains("！抽")){
+        } else if (text.contains("抽")||text.contains("！抽")){
             /** 抽卡 */
             String beautyPath = service.doBeauty(event,content);
             showImg(replyToken,beautyPath);
-        }else if(text.contains("!av")||text.contains("！av")){
+        } else if(text.contains("!av")||text.contains("！av")){
             /** 搜尋av */
             ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken,event,content);
             if (avSearch!=null){
                 showImg4AV(replyToken ,avSearch);
             }
-        }else if(text.contains("發財")||text.contains("發大財")||text.contains("韓國瑜")){
+        } else if(text.contains("發財")||text.contains("發大財")||text.contains("韓國瑜")){
             /** 發大財 */
             doMakeRich(replyToken,event,content);
-        }else if (text.matches("[!|！]?[0-9]{8}") || text.contains("發票")){
+        } else if (text.matches("[!|！]?[0-9]{8}") || text.contains("發票")){
             /** 發票兌獎 */
             if (text.contains("發票")){
                 service.doInvoice(replyToken,event,content);
             }else {
                 service.doInvoice4Check(replyToken,event,content);
             }
-        }else {
+        } else {
             messagePush.add(text);  //消息存入
             flowPush(replyToken);
         }
