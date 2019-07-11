@@ -689,7 +689,7 @@ public class DofuncServiceImpl implements DofuncService {
         String remorks = strings[3];
         String moneyType = strings[4];
         //創建表 (表不存在創建 存在新增)
-        String tableName = "Accounting_"+userId;
+        String tableName = "accounting_"+userId;
         java.sql.Connection conn = null ;
         Statement stat = null ;
         ResultSet rs = null ;
