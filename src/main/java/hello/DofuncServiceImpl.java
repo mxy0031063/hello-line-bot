@@ -708,7 +708,7 @@ public class DofuncServiceImpl implements DofuncService {
                         "        remarks TEXT NOT NULL ,\n" +
                         "        insert_date TEXT" +
                         "        )";
-
+                stat.executeUpdate(sql);
                 log.info("\nCREATE TABLE : "+tableName+"\n");
             }
             ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
