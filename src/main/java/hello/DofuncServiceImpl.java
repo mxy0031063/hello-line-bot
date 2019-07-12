@@ -19,10 +19,9 @@ import hello.utils.JDBCUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.StandardChartTheme;
-import org.jfree.chart.axis.CategoryAxis;
-import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.title.LegendTitle;
@@ -39,6 +38,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import retrofit2.Response;
 
 import java.awt.*;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
@@ -743,7 +743,7 @@ public class DofuncServiceImpl implements DofuncService {
      * @throws IOException
      */
     @Override
-    public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content) throws IOException {
+    public String doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content) throws IOException {
         String userId = event.getSource().getUserId().toLowerCase();
         String tablename = "accounting_"+userId;
         java.sql.Connection conn = null ;
@@ -822,7 +822,19 @@ public class DofuncServiceImpl implements DofuncService {
             plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} ：{1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
             // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
-            return chart ;
+            String tableImagePath = "/static/"+tablename+".jpg";
+            log.info("\nTableImage ："+tableImagePath+"\n");
+            FileOutputStream fos=new FileOutputStream("/static/"+tablename+".jpg");
+            ChartUtilities.writeChartAsJPEG(
+                    fos,
+                    1,
+                    chart,
+                    800,
+                    600,
+                    null
+            );
+            fos.close();
+            return tableImagePath ;
 //            StringBuilder sb = new StringBuilder();
 //            sb.append(" -----  記帳本  ----- \n\n");
 //            // 全部数据

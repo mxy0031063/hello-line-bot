@@ -615,9 +615,8 @@ public class HelloController {
         } else if (text.matches("[$][0-9]{1,20}[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
             service.doAccounting4User(replyToken,event,content);
         } else if(text.equals("$$")){
-            JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken,event,content);
-            DownloadedContent jpg = saveContent("jpg", jFreeChart);
-            this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
+            String imagePath = service.doShowAccountingMoneyDate(replyToken,event,content);
+            showImg(replyToken,imagePath);
         } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
         } else if (text.contains("!油價")||text.contains("！油價")) {
