@@ -838,7 +838,7 @@ public class DofuncServiceImpl implements DofuncService {
             e.printStackTrace();
         }
     }
-    private static HelloController.DownloadedContent saveContent(String ext, JFreeChart chart) {
+    public HelloController.DownloadedContent saveContent(String ext, JFreeChart chart) {
         HelloController.DownloadedContent tempFile = createTempFile(ext);
         try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
             ChartUtilities.writeChartAsJPEG(
@@ -856,7 +856,7 @@ public class DofuncServiceImpl implements DofuncService {
         }
     }
 
-    private static HelloController.DownloadedContent createTempFile(String ext) {
+    private HelloController.DownloadedContent createTempFile(String ext) {
         long unixTime = System.currentTimeMillis() / 1000L;
         String fileName = String.valueOf(unixTime) + "-" + UUID.randomUUID().toString() + '.' + ext;
         Path tempFile = HelloApplication.downloadedContentDir.resolve(fileName);
