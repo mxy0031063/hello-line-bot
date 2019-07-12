@@ -43,7 +43,8 @@ dependencies {
     compile group: 'org.mybatis', name: 'mybatis', version: '3.4.2'
     // https://mvnrepository.com/artifact/org.postgresql/postgresql
     compile group: 'org.postgresql', name: 'postgresql', version: '42.2.5'
-
+    // https://mvnrepository.com/artifact/jfree/jfreechart
+    compile group: 'jfree', name: 'jfreechart', version: '1.0.13'
 }
 
 jar {

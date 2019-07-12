@@ -3,11 +3,13 @@ package hello;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.io.ByteStreams;
 import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.model.ReplyMessage;
 import com.linecorp.bot.model.action.PostbackAction;
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.message.TextMessageContent;
+import com.linecorp.bot.model.message.ImageMessage;
 import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TemplateMessage;
 import com.linecorp.bot.model.message.TextMessage;
@@ -18,6 +20,15 @@ import com.linecorp.bot.model.response.BotApiResponse;
 import hello.utils.JDBCUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.ResponseBody;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.chart.title.LegendTitle;
+import org.jfree.chart.title.TextTitle;
+import org.jfree.data.general.DefaultPieDataset;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -28,13 +39,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import retrofit2.Response;
 
+import java.awt.*;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -777,29 +796,74 @@ public class DofuncServiceImpl implements DofuncService {
                     dateMap.put(date,newType);
                 }
             }
-            // 当前月的资料
-//            LocalDate localDate = LocalDate.now();
-//            String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
-//            Map<String,Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
-//            System.out.println("这个月花了");
-//            for (String key : nowDate4Accounting.keySet()) {
-//                System.out.println(key + " ：" + nowDate4Accounting.get(key));
-//            }
-            StringBuilder sb = new StringBuilder();
-            sb.append(" -----  記帳本  ----- \n\n");
-            // 全部数据
-            for (String Key : dateMap.keySet()) {
-                // month
-                sb.append(Key).append("  ： \n");
-                for (String key : dateMap.get(Key).keySet()) {
-                    sb.append(key).append(" ：").append(dateMap.get(Key).get(key)).append("\n");
-                }
+//             当前月的资料
+            LocalDate localDate = LocalDate.now();
+            String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+            Map<String,Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
+            DefaultPieDataset dataset = new DefaultPieDataset();
+            for (String key : nowDate4Accounting.keySet()) {
+                dataset.setValue(key,nowDate4Accounting.get(key));
             }
-            this.replyText(replyToken,sb.toString());
+            JFreeChart chart = ChartFactory.createPieChart("記帳圖",dataset,true,false,false);
+            chart.setTitle(new TextTitle("記帳圖",new Font("宋體",Font.BOLD,20)));
+            LegendTitle legend =chart.getLegend(0);
+            legend.setItemFont(new Font("宋體",Font.BOLD,20));//設定圖例的字型
+            chart.setBackgroundPaint(Color.white);
+            //設定圖的部分
+            PiePlot plot =(PiePlot)chart.getPlot();
+            plot.setLabelFont(new Font("宋體",Font.BOLD,18));//設定實際統計圖的字型
+            plot.setBackgroundImage(Toolkit.getDefaultToolkit().getImage("AccountingImage1.jpg"));
+            plot.setBackgroundAlpha(0.9f);
+            plot.setForegroundAlpha(0.80f);
+            plot.setCircular(true);
+            // 图片中显示百分比:自定义方式，{0} 表示选项， {1} 表示数值， {2} 表示所占比例 ,小数点后两位
+            plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} ：{1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
+            // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
+            plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
+            // 设置背景色为白色
+            HelloController.DownloadedContent jpg = saveContent("jpg", chart);
+            this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
+//            StringBuilder sb = new StringBuilder();
+//            sb.append(" -----  記帳本  ----- \n\n");
+//            // 全部数据
+//            for (String Key : dateMap.keySet()) {
+//                // month
+//                sb.append(Key).append("  ： \n");
+//                for (String key : dateMap.get(Key).keySet()) {
+//                    sb.append(key).append(" ：").append(dateMap.get(Key).get(key)).append("\n");
+//                }
+//            }
+//            this.replyText(replyToken,sb.toString());
         }catch (SQLException e){
             e.printStackTrace();
         }
     }
+    private static HelloController.DownloadedContent saveContent(String ext, JFreeChart chart) {
+        HelloController.DownloadedContent tempFile = createTempFile(ext);
+        try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+            ChartUtilities.writeChartAsJPEG(
+                    outputStream,
+                    1,
+                    chart,
+                    800,
+                    600,
+                    null
+            );
+            log.info("Saved {}: {}", ext, tempFile);
+            return tempFile;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static HelloController.DownloadedContent createTempFile(String ext) {
+        long unixTime = System.currentTimeMillis() / 1000L;
+        String fileName = String.valueOf(unixTime) + "-" + UUID.randomUUID().toString() + '.' + ext;
+        Path tempFile = HelloApplication.downloadedContentDir.resolve(fileName);
+        tempFile.toFile().deleteOnExit();
+        return new HelloController.DownloadedContent(tempFile, createUri("/downloaded/"+tempFile.getFileName()));
+    }
+
     private boolean checkTableExits(String tableName)throws SQLException{
         java.sql.Connection conn = null ;
         conn = JDBCUtil.getConnection();
