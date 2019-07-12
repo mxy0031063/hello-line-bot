@@ -95,6 +95,10 @@ public interface DofuncService {
      * 處理記帳數據庫
      */
     void doDataBase4Accounting(String replyToken, Event event ,String data)throws IOException;
+    /**
+     * 暫時方法 - 輸出可視化文字 為當前所有數據
+     */
+    void doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content)throws IOException;
 
 
 

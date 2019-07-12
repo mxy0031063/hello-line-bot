@@ -32,10 +32,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.sql.*;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -724,6 +721,82 @@ public class DofuncServiceImpl implements DofuncService {
             ex.printStackTrace();
         }finally {
             JDBCUtil.close(conn,stat,rs);
+        }
+    }
+
+    /**
+     * 　暫時方法 輸出文字 ( 目標輸出JFree圖檔 )
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
+    @Override
+    public void doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content) throws IOException {
+        String userId = event.getSource().getUserId().toLowerCase();
+        String tablename = "accounting_"+userId;
+        java.sql.Connection conn = null ;
+        Statement stat = null ;
+        ResultSet resultSet = null ;
+        try{
+            conn = JDBCUtil.getConnection();
+            stat = conn.createStatement();
+            String sql = "SELECT money_type,money,remarks,to_char(insert_date, 'YYYY-MM') insert_time FROM " + tablename;
+            resultSet = stat.executeQuery(sql);
+            Map<String, Map<String, Integer>> dateMap = new HashMap<>(); // 各月份里面有类型,钱 size = 月份数量
+            while (resultSet.next()) {
+                // 每条数据
+                String date = resultSet.getString("insert_time");
+                Integer money = resultSet.getInt("money");
+                String remarks = resultSet.getString("remarks");
+                String type = resultSet.getString("money_type");
+                // 把每条数据根据月份放集合<?>Map<date,Map<type,money>> 最终
+                // 需要 月份集合算钱总和?
+                // 判断有没有这个月份的资料 没有则新增 有就在判断
+                Map<String, Integer> typeMoneyMap = dateMap.get(date);
+                if (typeMoneyMap != null) {
+                    // 月份分组 月份已存在
+                    Map<String, Integer> map = dateMap.get(date);
+                    // 找类型
+                    Integer oldMoney = map.get(type);
+                    //map Key -> type : value -> sum(money)
+                    if (oldMoney != null) {
+                        // 类型存在 加总
+                        Integer newMoney = oldMoney + money;
+                        // 加完把钱跟类型放回去
+                        map.put(type, newMoney);
+                    } else {
+                        // 类型不存在 新增
+                        map.put(type, money);
+                    }
+                } else {
+                    // 月份不存在 新增
+                    Map<String, Integer> newType = new HashMap<>();
+                    newType.put(type, money);
+                    dateMap.put(date,newType);
+                }
+            }
+            // 当前月的资料
+//            LocalDate localDate = LocalDate.now();
+//            String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+//            Map<String,Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
+//            System.out.println("这个月花了");
+//            for (String key : nowDate4Accounting.keySet()) {
+//                System.out.println(key + " ：" + nowDate4Accounting.get(key));
+//            }
+            StringBuilder sb = new StringBuilder();
+            sb.append(" -----  記帳本  ----- \n\n");
+            // 全部数据
+            for (String Key : dateMap.keySet()) {
+                // month
+                sb.append(Key).append("  ： \n");
+                for (String key : dateMap.get(Key).keySet()) {
+                    sb.append(key).append(" ：").append(dateMap.get(Key).get(key));
+                }
+            }
+            this.replyText(replyToken,sb.toString());
+        }catch (SQLException e){
+            e.printStackTrace();
         }
     }
 
