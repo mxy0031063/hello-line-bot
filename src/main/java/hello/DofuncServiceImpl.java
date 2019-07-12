@@ -20,6 +20,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.title.LegendTitle;
@@ -797,13 +799,13 @@ public class DofuncServiceImpl implements DofuncService {
                 dataset.setValue(key,nowDate4Accounting.get(key));
             }
             JFreeChart chart = ChartFactory.createPieChart("記帳圖",dataset,true,false,false);
-            chart.setTitle(new TextTitle("記帳圖",new Font("宋體",Font.BOLD,20)));
+            chart.setTitle(new TextTitle("記帳圖",new Font("宋体", Font.ITALIC, 22)));
             LegendTitle legend =chart.getLegend(0);
-            legend.setItemFont(new Font("宋體",Font.BOLD,20));//設定圖例的字型
+            legend.setItemFont(new Font("宋体",Font.BOLD,20));//設定圖例的字型
             chart.setBackgroundPaint(Color.white);
             //設定圖的部分
             PiePlot plot =(PiePlot)chart.getPlot();
-            plot.setLabelFont(new Font("宋體",Font.BOLD,18));//設定實際統計圖的字型
+            plot.setLabelFont(new Font("宋体",Font.BOLD,18));//設定實際統計圖的字型
             plot.setBackgroundImage(Toolkit.getDefaultToolkit().getImage("AccountingImage1.jpg"));
             plot.setBackgroundAlpha(0.9f);
             plot.setForegroundAlpha(0.80f);
