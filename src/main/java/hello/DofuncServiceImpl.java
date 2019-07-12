@@ -681,24 +681,21 @@ public class DofuncServiceImpl implements DofuncService {
             this.replyText(replyToken,data);
             return;
         }
-        String userId = strings[1];
+        String userId = strings[1].toLowerCase();
         String money = strings[2];
         String remorks = strings[3];
         String moneyType = strings[4];
         //創建表 (表不存在創建 存在新增)
         String tableName = "accounting_"+userId;
-        tableName = tableName.toLowerCase();
         java.sql.Connection conn = null ;
         Statement stat = null ;
         ResultSet rs = null ;
         try{
+            boolean tableExits = checkTableExits(tableName);
             conn = JDBCUtil.getConnection();
-            DatabaseMetaData mata = conn.getMetaData();
-            String[] tableType = {"TABLE"};
-            rs = mata.getTables(null,null,tableName,tableType);
             String sql = null ;
             stat = conn.createStatement();
-            if (!rs.next()){
+            if (!tableExits){
                 // 表不存在 create
                 sql = "CREATE TABLE "+tableName+"(" +
                         "        money_type TEXT NOT NULL ,\n" +
@@ -739,6 +736,10 @@ public class DofuncServiceImpl implements DofuncService {
         Statement stat = null ;
         ResultSet resultSet = null ;
         try{
+            if (!checkTableExits(tablename)){
+                this.replyText(replyToken,"你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
+                return;
+            }
             conn = JDBCUtil.getConnection();
             stat = conn.createStatement();
             String sql = "SELECT money_type,money,remarks,to_char(insert_date, 'YYYY-MM') insert_time FROM " + tablename;
@@ -798,6 +799,14 @@ public class DofuncServiceImpl implements DofuncService {
         }catch (SQLException e){
             e.printStackTrace();
         }
+    }
+    private boolean checkTableExits(String tableName)throws SQLException{
+        java.sql.Connection conn = null ;
+        conn = JDBCUtil.getConnection();
+        DatabaseMetaData mata = conn.getMetaData();
+        String[] tableType = {"TABLE"};
+        ResultSet rs = mata.getTables(null,null,tableName,tableType);
+        return rs.next();
     }
 
     private void inItPrize() throws IOException{
