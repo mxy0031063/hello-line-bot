@@ -34,6 +34,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
 import org.apache.ibatis.session.SqlSession;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -145,6 +147,23 @@ public class HelloController {
                                           .path(path).build()
                                           .toUriString();
 
+    }
+    private HelloController.DownloadedContent saveContent(String ext, JFreeChart chart) {
+        HelloController.DownloadedContent tempFile = createTempFile(ext);
+        try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+            ChartUtilities.writeChartAsJPEG(
+                    outputStream,
+                    1,
+                    chart,
+                    800,
+                    600,
+                    null
+            );
+            log.info("Saved {}: {}", ext, tempFile);
+            return tempFile;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static DownloadedContent saveContent(String ext, ResponseBody responseBody) {
@@ -596,7 +615,9 @@ public class HelloController {
         } else if (text.matches("[$][0-9]{1,20}[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
             service.doAccounting4User(replyToken,event,content);
         } else if(text.equals("$$")){
-            service.doShowAccountingMoneyDate(replyToken,event,content);
+            JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken,event,content);
+            DownloadedContent jpg = saveContent("jpg", jFreeChart);
+            this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
         } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
         } else if (text.contains("!油價")||text.contains("！油價")) {

@@ -3,13 +3,11 @@ package hello;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.io.ByteStreams;
 import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.model.ReplyMessage;
 import com.linecorp.bot.model.action.PostbackAction;
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.message.TextMessageContent;
-import com.linecorp.bot.model.message.ImageMessage;
 import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TemplateMessage;
 import com.linecorp.bot.model.message.TextMessage;
@@ -20,9 +18,7 @@ import com.linecorp.bot.model.response.BotApiResponse;
 import hello.utils.JDBCUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.ResponseBody;
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.PiePlot;
@@ -40,13 +36,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import retrofit2.Response;
 
 import java.awt.*;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.*;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -748,7 +740,7 @@ public class DofuncServiceImpl implements DofuncService {
      * @throws IOException
      */
     @Override
-    public void doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content) throws IOException {
+    public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content) throws IOException {
         String userId = event.getSource().getUserId().toLowerCase();
         String tablename = "accounting_"+userId;
         java.sql.Connection conn = null ;
@@ -757,7 +749,7 @@ public class DofuncServiceImpl implements DofuncService {
         try{
             if (!checkTableExits(tablename)){
                 this.replyText(replyToken,"你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
-                return;
+                return null;
             }
             conn = JDBCUtil.getConnection();
             stat = conn.createStatement();
@@ -820,9 +812,7 @@ public class DofuncServiceImpl implements DofuncService {
             plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} ：{1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
             // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
-            // 设置背景色为白色
-            HelloController.DownloadedContent jpg = saveContent("jpg", chart);
-            this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
+            return chart ;
 //            StringBuilder sb = new StringBuilder();
 //            sb.append(" -----  記帳本  ----- \n\n");
 //            // 全部数据
@@ -837,31 +827,7 @@ public class DofuncServiceImpl implements DofuncService {
         }catch (SQLException e){
             e.printStackTrace();
         }
-    }
-    public HelloController.DownloadedContent saveContent(String ext, JFreeChart chart) {
-        HelloController.DownloadedContent tempFile = createTempFile(ext);
-        try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
-            ChartUtilities.writeChartAsJPEG(
-                    outputStream,
-                    1,
-                    chart,
-                    800,
-                    600,
-                    null
-            );
-            log.info("Saved {}: {}", ext, tempFile);
-            return tempFile;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private HelloController.DownloadedContent createTempFile(String ext) {
-        long unixTime = System.currentTimeMillis() / 1000L;
-        String fileName = String.valueOf(unixTime) + "-" + UUID.randomUUID().toString() + '.' + ext;
-        Path tempFile = HelloApplication.downloadedContentDir.resolve(fileName);
-        tempFile.toFile().deleteOnExit();
-        return new HelloController.DownloadedContent(tempFile, createUri("/downloaded/"+tempFile.getFileName()));
+        return null;
     }
 
     private boolean checkTableExits(String tableName)throws SQLException{
