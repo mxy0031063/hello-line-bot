@@ -791,7 +791,7 @@ public class DofuncServiceImpl implements DofuncService {
                 // month
                 sb.append(Key).append("  ： \n");
                 for (String key : dateMap.get(Key).keySet()) {
-                    sb.append(key).append(" ：").append(dateMap.get(Key).get(key));
+                    sb.append(key).append(" ：").append(dateMap.get(Key).get(key)).append("\n");
                 }
             }
             this.replyText(replyToken,sb.toString());
