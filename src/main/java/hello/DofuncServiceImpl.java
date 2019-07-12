@@ -705,21 +705,21 @@ public class DofuncServiceImpl implements DofuncService {
                 // 表不存在 create
                 sql = "CREATE TABLE "+tableName+"(" +
                         "        money_type TEXT NOT NULL ,\n" +
-                        "        money TEXT NOT NULL ,\n" +
+                        "        money INTEGER NOT NULL ,\n" +
                         "        remarks TEXT NOT NULL ,\n" +
-                        "        insert_date TEXT" +
+                        "        insert_date date" +
                         "        )";
                 stat.executeUpdate(sql);
                 log.info("\nCREATE TABLE : "+tableName+"\n");
             }
             ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy年MM月dd號_HH:mm:ss");
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String date = dtf.format(zonedDateTime);
             // 表存在 insert
-            sql = "INSERT INTO "+tableName+" (money_type,money,remarks,insert_date) VALUES ('"+moneyType+"','"+money+"','"+remorks+"','"+date+"')";
+            sql = "INSERT INTO "+tableName+" (money_type,money,remarks,insert_date) VALUES ('"+moneyType+"',"+Integer.parseInt(money)+",'"+remorks+"','"+date+"')";
             int insertCount = stat.executeUpdate(sql);
             log.info("\nINSERT INTO : "+insertCount+"\n");
-            this.replyText(replyToken,"已為你新增 \n"+moneyType+" \n金額 ："+money+" \n時間 ："+date);
+            this.replyText(replyToken,"已為你新增 \n"+moneyType+" \n金額 ："+money);
         }catch (SQLException ex){
             ex.printStackTrace();
         }finally {
