@@ -822,8 +822,8 @@ public class DofuncServiceImpl implements DofuncService {
             plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} ：{1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
             // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
-            String tableImagePath = "/static/"+tablename+".jpg";
-            tableImagePath = createUri(tableImagePath) ;
+            String tableImagePath = "/static/tableAccountingImage/"+tablename+".jpg";
+            //tableImagePath = createUri(tableImagePath) ;
             log.info("\nTableImage ："+tableImagePath+"\n");
             FileOutputStream fos=new FileOutputStream(tableImagePath);
             ChartUtilities.writeChartAsJPEG(
