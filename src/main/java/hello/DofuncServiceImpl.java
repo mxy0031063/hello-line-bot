@@ -834,7 +834,7 @@ public class DofuncServiceImpl implements DofuncService {
                     null
             );
             fos.close();
-            return createUri(tableImagePath) ;
+            return "https://abyss-linebot-hello.herokuapp.com/"+tableImagePath ;
 //            StringBuilder sb = new StringBuilder();
 //            sb.append(" -----  記帳本  ----- \n\n");
 //            // 全部数据

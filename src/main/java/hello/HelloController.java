@@ -616,6 +616,7 @@ public class HelloController {
             service.doAccounting4User(replyToken,event,content);
         } else if(text.equals("$$")){
             String imagePath = service.doShowAccountingMoneyDate(replyToken,event,content);
+            log.info("\n\n"+imagePath);
             showImg(replyToken,imagePath);
         } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
