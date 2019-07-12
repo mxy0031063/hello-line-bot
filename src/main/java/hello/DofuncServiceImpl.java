@@ -823,9 +823,7 @@ public class DofuncServiceImpl implements DofuncService {
             plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} ：{1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
             // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
-            String tableImagePath = "/resources/static/tableAccountingImage/"+tablename+".jpg";
-            //tableImagePath = createUri(tableImagePath) ;
-            log.info("\nTableImage ："+tableImagePath+"\n");
+            String tableImagePath = tablename+".jpg";
             FileOutputStream fos=new FileOutputStream(tableImagePath);
             ChartUtilities.writeChartAsJPEG(
                     fos,
@@ -836,7 +834,7 @@ public class DofuncServiceImpl implements DofuncService {
                     null
             );
             fos.close();
-            return tableImagePath ;
+            return createUri(tableImagePath) ;
 //            StringBuilder sb = new StringBuilder();
 //            sb.append(" -----  記帳本  ----- \n\n");
 //            // 全部数据
