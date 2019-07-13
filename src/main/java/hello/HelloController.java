@@ -331,6 +331,20 @@ public class HelloController {
                 this.replyText(replyToken, "Ok, let us keep talking!");
                 break;
             }
+            case "doShowAccountingMonth": {
+                service.doShowAccountingMonth4Detailed(replyToken,event);
+                break;
+            }
+            case "doShowAccountingMoneyDate": {
+                JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken,event);
+                showAccountingImage(jFreeChart,replyToken);
+                break;
+            }
+            case "doShowAllAccountByUser": {
+                JFreeChart jFreeChart = service.doShowAllAccountByUser(replyToken,event);
+                showAccountingImage(jFreeChart,replyToken);
+                break;
+            }
 
             case "doTemperature" :{
                 showImg(replyToken,WEATHER_PATH_TEMP);
@@ -618,11 +632,14 @@ public class HelloController {
         } else if (text.contains("全球天氣")){
             service.doWorldTemp(replyToken,event,content);
         } else if (text.matches("[$][0-9]{1,20}[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+            /** 用戶模板記帳輸入 */
             service.doAccounting4User(replyToken,event,content);
+        } else if (text.contains("!記帳") || text.contains("！記帳")){
+            service.doAccountingOperating(replyToken,event,content);
         } else if(text.equals("$$")){
-            JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken,event,content);
-            DownloadedContent jpg = saveContent("jpeg", jFreeChart);
-            this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
+            /** 顯示當前月記帳圖表 */
+            JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken,event);
+            showAccountingImage(jFreeChart,replyToken);
         } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
         } else if (text.contains("!油價")||text.contains("！油價")) {
@@ -698,6 +715,10 @@ public class HelloController {
         if (messagePush.size() > 10){
             messagePush.clear();
         }
+    }
+    private void showAccountingImage(JFreeChart jFreeChart,String replyToken){
+        DownloadedContent jpg = saveContent("jpeg", jFreeChart);
+        this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
     }
 
     private void handleTextContent(String replyToken, Event event, TextMessageContent content) throws IOException {

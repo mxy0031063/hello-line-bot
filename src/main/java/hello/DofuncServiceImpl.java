@@ -15,16 +15,23 @@ import com.linecorp.bot.model.message.template.ButtonsTemplate;
 import com.linecorp.bot.model.message.template.CarouselColumn;
 import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
+import hello.utils.AccountingUtils;
 import hello.utils.JDBCUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.StandardChartTheme;
+import org.jfree.chart.labels.StandardCategoryItemLabelGenerator;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
+import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PiePlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.chart.title.LegendTitle;
 import org.jfree.chart.title.TextTitle;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.general.DatasetUtilities;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -673,7 +680,6 @@ public class DofuncServiceImpl implements DofuncService {
                                                 "噓......")
                                 )
                         )
-
                 )
         );
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
@@ -698,97 +704,41 @@ public class DofuncServiceImpl implements DofuncService {
         String remorks = strings[3];
         String moneyType = strings[4];
         //創建表 (表不存在創建 存在新增)
-        String tableName = "accounting_"+userId;
-        java.sql.Connection conn = null ;
-        Statement stat = null ;
-        ResultSet rs = null ;
-        try{
-            boolean tableExits = checkTableExits(tableName);
-            conn = JDBCUtil.getConnection();
-            String sql = null ;
-            stat = conn.createStatement();
-            if (!tableExits){
-                // 表不存在 create
-                sql = "CREATE TABLE "+tableName+"(" +
-                        "        money_type TEXT NOT NULL ,\n" +
-                        "        money INTEGER NOT NULL ,\n" +
-                        "        remarks TEXT NOT NULL ,\n" +
-                        "        insert_date date" +
-                        "        )";
-                stat.executeUpdate(sql);
-                log.info("\nCREATE TABLE : "+tableName+"\n");
-            }
-            ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            String date = dtf.format(zonedDateTime);
-            // 表存在 insert
-            sql = "INSERT INTO "+tableName+" (money_type,money,remarks,insert_date) VALUES ('"+moneyType+"',"+Integer.parseInt(money)+",'"+remorks+"','"+date+"')";
-            int insertCount = stat.executeUpdate(sql);
-            log.info("\nINSERT INTO : "+insertCount+"\n");
-            this.replyText(replyToken,"已為你新增 \n"+moneyType+" \n金額 ："+money);
-        }catch (SQLException ex){
-            ex.printStackTrace();
-        }finally {
-            JDBCUtil.close(conn,stat,rs);
+        String tableName = TABLE_PERFIX + userId;
+        ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String date = dtf.format(zonedDateTime);
+        int insertRow = AccountingUtils.insertDatabase(tableName,moneyType,money,remorks,date);
+        if (insertRow == 0 ){
+            this.replyText(replyToken,"出錯拉~");
+            return;
         }
+        this.replyText(replyToken,"已為你新增 \n"+moneyType+" \n金額 ："+money);
     }
 
     /**
-     * 　暫時方法 輸出文字 ( 目標輸出JFree圖檔 )
+     * 　接入指令 $$ 顯示當前月圖表
      * @param replyToken
      * @param event
      * @param content
      * @throws IOException
      */
     @Override
-    public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content) throws IOException {
+    public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event) throws IOException {
         String userId = event.getSource().getUserId().toLowerCase();
-        String tablename = "accounting_"+userId;
-        java.sql.Connection conn = null ;
-        Statement stat = null ;
-        ResultSet resultSet = null ;
+        String tablename = TABLE_PERFIX + userId;
         try{
-            if (!checkTableExits(tablename)){
+            if (!AccountingUtils.checkTableExits(tablename)){
                 this.replyText(replyToken,"你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
                 return null;
             }
-            conn = JDBCUtil.getConnection();
-            stat = conn.createStatement();
-            String sql = "SELECT money_type,money,remarks,to_char(insert_date, 'YYYY-MM') insert_time FROM " + tablename;
-            resultSet = stat.executeQuery(sql);
-            Map<String, Map<String, Integer>> dateMap = new HashMap<>(); // 各月份里面有类型,钱 size = 月份数量
-            while (resultSet.next()) {
-                // 每条数据
-                String date = resultSet.getString("insert_time");
-                Integer money = resultSet.getInt("money");
-                String remarks = resultSet.getString("remarks");
-                String type = resultSet.getString("money_type");
-                // 把每条数据根据月份放集合<?>Map<date,Map<type,money>> 最终
-                // 需要 月份集合算钱总和?
-                // 判断有没有这个月份的资料 没有则新增 有就在判断
-                Map<String, Integer> typeMoneyMap = dateMap.get(date);
-                if (typeMoneyMap != null) {
-                    // 月份分组 月份已存在
-                    Map<String, Integer> map = dateMap.get(date);
-                    // 找类型
-                    Integer oldMoney = map.get(type);
-                    //map Key -> type : value -> sum(money)
-                    if (oldMoney != null) {
-                        // 类型存在 加总
-                        Integer newMoney = oldMoney + money;
-                        // 加完把钱跟类型放回去
-                        map.put(type, newMoney);
-                    } else {
-                        // 类型不存在 新增
-                        map.put(type, money);
-                    }
-                } else {
-                    // 月份不存在 新增
-                    Map<String, Integer> newType = new HashMap<>();
-                    newType.put(type, money);
-                    dateMap.put(date,newType);
-                }
+            ResultSet resultSet = AccountingUtils.selectAccountingUser(tablename);
+            if (null == resultSet){
+                this.replyText(replyToken,"出錯拉~");
+                return null;
             }
+            Map<String,Map<String,Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
+
 //             当前月的资料
             LocalDate localDate = LocalDate.now();
             String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
@@ -797,20 +747,12 @@ public class DofuncServiceImpl implements DofuncService {
             for (String key : nowDate4Accounting.keySet()) {
                 dataset.setValue(key,nowDate4Accounting.get(key));
             }
-//            StandardChartTheme standardChartTheme = new StandardChartTheme("CN");
-//            standardChartTheme.setLargeFont(new Font("宋体", Font.ITALIC, 22));
-//            standardChartTheme.setExtraLargeFont(new Font("宋体", Font.ITALIC, 22));
-//            standardChartTheme.setRegularFont(new Font("宋体", Font.ITALIC, 22));
-//            ChartFactory.setChartTheme(standardChartTheme);
-
             JFreeChart chart = ChartFactory.createPieChart3D("Accounting Text",dataset,true,false,false);
             chart.setTitle(new TextTitle("Accounting Text",new Font("宋体", Font.ITALIC, 22)));
             LegendTitle legend =chart.getLegend(0);
-//            legend.setItemFont(new Font("宋体",Font.BOLD,20));//設定圖例的字型
             chart.setBackgroundPaint(Color.white);
             //設定圖的部分
             PiePlot plot =(PiePlot)chart.getPlot();
-//            plot.setLabelFont(new Font("宋体",Font.BOLD,18));//設定實際統計圖的字型
             plot.setBackgroundImage(Toolkit.getDefaultToolkit().getImage("AccountingImage1.jpg"));
             plot.setBackgroundAlpha(0.9f);
             plot.setForegroundAlpha(0.80f);
@@ -819,19 +761,6 @@ public class DofuncServiceImpl implements DofuncService {
             plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} : {1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
             // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
-//            String tableImagePath = tablename+".jpeg";
-            //createUri("src/main/resources/static/tableAccountingImage/"+tableImagePath)
-//            File file = new File("/hello-line-bot/src/main/resources/static/tableAccountingImage/"+tableImagePath);
-//            FileOutputStream fos=new FileOutputStream(file);
-//            ChartUtilities.writeChartAsJPEG(
-//                    fos,
-//                    1,
-//                    chart,
-//                    800,
-//                    600,
-//                    null
-//            );
-//            fos.close();
             return chart;
 //            StringBuilder sb = new StringBuilder();
 //            sb.append(" -----  記帳本  ----- \n\n");
@@ -850,14 +779,141 @@ public class DofuncServiceImpl implements DofuncService {
         return null;
     }
 
-    private boolean checkTableExits(String tableName)throws SQLException{
-        java.sql.Connection conn = null ;
-        conn = JDBCUtil.getConnection();
-        DatabaseMetaData mata = conn.getMetaData();
-        String[] tableType = {"TABLE"};
-        ResultSet rs = mata.getTables(null,null,tableName,tableType);
-        return rs.next();
+    /**
+     * 用戶顯示操作模板
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
+    @Override
+    public void doAccountingOperating(String replyToken, Event event, TextMessageContent content) throws IOException {
+        String imgUrl2 = createUri("/static/AccountingImage/AccountingImage2.jpg");
+        CarouselTemplate carouselTemplate = new CarouselTemplate(
+                Arrays.asList(
+                        new CarouselColumn(
+                                imgUrl2,
+                                " 發 財 記 帳 本 ",
+                                " ",
+                                Arrays.asList(
+                                        new PostbackAction(" 刪除 & 更改 ",
+                                                "doShowAccountingMonth",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "刪除 & 更改"),
+                                        new PostbackAction(" 這 個 月 ",
+                                                "doShowAccountingMoneyDate",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$$"),
+                                        new PostbackAction(" 總 紀 錄 ",
+                                                "doShowAllAccountByUser",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "總 紀 錄")
+                                )
+                        )
+                )
+        );
+        TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
+        this.reply(replyToken,templateMessage);
     }
+
+    /**
+     *  顯示記帳的詳細記錄 用於用戶知道Id 輸出做 刪除 & 更改 動作
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
+    @Override
+    public void doShowAccountingMonth4Detailed(String replyToken, Event event) throws IOException {
+        String userId = event.getSource().getUserId().toLowerCase();
+        String tableName = TABLE_PERFIX + userId ;
+        LocalDate localDate = LocalDate.now();
+        String time = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+        ResultSet resultSet = AccountingUtils.selectAccounting4Month(tableName,time);
+        if (null == resultSet){
+            this.replyText(replyToken,"出錯拉~");
+            return;
+        }
+        StringBuilder outputText = new StringBuilder();
+        outputText.append("當前月 您的詳細記錄 ：如想操作紀錄指令再次輸入你的紀錄ID\n")
+                .append("刪除操作 ： !del ID\n更新操作 ：!update ID $123 晚餐 Food\n")
+                .append("ID  . 類型  . 金額  . 備註 . 日期");
+        try{
+            while (resultSet.next()){
+                outputText.append(resultSet.getString("id")).append(" /")
+                        .append(resultSet.getString("money_type")).append(" / ")
+                        .append(resultSet.getString("money")).append(" / ")
+                        .append(resultSet.getString("remarks")).append(" / ")
+                        .append(resultSet.getString("date")).append("\n");
+            }
+            this.replyText(replyToken,outputText.toString());
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 顯示全部記錄圖表
+     * @param replyToken
+     * @param event
+     * @return
+     * @throws IOException
+     */
+    @Override
+    public JFreeChart doShowAllAccountByUser(String replyToken, Event event) throws IOException {
+        String userId = event.getSource().getUserId().toLowerCase();
+        String tableName = TABLE_PERFIX + userId ;
+        // 拿到數據
+        ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName);
+        try {
+            Map<String,Map<String,Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
+            String[] rowKey = {"Food","Clothing","Housing","Transportation","Play","Other"};
+            String[] colKey = new String[dateMap.keySet().size()];
+            double[][] data = new double[colKey.length][rowKey.length];
+            int colIndex = 0 ;
+            for (String key : dateMap.keySet() ){
+                colKey[colIndex] = key ; // 時間
+                Map<String,Integer> typeMap = dateMap.get(key); // 當前月份的種類與錢
+                // 所有日期
+                for (int i = 0; i < rowKey.length; i++) {
+                    // 每一個月都循環找各種類的錢
+                    String type = rowKey[i];
+                    Integer typeOfmoney = typeMap.get(type);
+                    if (typeOfmoney != null){
+                        // 這個月的這個種類有紀錄就給值
+                        data[colIndex][i] = typeOfmoney.doubleValue() ;
+                    }else {
+                        // 沒紀錄就給0
+                        data[colIndex][i] = 0;
+                    }
+                }
+                colIndex++;
+            }
+            CategoryDataset categoryDataset = DatasetUtilities.createCategoryDataset(rowKey,colKey,data);
+            JFreeChart jFreeChart = ChartFactory.createLineChart("User Accounting Line Chart",
+                    "year/month",
+                    "total of money",
+                    categoryDataset,
+                    PlotOrientation.VERTICAL,
+                    true,
+                    false,
+                    false);
+            CategoryPlot plot = (CategoryPlot)jFreeChart.getPlot();
+            // 背景色 透明度
+            plot.setBackgroundAlpha(0.5f);
+            // 前景色 透明度
+            plot.setForegroundAlpha(0.9f);
+            // 其他设置 参考 CategoryPlot类
+            LineAndShapeRenderer renderer = (LineAndShapeRenderer)plot.getRenderer();
+            renderer.setBaseShapesVisible(true); // series 点（即数据点）可见
+            renderer.setBaseLinesVisible(true); // series 点（即数据点）间有连线可见
+            renderer.setUseSeriesOffset(true); // 设置偏移量
+            renderer.setBaseItemLabelGenerator(new StandardCategoryItemLabelGenerator());
+            renderer.setBaseItemLabelsVisible(true);
+            return jFreeChart ;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
     private void inItPrize() throws IOException{
         Document document = jsoupClient(INVOICE_PATH);

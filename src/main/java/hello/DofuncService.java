@@ -46,6 +46,10 @@ public interface DofuncService {
     發票地址
      */
     String INVOICE_PATH = "http://invoice.etax.nat.gov.tw/";
+    /*
+    記帳表統一前綴
+     */
+    String TABLE_PERFIX = "accounting_";
 
     /**
      * 處理天氣
@@ -96,9 +100,21 @@ public interface DofuncService {
      */
     void doDataBase4Accounting(String replyToken, Event event ,String data)throws IOException;
     /**
-     * 暫時方法 - 輸出可視化文字 為當前所有數據
+     * 處理顯示當前月記帳圖表
      */
-    JFreeChart doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content)throws IOException;
+    JFreeChart doShowAccountingMoneyDate(String replyToken, Event event)throws IOException;
+    /**
+     * 處理 刪除 更改 查全部 選擇模板
+     */
+    void doAccountingOperating(String replyToken, Event event, TextMessageContent content)throws IOException;
+    /**
+     * 處理顯示記帳當前月詳細記錄
+     */
+    void doShowAccountingMonth4Detailed(String replyToken, Event event)throws IOException;
+    /**
+     * 處理顯示全部帳本記錄圖表
+     */
+    JFreeChart doShowAllAccountByUser(String replyToken, Event event)throws IOException;
 
 
 
