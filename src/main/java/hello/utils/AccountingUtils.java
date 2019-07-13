@@ -61,8 +61,6 @@ public class AccountingUtils {
             return resultSet;
         }catch (SQLException e){
             e.printStackTrace();
-        } finally {
-            JDBCUtil.close(conn, stat, resultSet);
         }
         return null;
     }
@@ -85,8 +83,6 @@ public class AccountingUtils {
             return resultSet;
         }catch (SQLException e){
             e.printStackTrace();
-        } finally {
-            JDBCUtil.close(conn, stat, resultSet);
         }
         return null;
     }

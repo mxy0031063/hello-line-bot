@@ -720,19 +720,17 @@ public class DofuncServiceImpl implements DofuncService {
      * 　接入指令 $$ 顯示當前月圖表
      * @param replyToken
      * @param event
-     * @param content
      * @throws IOException
      */
     @Override
     public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event) throws IOException {
         String userId = event.getSource().getUserId().toLowerCase();
         String tablename = TABLE_PERFIX + userId;
-        try{
+        try(ResultSet resultSet = AccountingUtils.selectAccountingUser(tablename)){
             if (!AccountingUtils.checkTableExits(tablename)){
                 this.replyText(replyToken,"你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
                 return null;
             }
-            ResultSet resultSet = AccountingUtils.selectAccountingUser(tablename);
             if (null == resultSet){
                 this.replyText(replyToken,"出錯拉~");
                 return null;
@@ -817,7 +815,6 @@ public class DofuncServiceImpl implements DofuncService {
      *  顯示記帳的詳細記錄 用於用戶知道Id 輸出做 刪除 & 更改 動作
      * @param replyToken
      * @param event
-     * @param content
      * @throws IOException
      */
     @Override
@@ -826,16 +823,15 @@ public class DofuncServiceImpl implements DofuncService {
         String tableName = TABLE_PERFIX + userId ;
         LocalDate localDate = LocalDate.now();
         String time = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
-        ResultSet resultSet = AccountingUtils.selectAccounting4Month(tableName,time);
-        if (null == resultSet){
-            this.replyText(replyToken,"出錯拉~");
-            return;
-        }
-        StringBuilder outputText = new StringBuilder();
-        outputText.append("當前月 您的詳細記錄 ：如想操作紀錄指令再次輸入你的紀錄ID\n")
-                .append("刪除操作 ： !del ID\n更新操作 ：!update ID $123 晚餐 Food\n")
-                .append("ID  . 類型  . 金額  . 備註 . 日期");
-        try{
+        try(ResultSet resultSet = AccountingUtils.selectAccounting4Month(tableName,time)){
+            if (null == resultSet){
+                this.replyText(replyToken,"出錯拉~");
+                return;
+            }
+            StringBuilder outputText = new StringBuilder();
+            outputText.append("當前月 您的詳細記錄 ：如想操作紀錄指令再次輸入你的紀錄ID\n")
+                    .append("刪除操作 ： !del ID\n更新操作 ：!update ID $123 晚餐 Food\n")
+                    .append("ID  . 類型  . 金額  . 備註 . 日期");
             while (resultSet.next()){
                 outputText.append(resultSet.getString("id")).append(" /")
                         .append(resultSet.getString("money_type")).append(" / ")
