@@ -824,7 +824,8 @@ public class DofuncServiceImpl implements DofuncService {
             // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
             String tableImagePath = tablename+".jpg";
-            FileOutputStream fos=new FileOutputStream(tableImagePath);
+            File file = new File("./src/main/resources/static/tableAccountingImage/"+tableImagePath);
+            FileOutputStream fos=new FileOutputStream(file);
             ChartUtilities.writeChartAsJPEG(
                     fos,
                     1,
@@ -834,7 +835,7 @@ public class DofuncServiceImpl implements DofuncService {
                     null
             );
             fos.close();
-            return "https://abyss-linebot-hello.herokuapp.com/"+tableImagePath ;
+            return tableImagePath ;
 //            StringBuilder sb = new StringBuilder();
 //            sb.append(" -----  記帳本  ----- \n\n");
 //            // 全部数据
