@@ -803,7 +803,7 @@ public class DofuncServiceImpl implements DofuncService {
 //            standardChartTheme.setRegularFont(new Font("宋体", Font.ITALIC, 22));
 //            ChartFactory.setChartTheme(standardChartTheme);
 
-            JFreeChart chart = ChartFactory.createPieChart("Accounting Text",dataset,true,false,false);
+            JFreeChart chart = ChartFactory.createPieChart3D("Accounting Text",dataset,true,false,false);
             chart.setTitle(new TextTitle("Accounting Text",new Font("宋体", Font.ITALIC, 22)));
             LegendTitle legend =chart.getLegend(0);
 //            legend.setItemFont(new Font("宋体",Font.BOLD,20));//設定圖例的字型
@@ -816,7 +816,7 @@ public class DofuncServiceImpl implements DofuncService {
             plot.setForegroundAlpha(0.80f);
             plot.setCircular(true);
             // 图片中显示百分比:自定义方式，{0} 表示选项， {1} 表示数值， {2} 表示所占比例 ,小数点后两位
-            plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} ：{1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
+            plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} : {1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
             // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
 //            String tableImagePath = tablename+".jpeg";
