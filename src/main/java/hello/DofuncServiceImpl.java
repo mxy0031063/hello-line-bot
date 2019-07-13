@@ -825,7 +825,7 @@ public class DofuncServiceImpl implements DofuncService {
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
             String tableImagePath = tablename+".jpg";
 
-            File file = new File(createUri("../resources/static/tableAccountingImage/"+tableImagePath));
+            File file = new File(createUri("src/main/resources/static/tableAccountingImage/"+tableImagePath));
             FileOutputStream fos=new FileOutputStream(file);
             ChartUtilities.writeChartAsJPEG(
                     fos,
