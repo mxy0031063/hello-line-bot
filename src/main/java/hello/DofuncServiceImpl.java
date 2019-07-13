@@ -837,7 +837,7 @@ public class DofuncServiceImpl implements DofuncService {
                         .append(resultSet.getString("money_type")).append(" / ")
                         .append(resultSet.getString("money")).append(" / ")
                         .append(resultSet.getString("remarks")).append(" / ")
-                        .append(resultSet.getString("insert_date")).append("\n");
+                        .append(resultSet.getString("insert_time")).append("\n");
             }
             this.replyText(replyToken,outputText.toString());
         }catch (SQLException e){
