@@ -19,7 +19,6 @@ import hello.utils.JDBCUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.StandardChartTheme;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
@@ -38,8 +37,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import retrofit2.Response;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
@@ -744,7 +741,7 @@ public class DofuncServiceImpl implements DofuncService {
      * @throws IOException
      */
     @Override
-    public String doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content) throws IOException {
+    public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content) throws IOException {
         String userId = event.getSource().getUserId().toLowerCase();
         String tablename = "accounting_"+userId;
         java.sql.Connection conn = null ;
@@ -823,20 +820,20 @@ public class DofuncServiceImpl implements DofuncService {
             plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} ：{1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
             // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
-            String tableImagePath = tablename+".jpg";
+//            String tableImagePath = tablename+".jpeg";
             //createUri("src/main/resources/static/tableAccountingImage/"+tableImagePath)
-            File file = new File("/hello-line-bot/src/main/resources/static/tableAccountingImage/"+tableImagePath);
-            FileOutputStream fos=new FileOutputStream(file);
-            ChartUtilities.writeChartAsJPEG(
-                    fos,
-                    1,
-                    chart,
-                    800,
-                    600,
-                    null
-            );
-            fos.close();
-            return createUri(tableImagePath) ;
+//            File file = new File("/hello-line-bot/src/main/resources/static/tableAccountingImage/"+tableImagePath);
+//            FileOutputStream fos=new FileOutputStream(file);
+//            ChartUtilities.writeChartAsJPEG(
+//                    fos,
+//                    1,
+//                    chart,
+//                    800,
+//                    600,
+//                    null
+//            );
+//            fos.close();
+            return chart;
 //            StringBuilder sb = new StringBuilder();
 //            sb.append(" -----  記帳本  ----- \n\n");
 //            // 全部数据

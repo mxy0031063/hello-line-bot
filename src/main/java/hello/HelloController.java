@@ -615,10 +615,9 @@ public class HelloController {
         } else if (text.matches("[$][0-9]{1,20}[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
             service.doAccounting4User(replyToken,event,content);
         } else if(text.equals("$$")){
-            String imagePath = service.doShowAccountingMoneyDate(replyToken,event,content);
-            //imagePath = "/static/tableAccountingImage/"+imagePath;
-            log.info("\n\n"+imagePath);
-            showImg(replyToken,imagePath);
+            JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken,event,content);
+            DownloadedContent jpg = saveContent("jpeg", jFreeChart);
+            this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
         } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
         } else if (text.contains("!油價")||text.contains("！油價")) {

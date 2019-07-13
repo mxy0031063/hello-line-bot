@@ -2,6 +2,7 @@ package hello;
 
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.message.TextMessageContent;
+import org.jfree.chart.JFreeChart;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -97,7 +98,7 @@ public interface DofuncService {
     /**
      * 暫時方法 - 輸出可視化文字 為當前所有數據
      */
-    String doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content)throws IOException;
+    JFreeChart doShowAccountingMoneyDate(String replyToken, Event event, TextMessageContent content)throws IOException;
 
 
 
