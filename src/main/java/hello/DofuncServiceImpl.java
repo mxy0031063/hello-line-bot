@@ -872,10 +872,10 @@ public class DofuncServiceImpl implements DofuncService {
                     // 每一個月都循環找各種類的錢
                     String type = rowKey[i];
                     Integer typeOfmoney = typeMap.get(type);
-                    log.info("\n\n type : "+type+"\n\n money : "+typeOfmoney+"\n\n");
+             //       log.info("\n\n type : "+type+"\n\n money : "+typeOfmoney+"\n\n");
                     if (typeOfmoney != null){
                         // 這個月的這個種類有紀錄就給值
-                        data[colIndex][i] = typeOfmoney.doubleValue() ;
+                        data[colIndex][i] = typeOfmoney ;
                     }else {
                         // 沒紀錄就給0
                         data[colIndex][i] = 0;
@@ -883,7 +883,11 @@ public class DofuncServiceImpl implements DofuncService {
                 }
                 colIndex++;
             }
-            log.info("\n\n Data : "+data.toString()+"\n\n");
+            Arrays.stream(data).forEach(doubles -> {
+                Arrays.stream(doubles).forEach(dou ->{
+                    log.info("\n\n dou : "+dou+"\n\n");
+                });
+            });
             CategoryDataset categoryDataset = DatasetUtilities.createCategoryDataset(rowKey,colKey,data);
             JFreeChart jFreeChart = ChartFactory.createLineChart("User Accounting Line Chart",
                     "year/month",
