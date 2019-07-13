@@ -647,13 +647,13 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 飲 食 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_飲食",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_Food",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "吃的拉"),
                                         new PostbackAction(" 衣 褲 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_衣褲",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_Clothing",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "穿的拉"),
                                         new PostbackAction(" 住 宿 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_住宿",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_Housing",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "住的拉")
                                 )
                         ),
@@ -663,13 +663,13 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 交 通 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_交通",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_Transportation",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "行的拉"),
                                         new PostbackAction(" 遊 樂 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_遊樂",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_Play",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "玩的拉"),
                                         new PostbackAction(" 不 好 說 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_不好說",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_"+userId+"_"+money+"_"+remorks+"_Other",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "噓......")
                                 )
                         )
@@ -795,18 +795,16 @@ public class DofuncServiceImpl implements DofuncService {
             Map<String,Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
             DefaultPieDataset dataset = new DefaultPieDataset();
             for (String key : nowDate4Accounting.keySet()) {
-                //dataset.setValue(key,nowDate4Accounting.get(key));
+                dataset.setValue(key,nowDate4Accounting.get(key));
             }
-            dataset.setValue("abbc",11);
-            dataset.setValue("fff",100);
-            StandardChartTheme standardChartTheme = new StandardChartTheme("CN");
-            standardChartTheme.setLargeFont(new Font("宋体", Font.ITALIC, 22));
-            standardChartTheme.setExtraLargeFont(new Font("宋体", Font.ITALIC, 22));
-            standardChartTheme.setRegularFont(new Font("宋体", Font.ITALIC, 22));
-            ChartFactory.setChartTheme(standardChartTheme);
+//            StandardChartTheme standardChartTheme = new StandardChartTheme("CN");
+//            standardChartTheme.setLargeFont(new Font("宋体", Font.ITALIC, 22));
+//            standardChartTheme.setExtraLargeFont(new Font("宋体", Font.ITALIC, 22));
+//            standardChartTheme.setRegularFont(new Font("宋体", Font.ITALIC, 22));
+//            ChartFactory.setChartTheme(standardChartTheme);
 
-            JFreeChart chart = ChartFactory.createPieChart("記帳圖",dataset,true,false,false);
-            chart.setTitle(new TextTitle("記帳圖",new Font("宋体", Font.ITALIC, 22)));
+            JFreeChart chart = ChartFactory.createPieChart("Accounting Text",dataset,true,false,false);
+            chart.setTitle(new TextTitle("Accounting Text",new Font("宋体", Font.ITALIC, 22)));
             LegendTitle legend =chart.getLegend(0);
 //            legend.setItemFont(new Font("宋体",Font.BOLD,20));//設定圖例的字型
             chart.setBackgroundPaint(Color.white);
