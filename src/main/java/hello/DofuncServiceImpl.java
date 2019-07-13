@@ -795,9 +795,10 @@ public class DofuncServiceImpl implements DofuncService {
             Map<String,Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
             DefaultPieDataset dataset = new DefaultPieDataset();
             for (String key : nowDate4Accounting.keySet()) {
-                dataset.setValue(key,nowDate4Accounting.get(key));
+                //dataset.setValue(key,nowDate4Accounting.get(key));
             }
-
+            dataset.setValue("abbc",11);
+            dataset.setValue("fff",100);
             StandardChartTheme standardChartTheme = new StandardChartTheme("CN");
             standardChartTheme.setLargeFont(new Font("宋体", Font.ITALIC, 22));
             standardChartTheme.setExtraLargeFont(new Font("宋体", Font.ITALIC, 22));
