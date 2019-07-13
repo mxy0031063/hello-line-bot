@@ -799,7 +799,7 @@ public class DofuncServiceImpl implements DofuncService {
                                                 "刪除 & 更改"),
                                         new PostbackAction(" 這 個 月 ",
                                                 "doShowAccountingMoneyDate",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                "$$"),
+                                                "月 紀 錄"),
                                         new PostbackAction(" 總 紀 錄 ",
                                                 "doShowAllAccountByUser",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "總 紀 錄")
@@ -837,7 +837,7 @@ public class DofuncServiceImpl implements DofuncService {
                         .append(resultSet.getString("money_type")).append(" / ")
                         .append(resultSet.getString("money")).append(" / ")
                         .append(resultSet.getString("remarks")).append(" / ")
-                        .append(resultSet.getString("date")).append("\n");
+                        .append(resultSet.getString("insert_date")).append("\n");
             }
             this.replyText(replyToken,outputText.toString());
         }catch (SQLException e){
