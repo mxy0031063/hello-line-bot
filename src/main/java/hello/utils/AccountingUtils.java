@@ -32,7 +32,6 @@ public class AccountingUtils {
                         "        insert_date date" +
                         "        )";
                 stat.executeUpdate(sql);
-                log.info("\nCREATE TABLE : " + tableName + "\n");
             }
             // 表存在 insert
             sql = "INSERT INTO " + tableName + " (money_type,money,remarks,insert_date) VALUES ('" + moneyType + "'," + Integer.parseInt(money) + ",'" + remarks + "','" + date + "')";
