@@ -831,7 +831,7 @@ public class DofuncServiceImpl implements DofuncService {
             StringBuilder outputText = new StringBuilder();
             outputText.append("當前月 您的詳細記錄 ：如想操作紀錄指令再次輸入你的紀錄ID\n")
                     .append("刪除操作 ： !del ID\n更新操作 ：!update ID $123 晚餐 Food\n")
-                    .append("ID  . 類型  . 金額  . 備註 . 日期");
+                    .append("ID  . 類型  . 金額  . 備註 . 日期\n");
             while (resultSet.next()){
                 outputText.append(resultSet.getString("id")).append(" /")
                         .append(resultSet.getString("money_type")).append(" / ")
@@ -860,9 +860,9 @@ public class DofuncServiceImpl implements DofuncService {
         ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName);
         try {
             Map<String,Map<String,Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
-            String[] rowKey = {"Food","Clothing","Housing","Transportation","Play","Other"};
-            String[] colKey = new String[dateMap.keySet().size()];
-            double[][] data = new double[colKey.length][rowKey.length];
+            String[] rowKey = {"Food","Clothing","Housing","Transportation","Play","Other"}; //6
+            String[] colKey = new String[dateMap.keySet().size()]; //1
+            double[][] data = new double[colKey.length][rowKey.length]; // [1][6] like {{1},{2},{3},{4},{5},{6}}
             int colIndex = 0 ;
             for (String key : dateMap.keySet() ){
                 colKey[colIndex] = key ; // 時間
@@ -872,6 +872,7 @@ public class DofuncServiceImpl implements DofuncService {
                     // 每一個月都循環找各種類的錢
                     String type = rowKey[i];
                     Integer typeOfmoney = typeMap.get(type);
+                    log.info("\n\n type : "+type+"\n\n money : "+typeOfmoney+"\n\n");
                     if (typeOfmoney != null){
                         // 這個月的這個種類有紀錄就給值
                         data[colIndex][i] = typeOfmoney.doubleValue() ;
@@ -882,6 +883,7 @@ public class DofuncServiceImpl implements DofuncService {
                 }
                 colIndex++;
             }
+            log.info("\n\n Data : "+data.toString()+"\n\n");
             CategoryDataset categoryDataset = DatasetUtilities.createCategoryDataset(rowKey,colKey,data);
             JFreeChart jFreeChart = ChartFactory.createLineChart("User Accounting Line Chart",
                     "year/month",
