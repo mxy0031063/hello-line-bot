@@ -825,7 +825,7 @@ public class DofuncServiceImpl implements DofuncService {
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
             String tableImagePath = tablename+".jpg";
             //createUri("src/main/resources/static/tableAccountingImage/"+tableImagePath)
-            File file = new File("../resources/static/tableAccountingImage/"+tableImagePath);
+            File file = new File(createUri(tableImagePath));
             FileOutputStream fos=new FileOutputStream(file);
             ChartUtilities.writeChartAsJPEG(
                     fos,
@@ -836,7 +836,7 @@ public class DofuncServiceImpl implements DofuncService {
                     null
             );
             fos.close();
-            return tableImagePath ;
+            return createUri(tableImagePath) ;
 //            StringBuilder sb = new StringBuilder();
 //            sb.append(" -----  記帳本  ----- \n\n");
 //            // 全部数据
