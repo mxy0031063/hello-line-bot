@@ -909,7 +909,7 @@ public class DofuncServiceImpl implements DofuncService {
                     "total of money",
                     defaultCategoryDataset,
                     PlotOrientation.VERTICAL,
-                    false,
+                    true,
                     true,
                     false);
             jFreeChart.setBackgroundPaint(Color.WHITE);
