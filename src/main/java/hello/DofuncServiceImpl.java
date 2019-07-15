@@ -629,6 +629,25 @@ public class DofuncServiceImpl implements DofuncService {
         //獲得用戶ID
         String userId = event.getSource().getUserId();
         String text = content.getText();
+        if (text.matches("[$][0-9]{1,20}[_|\\s](Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)[_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+            // 完整語法
+            String[]strings = text.split("[_|\\s]");
+            String money = strings[0].replaceAll("[$]","");
+            String type = strings[1];
+            String remarks = strings[2];
+            String tableName = TABLE_PERFIX + userId.toLowerCase() ;
+            ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            String date = dtf.format(zonedDateTime);
+            int insertRow = AccountingUtils.insertDatabase(tableName,type,money,remarks,date);
+            if (insertRow == 0 ){
+                this.replyText(replyToken,"出錯拉~");
+                log.info("\n TYPE : "+type+" MONEY : "+money+" REMARKS : "+remarks+"\n");
+                return;
+            }
+            this.replyText(replyToken,"已為你新增 \n"+type+" \n金額 ："+money);
+            return;
+        }
         log.info("\n doAccounting4User :{ text - "+text+" } \n");
         // 獲得用戶輸入的類型 錢 備註
         String[] strings = text.split(" ");
@@ -705,11 +724,16 @@ public class DofuncServiceImpl implements DofuncService {
         String remorks = strings[3];
         String moneyType = strings[4];
         //創建表 (表不存在創建 存在新增)
-        String tableName = TABLE_PERFIX + userId;
+        String oldtableName = TABLE_PERFIX + userId;
+        String newtableName = getTableName(event);
+        if (!oldtableName.equals(newtableName)){
+            this.replyText(replyToken,"不要亂點拉～");
+            return;
+        }
         ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String date = dtf.format(zonedDateTime);
-        int insertRow = AccountingUtils.insertDatabase(tableName,moneyType,money,remorks,date);
+        int insertRow = AccountingUtils.insertDatabase(oldtableName,moneyType,money,remorks,date);
         if (insertRow == 0 ){
             this.replyText(replyToken,"出錯拉~");
             return;
@@ -725,10 +749,9 @@ public class DofuncServiceImpl implements DofuncService {
      */
     @Override
     public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event) throws IOException {
-        String userId = event.getSource().getUserId().toLowerCase();
-        String tablename = TABLE_PERFIX + userId;
-        try(ResultSet resultSet = AccountingUtils.selectAccountingUser(tablename)){
-            if (!AccountingUtils.checkTableExits(tablename)){
+        String tableName = getTableName(event);
+        try(ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName)){
+            if (!AccountingUtils.checkTableExits(tableName)){
                 this.replyText(replyToken,"你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
                 return null;
             }
@@ -820,8 +843,7 @@ public class DofuncServiceImpl implements DofuncService {
      */
     @Override
     public void doShowAccountingMonth4Detailed(String replyToken, Event event) throws IOException {
-        String userId = event.getSource().getUserId().toLowerCase();
-        String tableName = TABLE_PERFIX + userId ;
+        String tableName = getTableName(event);
         LocalDate localDate = LocalDate.now();
         String time = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
         try(ResultSet resultSet = AccountingUtils.selectAccounting4Month(tableName,time)){
@@ -855,8 +877,7 @@ public class DofuncServiceImpl implements DofuncService {
      */
     @Override
     public JFreeChart doShowAllAccountByUser(String replyToken, Event event) throws IOException {
-        String userId = event.getSource().getUserId().toLowerCase();
-        String tableName = TABLE_PERFIX + userId ;
+        String tableName = getTableName(event);
         // 拿到數據
         ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName);
         try {
@@ -930,6 +951,70 @@ public class DofuncServiceImpl implements DofuncService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * 記帳刪除操作
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
+    @Override
+    public void doAccountingDelete(String replyToken, Event event, TextMessageContent content) throws IOException {
+        String text = content.getText();
+        if (!text.matches("[!|！](del)[_|\\s][0-9]{1,10}")){
+            // 語法不正確
+            this.replyText(replyToken,"語法錯誤? 範例 ：!del ID or !del_ID");
+            return;
+        }
+        String tableName = getTableName(event);
+        String[] strings = text.split("[_|\\s]");
+        String id = strings[1];
+        // util
+        int delCount = AccountingUtils.delByRowId(tableName,id);
+        if (delCount == 0){
+            log.info("\n\n ERROR \ndoAccountingDelete : "+text+"\n");
+            this.replyText(replyToken,"刪除出錯拉~");
+            return;
+        }
+        this.replyText(replyToken,"刪除成功");
+    }
+
+    /**
+     * 記帳更改操作
+     * @param replyToken
+     * @param event
+     * @param content
+     * @throws IOException
+     */
+    @Override
+    public void doAccountingUpdate(String replyToken, Event event, TextMessageContent content) throws IOException {
+        String text = content.getText();
+        if (!text.matches("[!|！](update)[_|\\s][0-9]{1,10}[_|\\s][$][0-9]{1,10}[_|\\s](Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)[_|\\s][a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+            // 語法不正確
+            this.replyText(replyToken,"語法錯誤? 範例 ：!update_ID_$200_play_玩的拉");
+            return;
+        }
+        String tableName = getTableName(event);
+        String[] strings = text.split("[_|\\s]");
+        String rowId = strings[1];
+        String money = strings[2].replaceAll("[$]","");
+        String type = strings[3];
+        String remarks = strings[4];
+        // util
+        int updateConut = AccountingUtils.updateByRowId(tableName,rowId,money,type,remarks);
+        if (updateConut == 0) {
+            log.info("\n\n ERROR \ndoAccountingUpdate : "+text+"\n");
+            this.replyText(replyToken,"更新出錯拉");
+            return;
+        }
+        this.replyText(replyToken,"更新成功");
+    }
+
+    private String getTableName(Event event){
+        String userId = event.getSource().getUserId().toLowerCase();
+        return TABLE_PERFIX + userId ;
     }
 
 

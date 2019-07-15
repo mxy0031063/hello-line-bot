@@ -640,6 +640,12 @@ public class HelloController {
             /** 顯示當前月記帳圖表 */
             JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken,event);
             showAccountingImage(jFreeChart,replyToken);
+        } else if (text.startsWith("!del") || text.startsWith("！del")){
+            /** 記帳模塊 刪除操作 */
+            service.doAccountingDelete(replyToken,event,content);
+        } else if (text.startsWith("!update") || text.startsWith("！update")){
+            /** 記帳模塊 更改操作 */
+            service.doAccountingUpdate(replyToken,event,content);
         } else if (text.contains("--service")){
             handleTextContent(replyToken,event,content);
         } else if (text.contains("!油價")||text.contains("！油價")) {

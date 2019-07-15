@@ -67,9 +67,9 @@ public class AccountingUtils {
 
     /**
      * 依照月份查詳細帳本
-     * @param tablename
-     * @param date
-     * @return
+     * @param tablename 用戶表名
+     * @param date 時間
+     * @return 結果集
      */
     public static ResultSet selectAccounting4Month(String tablename, String date){
         java.sql.Connection conn = null ;
@@ -89,9 +89,9 @@ public class AccountingUtils {
 
     /**
      *  帳本轉Map結構 依照月份分組的各類型錢總和
-     * @param resultSet
-     * @return
-     * @throws SQLException
+     * @param resultSet 查詢的結果
+     * @return  轉換完成的MAP
+     * @throws SQLException 拋出sql異常
      */
     public static Map<String,Map<String,Integer>> resultSet2Map(ResultSet resultSet) throws SQLException{
         Map<String, Map<String, Integer>> dateMap = new HashMap<>(); // 各月份里面有类型,钱 size = 月份数量
@@ -128,6 +128,55 @@ public class AccountingUtils {
             }
         }
         return dateMap;
+    }
+
+    /**
+     *  數據庫 刪除操作
+     * @param tableName 用戶表名
+     * @param rowId 表ID
+     * @return 更新行數
+     */
+    public static int delByRowId(String tableName ,String rowId){
+        java.sql.Connection conn = null ;
+        Statement stat = null ;
+        ResultSet resultSet = null ;
+        try{
+            conn = JDBCUtil.getConnection();
+            stat = conn.createStatement();
+            String sql = "DELETE FROM "+tableName+" WHERE id = "+rowId;
+            return  stat.executeUpdate(sql);
+        }catch (SQLException e){
+            e.printStackTrace();
+        }finally {
+            JDBCUtil.close(conn,stat,resultSet);
+        }
+        return 0 ;
+    }
+
+    /**
+     * 數據庫 更新操作
+     * @param tableName 用戶表名
+     * @param rowId 表字段ID
+     * @param money 更改的金額
+     * @param type 更改的種類
+     * @param remarks 更改的備註
+     * @return 更新行數
+     */
+    public static int updateByRowId(String tableName ,String rowId ,String money ,String type ,String remarks){
+        java.sql.Connection conn = null ;
+        Statement stat = null ;
+        ResultSet resultSet = null ;
+        try{
+            conn = JDBCUtil.getConnection();
+            stat = conn.createStatement();
+            String sql = "UPDATE "+tableName+" SET money = "+money+" , money_type = '"+type+"' , remarks = '"+remarks+"'  WHERE id = "+rowId;
+            return  stat.executeUpdate(sql);
+        }catch (SQLException e){
+            e.printStackTrace();
+        }finally {
+            JDBCUtil.close(conn,stat,resultSet);
+        }
+        return 0 ;
     }
 
     /**

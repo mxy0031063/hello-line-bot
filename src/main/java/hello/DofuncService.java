@@ -115,6 +115,14 @@ public interface DofuncService {
      * 處理顯示全部帳本記錄圖表
      */
     JFreeChart doShowAllAccountByUser(String replyToken, Event event)throws IOException;
+    /**
+     * 處理帳本刪除紀錄實際操作
+     */
+    void doAccountingDelete(String replyToken, Event event ,TextMessageContent content)throws IOException;
+    /**
+     * 處理帳本更改紀錄實際操作
+     */
+    void doAccountingUpdate(String replyToken, Event event ,TextMessageContent content)throws IOException;
 
 
 
