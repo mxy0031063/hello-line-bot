@@ -78,7 +78,7 @@ public class AccountingUtils {
         try{
             conn = JDBCUtil.getConnection();
             stat = conn.createStatement();
-            String sql = "SELECT id,money_type,money,remarks,to_char(insert_date, 'YYYY-MM') insert_time FROM " + tablename+" WHERE to_char(insert_date, 'YYYY-MM') = '"+date+"'";
+            String sql = "SELECT id,money_type,money,remarks,to_char(insert_date, 'YYYY-MM-dd') insert_time FROM " + tablename+" WHERE to_char(insert_date, 'YYYY-MM') = '"+date+"'";
             resultSet = stat.executeQuery(sql);
             return resultSet;
         }catch (SQLException e){
