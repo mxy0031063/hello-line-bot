@@ -17,6 +17,7 @@ import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
 import hello.utils.AccountingUtils;
 import hello.utils.JDBCUtil;
+import javafx.scene.chart.LineChart;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jfree.chart.ChartFactory;
@@ -31,6 +32,7 @@ import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.chart.title.LegendTitle;
 import org.jfree.chart.title.TextTitle;
 import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DatasetUtilities;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jsoup.Connection;
@@ -861,42 +863,57 @@ public class DofuncServiceImpl implements DofuncService {
         try {
             Map<String,Map<String,Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
             String[] rowKey = {"Food","Clothing","Housing","Transportation","Play","Other"}; //6
-            String[] colKey = new String[dateMap.keySet().size()]; //1
-            double[][] data = new double[colKey.length][rowKey.length]; // [1][6] like {{1},{2},{3},{4},{5},{6}}
+            //String[] colKey = new String[dateMap.keySet().size()]; //1
+           // double[][] data = new double[colKey.length][rowKey.length]; // [1][6] like {{100},{0},{100},{400},{200},{0}}
             int colIndex = 0 ;
-            for (String key : dateMap.keySet() ){
-                colKey[colIndex] = key ; // 時間
-                Map<String,Integer> typeMap = dateMap.get(key); // 當前月份的種類與錢
-                // 所有日期
-                for (int i = 0; i < rowKey.length; i++) {
-                    // 每一個月都循環找各種類的錢
-                    String type = rowKey[i];
-                    Integer typeOfmoney = typeMap.get(type);
-             //       log.info("\n\n type : "+type+"\n\n money : "+typeOfmoney+"\n\n");
-                    if (typeOfmoney != null){
-                        // 這個月的這個種類有紀錄就給值
-                        data[colIndex][i] = typeOfmoney ;
-                    }else {
-                        // 沒紀錄就給0
-                        data[colIndex][i] = 0;
+//            for (String key : dateMap.keySet() ){
+//                colKey[colIndex] = key ; // 時間
+//                Map<String,Integer> typeMap = dateMap.get(key); // 當前月份的種類與錢
+//                // 所有日期
+//                for (int i = 0; i < rowKey.length; i++) {
+//                    // 每一個月都循環找各種類的錢
+//                    String type = rowKey[i];
+//                    Integer typeOfmoney = typeMap.get(type);
+//             //       log.info("\n\n type : "+type+"\n\n money : "+typeOfmoney+"\n\n");
+//                    if (typeOfmoney != null){
+//                        // 這個月的這個種類有紀錄就給值
+//                        data[colIndex][i] = typeOfmoney ;
+//                    }else {
+//                        // 沒紀錄就給0
+//                        data[colIndex][i] = 0;
+//                    }
+//                }
+//                colIndex++;
+//            }
+            DefaultCategoryDataset defaultCategoryDataset = new DefaultCategoryDataset();
+
+            for (String key : dateMap.keySet()) {   // key dateMap中的時間月份
+                Map<String,Integer> typeMap = dateMap.get(key); // 拿到種類 : 錢
+                for (String type : rowKey) {    // type 6個種類的錢
+                    Integer money = typeMap.get(type);  // 拿到這個月的種類是否有錢
+                    if(money == null){  // 沒錢就給0
+                        money = 0 ;
                     }
+                    defaultCategoryDataset.addValue(money,type,key);
                 }
-                colIndex++;
             }
-            Arrays.stream(data).forEach(doubles -> {
-                Arrays.stream(doubles).forEach(dou ->{
-                    log.info("\n\n dou : "+dou+"\n\n");
-                });
-            });
-            CategoryDataset categoryDataset = DatasetUtilities.createCategoryDataset(rowKey,colKey,data);
+
+
+//            Arrays.stream(data).forEach(doubles -> {
+//                Arrays.stream(doubles).forEach(dou ->{
+//                    log.info("\n\n dou : "+dou+"\n\n");
+//                });
+//            });
+
             JFreeChart jFreeChart = ChartFactory.createLineChart("User Accounting Line Chart",
                     "year/month",
                     "total of money",
-                    categoryDataset,
+                    defaultCategoryDataset,
                     PlotOrientation.VERTICAL,
-                    true,
                     false,
+                    true,
                     false);
+            jFreeChart.setBackgroundPaint(Color.WHITE);
             CategoryPlot plot = (CategoryPlot)jFreeChart.getPlot();
             // 背景色 透明度
             plot.setBackgroundAlpha(0.5f);
