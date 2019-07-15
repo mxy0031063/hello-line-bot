@@ -330,11 +330,11 @@ public class DofuncServiceImpl implements DofuncService {
     public String doBeauty(Event event, TextMessageContent content) throws IOException {
         /**
          * clear 方法會把元素清空
-         * 目的 ：再次數超過上限201次時的當下進行 原有數據清空
+         * 目的 ：再次數超過上限101次時的當下進行 原有數據清空
          *        為了讓內容的地址因多次調用APP端沒有進入休眠
          *        而無法更新最新
          */
-        if ( doCount > 200) {
+        if ( doCount > 100) {
             dccardSexList.clear();
             grilImgUrlList.clear();
             doCount = 0 ;
@@ -371,14 +371,12 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     public static void itubaInit() throws IOException{
-        String IMG_GRIL_PATH = "https://m.ituba.cc/meinvtupian/p";
-
-        int[] index = timerUilts.getRandomArrayByValue(2,500);
+//        String IMG_GRIL_PATH = "https://m.ituba.cc/meinvtupian/p";
+//        int[] index = timerUilts.getRandomArrayByValue(2,500);
         List<String> urlLiat = new ArrayList<>();
-        Document document ;
-        for (int num : index) {
-            urlLiat.add(IMG_GRIL_PATH+num+".html");
-        }
+//        for (int num : index) {
+//            urlLiat.add(IMG_GRIL_PATH+num+".html");
+//        }
         urlLiat.add("https://m.ituba.cc/tag/755_2.html");
         urlLiat.add("https://m.ituba.cc/tag/755_3.html");
         urlLiat.add("https://m.ituba.cc/belle/p2.html");
@@ -388,7 +386,7 @@ public class DofuncServiceImpl implements DofuncService {
         urlLiat.add("https://m.ituba.cc/tag/802_1.html");
         urlLiat.add("https://m.ituba.cc/tag/802_2.html");
         for (String str : urlLiat) {
-            document = jsoupClient(str);
+            Document document = jsoupClient(str);
             Elements elements = document.select(".libox img");
             for (Element element : elements) {
                 String url = element.absUrl("src");
