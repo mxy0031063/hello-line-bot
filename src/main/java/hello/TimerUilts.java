@@ -30,68 +30,78 @@ public class TimerUilts implements ApplicationRunner{
 
     @Override
     public void run(ApplicationArguments args) throws IOException {
-        /* keyTextChanage start */
-        keyTextChanage.put("美金","USD");
-        keyTextChanage.put("美元","USD");
-        keyTextChanage.put("台幣","TWD");
-        keyTextChanage.put("元","TWD");
-        keyTextChanage.put("塊","TWD");
-        keyTextChanage.put("新台幣","TWD");
-        keyTextChanage.put("人民幣","CNY");
-        keyTextChanage.put("越南幣","VND");
-        keyTextChanage.put("越南盾","VND");
-        keyTextChanage.put("港幣","HKD");
-        keyTextChanage.put("日幣","JPY");
-        keyTextChanage.put("日圓","JPY");
-        keyTextChanage.put("韓幣","KRW");
-        keyTextChanage.put("韓元","KRW");
-        keyTextChanage.put("泰銖","THB");
-        keyTextChanage.put("泰幣","THB");
-        keyTextChanage.put("泰國幣","THB");
-        keyTextChanage.put("澳幣","AUD");
-        keyTextChanage.put("澳元","AUD");
-        keyTextChanage.put("澳幣","AUD");
-        keyTextChanage.put("歐元","EUR");
-        keyTextChanage.put("英鎊","GBP");
-        keyTextChanage.put("比特幣","BTC");
-        keyTextChanage.put("加拿大幣","CAD");
-        keyTextChanage.put("瑞士法郎","CHF");
-        keyTextChanage.put("法郎","CHF");
-        keyTextChanage.put("法瑯","CHF");
-        keyTextChanage.put("比索","PHP");
-        keyTextChanage.put("瑞典幣","SEK");
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+                /* keyTextChanage start */
+                keyTextChanage.put("美金","USD");
+                keyTextChanage.put("美元","USD");
+                keyTextChanage.put("台幣","TWD");
+                keyTextChanage.put("元","TWD");
+                keyTextChanage.put("塊","TWD");
+                keyTextChanage.put("新台幣","TWD");
+                keyTextChanage.put("人民幣","CNY");
+                keyTextChanage.put("越南幣","VND");
+                keyTextChanage.put("越南盾","VND");
+                keyTextChanage.put("港幣","HKD");
+                keyTextChanage.put("日幣","JPY");
+                keyTextChanage.put("日圓","JPY");
+                keyTextChanage.put("韓幣","KRW");
+                keyTextChanage.put("韓元","KRW");
+                keyTextChanage.put("泰銖","THB");
+                keyTextChanage.put("泰幣","THB");
+                keyTextChanage.put("泰國幣","THB");
+                keyTextChanage.put("澳幣","AUD");
+                keyTextChanage.put("澳元","AUD");
+                keyTextChanage.put("澳幣","AUD");
+                keyTextChanage.put("歐元","EUR");
+                keyTextChanage.put("英鎊","GBP");
+                keyTextChanage.put("比特幣","BTC");
+                keyTextChanage.put("加拿大幣","CAD");
+                keyTextChanage.put("瑞士法郎","CHF");
+                keyTextChanage.put("法郎","CHF");
+                keyTextChanage.put("法瑯","CHF");
+                keyTextChanage.put("比索","PHP");
+                keyTextChanage.put("瑞典幣","SEK");
         /* keyTextChanage end */
         /* tempCity4Id start */
-        tempCity4Id.put("台中","66");
-        tempCity4Id.put("臺中","66");
-        tempCity4Id.put("台北","63");
-        tempCity4Id.put("臺北","63");
-        tempCity4Id.put("基隆","10017");
-        tempCity4Id.put("新北","65");
-        tempCity4Id.put("桃園","68");
-        tempCity4Id.put("新竹市","10018");
-        tempCity4Id.put("新竹縣","10004");
-        tempCity4Id.put("苗栗","10005");
-        tempCity4Id.put("彰化","10007");
-        tempCity4Id.put("南投","10008");
-        tempCity4Id.put("雲林","10009");
-        tempCity4Id.put("嘉義市","10020");
-        tempCity4Id.put("嘉義縣","10010");
-        tempCity4Id.put("台南","67");
-        tempCity4Id.put("臺南","67");
-        tempCity4Id.put("高雄","64");
-        tempCity4Id.put("屏東","10013");
-        tempCity4Id.put("宜蘭","10002");
-        tempCity4Id.put("花蓮","10005");
-        tempCity4Id.put("台東","10014");
-        tempCity4Id.put("臺東","10014");
-        tempCity4Id.put("澎湖","10016");
-        tempCity4Id.put("金門","09020");
-        tempCity4Id.put("連江","09007");
-        tempCity4Id.put("媽祖","09007");
+                tempCity4Id.put("台中","66");
+                tempCity4Id.put("臺中","66");
+                tempCity4Id.put("台北","63");
+                tempCity4Id.put("臺北","63");
+                tempCity4Id.put("基隆","10017");
+                tempCity4Id.put("新北","65");
+                tempCity4Id.put("桃園","68");
+                tempCity4Id.put("新竹市","10018");
+                tempCity4Id.put("新竹縣","10004");
+                tempCity4Id.put("苗栗","10005");
+                tempCity4Id.put("彰化","10007");
+                tempCity4Id.put("南投","10008");
+                tempCity4Id.put("雲林","10009");
+                tempCity4Id.put("嘉義市","10020");
+                tempCity4Id.put("嘉義縣","10010");
+                tempCity4Id.put("台南","67");
+                tempCity4Id.put("臺南","67");
+                tempCity4Id.put("高雄","64");
+                tempCity4Id.put("屏東","10013");
+                tempCity4Id.put("宜蘭","10002");
+                tempCity4Id.put("花蓮","10005");
+                tempCity4Id.put("台東","10014");
+                tempCity4Id.put("臺東","10014");
+                tempCity4Id.put("澎湖","10016");
+                tempCity4Id.put("金門","09020");
+                tempCity4Id.put("連江","09007");
+                tempCity4Id.put("媽祖","09007");
         /* tempCity4Id end */
-        beautyInit();
-        itubaInit();
+                try{
+                    beautyInit();
+                    itubaInit();
+                }catch (IOException e){
+                    e.printStackTrace();
+                }
+            }
+        }.start();
     }
 
 
