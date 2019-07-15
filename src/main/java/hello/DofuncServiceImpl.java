@@ -63,7 +63,7 @@ public class DofuncServiceImpl implements DofuncService {
     @Autowired
     private LineMessagingService lineMessagingService;
     @Autowired
-    private static TimerUilts timerUilts ;
+    private TimerUilts timerUilts ;
 
     private static List<String> grilImgUrlList = new ArrayList<>();
 

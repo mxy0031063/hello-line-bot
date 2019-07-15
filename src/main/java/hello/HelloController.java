@@ -112,30 +112,7 @@ public class HelloController {
      */
     private static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
 
-    /* 城市 ID start */
-    private static final String WEATHER_CITY_TAICHUNG_CITY = "66";  // 台中市
-    private static final String WEATHER_CITY_KEELUNG_CITY = "10017";    // 基隆市
-    private static final String WEATHER_CITY_TAIPEI_CITY = "63";    //  台北市
-    private static final String WEATHER_CITY_NEWTAIPEI_CITY = "65"; //  新北市
-    private static final String WEATHER_CITY_TAOYUAN_CITY = "68";   //  桃園市
-    private static final String WEATHER_CITY_HSINCHU_CITY = "10018";    // 新竹市
-    private static final String WEATHER_CITY_HSINCHU_COUNTY = "10004";  //  新竹縣
-    private static final String WEATHER_CITY_MIAOLI_COUNTY = "10005";   // 苗栗縣
-    private static final String WEATHER_CITY_CHANGHUA_COUNTY = "10007"; //  彰化縣
-    private static final String WEATHER_CITY_NANTOU_COUNTY = "10008";   // 南投縣
-    private static final String WEATHER_CITY_YUNLIN_COUNTY = "10009"; // 雲林縣
-    private static final String WEATHER_CITY_CHIAYI_CITY = "10020"; //  嘉義市
-    private static final String WEATHER_CITY_CHIAYI_COUNTY = "10010";   //嘉義縣
-    private static final String WEATHER_CITY_TAINAN_CITY = "67";    // 台南市
-    private static final String WEATHER_CITY_KAOHSIUNG_CITY = "64"; // 高雄市
-    private static final String WEATHER_CITY_PINGTUNG_COUNTY = "10013"; // 屏東縣
-    private static final String WEATHER_CITY_YLIAN_COUNTY = "10002";    // 宜蘭縣
-    private static final String WEATHER_CITY_HUALIEN_COUNTY = "10015";  //  花蓮縣
-    private static final String WEATHER_CITY_TAITUNG_COUNTY = "10014";  //  台東縣
-    private static final String WEATHER_CITY_PENGHU_COUNTY = "10016";   //  澎湖縣
-    private static final String WEATHER_CITY_KINMEN_COUNTY = "09020";   // 金門縣
-    private static final String WEATHER_CITY_LIENCHIANG_COUNTY = "09007";   //  連江縣
-    /* 城市 ID end */
+
 
     @Autowired
     private TimerUilts timerUilts ;
