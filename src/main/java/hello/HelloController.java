@@ -631,7 +631,7 @@ public class HelloController {
             service.doWeather(replyToken,event,content);
         } else if (text.contains("全球天氣")){
             service.doWorldTemp(replyToken,event,content);
-        } else if (text.matches("[$][0-9]{1,20}[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+        } else if (text.matches("[$][0-9]{1,20}[\\s]?(Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)?[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
             /** 用戶模板記帳輸入 */
             service.doAccounting4User(replyToken,event,content);
         } else if (text.contains("!記帳") || text.contains("！記帳")){
