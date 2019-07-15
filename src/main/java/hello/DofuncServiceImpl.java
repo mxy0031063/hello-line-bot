@@ -63,7 +63,7 @@ public class DofuncServiceImpl implements DofuncService {
     @Autowired
     private LineMessagingService lineMessagingService;
     @Autowired
-    private TimerUilts timerUilts ;
+    private static TimerUilts timerUilts ;
 
     private static List<String> grilImgUrlList = new ArrayList<>();
 
@@ -370,7 +370,7 @@ public class DofuncServiceImpl implements DofuncService {
         return url ;
     }
 
-    private void itubaInit() throws IOException{
+    public static void itubaInit() throws IOException{
         String IMG_GRIL_PATH = "https://m.ituba.cc/meinvtupian/p";
 
         int[] index = timerUilts.getRandomArrayByValue(2,500);
@@ -1105,7 +1105,7 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
 
-    private static void beautyInit() throws IOException{
+    public static void beautyInit() throws IOException{
         log.info("beautyList Function INIT ... ");
         Document doc = jsoupClient(PTT_BEAUTY_URL);
         Elements lastPageArray = doc.getElementsByClass("btn-group-paging");

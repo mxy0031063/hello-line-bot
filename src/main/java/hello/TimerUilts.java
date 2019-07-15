@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.*;
+import static hello.DofuncServiceImpl.beautyInit;
+import static hello.DofuncServiceImpl.itubaInit;
 
 @Component
 @Order(value = 1)
@@ -88,6 +90,8 @@ public class TimerUilts implements ApplicationRunner{
         tempCity4Id.put("連江","09007");
         tempCity4Id.put("媽祖","09007");
         /* tempCity4Id end */
+        beautyInit();
+        itubaInit();
     }
 
 
