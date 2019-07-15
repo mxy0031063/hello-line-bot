@@ -810,6 +810,15 @@ public class DofuncServiceImpl implements DofuncService {
      */
     @Override
     public void doAccountingOperating(String replyToken, Event event, TextMessageContent content) throws IOException {
+        String tableName = getTableName(event);
+        try{
+            if (!AccountingUtils.checkTableExits(tableName)) {
+                this.replyText(replyToken,"先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
+                return;
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
         String imgUrl2 = createUri("/static/AccountingImage/AccountingImage2.jpg");
         CarouselTemplate carouselTemplate = new CarouselTemplate(
                 Arrays.asList(
@@ -844,6 +853,14 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public void doShowAccountingMonth4Detailed(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
+        try{
+            if (!AccountingUtils.checkTableExits(tableName)) {
+                this.replyText(replyToken,"先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
+                return;
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
         LocalDate localDate = LocalDate.now();
         String time = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
         try(ResultSet resultSet = AccountingUtils.selectAccounting4Month(tableName,time)){
@@ -878,6 +895,14 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public JFreeChart doShowAllAccountByUser(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
+        try{
+            if (!AccountingUtils.checkTableExits(tableName)) {
+                this.replyText(replyToken,"先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
+                return null;
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
         // 拿到數據
         ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName);
         try {
