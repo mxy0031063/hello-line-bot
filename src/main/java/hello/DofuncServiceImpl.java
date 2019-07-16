@@ -1120,8 +1120,9 @@ public class DofuncServiceImpl implements DofuncService {
 
     private void dccardSexInit(String path, int count) throws IOException {
         log.info("DcardList finction INIT ...");
-        okhttp3.Response response = timerUilts.clientHttp(path);
-        String returnText = response.body().string();
+//        okhttp3.Response response = timerUilts.clientHttp(path);
+//        String returnText = response.body().string();
+        String returnText = jsoupClient(path).text();
         JSONArray page = JSONArray.parseArray(returnText);
         String pageId = null;
         for (int i = 0; i < page.size(); i++) {

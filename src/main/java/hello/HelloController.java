@@ -631,6 +631,10 @@ public class HelloController {
         } else if(text.contains("push")){
             String userId = event.getSource().getUserId();
             String[]strings = text.split("-");
+            if (text.contains("pushAll")){
+                service.doPushMessage4All(new TextMessage(strings[1]),event);
+                return;
+            }
             String type = strings[1];
             String message = strings[2];
             service.doPushMessage2Type(new TextMessage(message),event,type);
