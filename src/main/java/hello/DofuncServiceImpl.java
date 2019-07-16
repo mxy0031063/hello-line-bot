@@ -627,7 +627,7 @@ public class DofuncServiceImpl implements DofuncService {
             // 完整語法
             String[]strings = text.split("[_|\\s]");
             String money = strings[0].replaceAll("[$]","");
-            String type = strings[1];
+            String type = strings[1].toLowerCase();     // 默認寫入小寫
             String remarks = strings[2];
             String tableName = TABLE_PERFIX + userId.toLowerCase() ;
             ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
@@ -716,7 +716,7 @@ public class DofuncServiceImpl implements DofuncService {
         String userId = strings[1].toLowerCase();
         String money = strings[2];
         String remorks = strings[3];
-        String moneyType = strings[4];
+        String moneyType = strings[4].toLowerCase();    // 默認寫入類型小寫
         //創建表 (表不存在創建 存在新增)
         String oldtableName = TABLE_PERFIX + userId;
         String newtableName = getTableName(event);
@@ -929,7 +929,7 @@ public class DofuncServiceImpl implements DofuncService {
             for (String key : dateMap.keySet()) {   // key dateMap中的時間月份
                 Map<String,Integer> typeMap = dateMap.get(key); // 拿到種類 : 錢
                 for (String type : rowKey) {    // type 6個種類的錢
-                    Integer money = typeMap.get(type);  // 拿到這個月的種類是否有錢
+                    Integer money = typeMap.get(type.toLowerCase());  // 拿到這個月的種類是否有錢 由於默認類型默認寫入小寫 所以get要小寫處理
                     if(money == null){  // 沒錢就給0
                         money = 0 ;
                     }
@@ -1019,7 +1019,7 @@ public class DofuncServiceImpl implements DofuncService {
         String[] strings = text.split("[_|\\s]");
         String rowId = strings[1];
         String money = strings[2].replaceAll("[$]","");
-        String type = strings[3];
+        String type = strings[3].toLowerCase(); // 寫入時默認類型小寫
         String remarks = strings[4];
         // util
         int updateConut = AccountingUtils.updateByRowId(tableName,rowId,money,type,remarks);
