@@ -1118,7 +1118,7 @@ public class DofuncServiceImpl implements DofuncService {
         }
     }
 
-    private void dccardSexInit(String path, int count) throws IOException {
+    public static void dccardSexInit(String path, int count) throws IOException {
         log.info("DcardList finction INIT ...");
 //        okhttp3.Response response = timerUilts.clientHttp(path);
 //        String returnText = response.body().string();
