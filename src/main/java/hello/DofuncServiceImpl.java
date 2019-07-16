@@ -79,11 +79,7 @@ public class DofuncServiceImpl implements DofuncService {
 
     private static Map<String, Integer> prize = new HashMap<>();
 
-    static int dccardSexCount ;
-
-
-
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DofuncServiceImpl.class);
 
     @Override
     public void doWeather(String replyToken, Event event, TextMessageContent content) {
