@@ -608,6 +608,21 @@ public class HelloController {
             // 找不到城市就輸出
             //改成模板 按模版 選擇想要觀看的東西
             service.doWeather(replyToken,event,content);
+        } else if(text.contains("push")){
+            String userId = event.getSource().getUserId();
+            String[]strings = text.split("-");
+            String message = strings[1];
+            PushMessage pushMessage = new PushMessage(userId,new TextMessage(message));
+            Response<BotApiResponse> apiResponse =
+                null;
+            try {
+                apiResponse = lineMessagingService
+                        .pushMessage(pushMessage)
+                        .execute();
+                log.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         } else if (text.contains("全球天氣")){
             service.doWorldTemp(replyToken,event,content);
         } else if (text.matches("[$][0-9]{1,20}[\\s]?(Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)?[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
