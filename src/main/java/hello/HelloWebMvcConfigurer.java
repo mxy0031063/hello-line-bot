@@ -18,6 +18,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @Slf4j
 public class HelloWebMvcConfigurer extends WebMvcConfigurerAdapter {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HelloWebMvcConfigurer.class);
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String downloadedContentUri = HelloApplication.downloadedContentDir.toUri().toASCIIString();

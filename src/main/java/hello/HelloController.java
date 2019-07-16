@@ -86,6 +86,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @RestController
 public class HelloController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HelloController.class);
+
     private static List<String> messagePush = new ArrayList<>();
 
     private static final int PUSH_AMOUNT = 2 ;
