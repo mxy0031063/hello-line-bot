@@ -1,9 +1,15 @@
 package hello.utils;
 
+import com.linecorp.bot.model.event.Event;
+
+import java.awt.*;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,21 +51,22 @@ public class AccountingUtils {
     }
 
     /**
-     *  查詢用戶帳本
+     * 查詢用戶帳本
+     *
      * @param tablename 表名
      * @return 查詢集
      */
-    public static ResultSet selectAccountingUser(String tablename){
-        java.sql.Connection conn = null ;
-        Statement stat = null ;
-        ResultSet resultSet = null ;
-        try{
+    public static ResultSet selectAccountingUser(String tablename) {
+        java.sql.Connection conn = null;
+        Statement stat = null;
+        ResultSet resultSet = null;
+        try {
             conn = JDBCUtil.getConnection();
             stat = conn.createStatement();
             String sql = "SELECT id,money_type,money,remarks,to_char(insert_date, 'YYYY-MM') insert_time FROM " + tablename;
             resultSet = stat.executeQuery(sql);
             return resultSet;
-        }catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
@@ -67,33 +74,35 @@ public class AccountingUtils {
 
     /**
      * 依照月份查詳細帳本
+     *
      * @param tablename 用戶表名
-     * @param date 時間
+     * @param date      時間
      * @return 結果集
      */
-    public static ResultSet selectAccounting4Month(String tablename, String date){
-        java.sql.Connection conn = null ;
-        Statement stat = null ;
-        ResultSet resultSet = null ;
-        try{
+    public static ResultSet selectAccounting4Month(String tablename, String date) {
+        java.sql.Connection conn = null;
+        Statement stat = null;
+        ResultSet resultSet = null;
+        try {
             conn = JDBCUtil.getConnection();
             stat = conn.createStatement();
-            String sql = "SELECT id,money_type,money,remarks,to_char(insert_date, 'YYYY-MM-dd') insert_time FROM " + tablename+" WHERE to_char(insert_date, 'YYYY-MM') = '"+date+"'";
+            String sql = "SELECT id,money_type,money,remarks,to_char(insert_date, 'YYYY-MM-dd') insert_time FROM " + tablename + " WHERE to_char(insert_date, 'YYYY-MM') = '" + date + "'";
             resultSet = stat.executeQuery(sql);
             return resultSet;
-        }catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
     }
 
     /**
-     *  帳本轉Map結構 依照月份分組的各類型錢總和
+     * 帳本轉Map結構 依照月份分組的各類型錢總和
+     *
      * @param resultSet 查詢的結果
-     * @return  轉換完成的MAP
+     * @return 轉換完成的MAP
      * @throws SQLException 拋出sql異常
      */
-    public static Map<String,Map<String,Integer>> resultSet2Map(ResultSet resultSet) throws SQLException{
+    public static Map<String, Map<String, Integer>> resultSet2Map(ResultSet resultSet) throws SQLException {
         Map<String, Map<String, Integer>> dateMap = new HashMap<>(); // 各月份里面有类型,钱 size = 月份数量
         while (resultSet.next()) {
             // 每条数据
@@ -124,63 +133,136 @@ public class AccountingUtils {
                 // 月份不存在 新增
                 Map<String, Integer> newType = new HashMap<>();
                 newType.put(type, money);
-                dateMap.put(date,newType);
+                dateMap.put(date, newType);
             }
         }
         return dateMap;
     }
 
     /**
-     *  數據庫 刪除操作
+     * 數據庫 刪除操作
+     *
      * @param tableName 用戶表名
-     * @param rowId 表ID
+     * @param rowId     表ID
      * @return 更新行數
      */
-    public static int delByRowId(String tableName ,String rowId){
-        java.sql.Connection conn = null ;
-        Statement stat = null ;
-        ResultSet resultSet = null ;
-        try{
+    public static int delByRowId(String tableName, String rowId) {
+        java.sql.Connection conn = null;
+        Statement stat = null;
+        ResultSet resultSet = null;
+        try {
             conn = JDBCUtil.getConnection();
             stat = conn.createStatement();
-            String sql = "DELETE FROM "+tableName+" WHERE id = "+rowId;
-            return  stat.executeUpdate(sql);
-        }catch (SQLException e){
+            String sql = "DELETE FROM " + tableName + " WHERE id = " + rowId;
+            return stat.executeUpdate(sql);
+        } catch (SQLException e) {
             e.printStackTrace();
-        }finally {
-            JDBCUtil.close(conn,stat,resultSet);
+        } finally {
+            JDBCUtil.close(conn, stat, resultSet);
         }
-        return 0 ;
+        return 0;
     }
 
     /**
      * 數據庫 更新操作
+     *
      * @param tableName 用戶表名
-     * @param rowId 表字段ID
-     * @param money 更改的金額
-     * @param type 更改的種類
-     * @param remarks 更改的備註
+     * @param rowId     表字段ID
+     * @param money     更改的金額
+     * @param type      更改的種類
+     * @param remarks   更改的備註
      * @return 更新行數
      */
-    public static int updateByRowId(String tableName ,String rowId ,String money ,String type ,String remarks){
-        java.sql.Connection conn = null ;
-        Statement stat = null ;
-        ResultSet resultSet = null ;
-        try{
+    public static int updateByRowId(String tableName, String rowId, String money, String type, String remarks) {
+        java.sql.Connection conn = null;
+        Statement stat = null;
+        ResultSet resultSet = null;
+        try {
             conn = JDBCUtil.getConnection();
             stat = conn.createStatement();
-            String sql = "UPDATE "+tableName+" SET money = "+money+" , money_type = '"+type+"' , remarks = '"+remarks+"'  WHERE id = "+rowId;
-            return  stat.executeUpdate(sql);
-        }catch (SQLException e){
+            String sql = "UPDATE " + tableName + " SET money = " + money + " , money_type = '" + type + "' , remarks = '" + remarks + "'  WHERE id = " + rowId;
+            return stat.executeUpdate(sql);
+        } catch (SQLException e) {
             e.printStackTrace();
-        }finally {
-            JDBCUtil.close(conn,stat,resultSet);
+        } finally {
+            JDBCUtil.close(conn, stat, resultSet);
         }
-        return 0 ;
+        return 0;
+    }
+
+    /**
+     * 找全部的id
+     *
+     * @return ID
+     */
+    public static ResultSet selectIdInfo() {
+        java.sql.Connection conn = null;
+        Statement stat = null;
+        ResultSet resultSet = null;
+        try {
+            conn = JDBCUtil.getConnection();
+            stat = conn.createStatement();
+            String sql = "SELECT id FROM id_info ";
+            resultSet = stat.executeQuery(sql);
+            return resultSet;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * 傳入 type 或 date 找 id
+     * 時間值為 再傳入時間之後的紀錄
+     *
+     * @param args TYPE OR DATE
+     * @return ID
+     */
+    public static ResultSet selectIdInfo(String... args) {
+        java.sql.Connection conn = null;
+        Statement stat = null;
+        ResultSet resultSet = null;
+        try {
+            String sql = null;
+            if (args.length > 1) {
+                sql = args[0].matches("[0-9]{4}-[0-9]{2}-[0-9]{2}") ?
+                        "SELECT id FROM id_info a WHERE a.type = '" + args[1] + "' AND a.date > '" + args[0] + "'" :
+                        "SELECT id FROM id_info a WHERE a.type = '" + args[0] + "' AND a.date > '" + args[1] + "'";
+            } else {
+                sql = args[0].matches("[0-9]{4}-[0-9]{2}-[0-9]{2}") ?
+                        "SELECT id FROM id_info a WHERE a.date > '" + args[0] + "'" :
+                        "SELECT id FROM id_info a WHERE a.type = '" + args[0] + "'";
+            }
+            conn = JDBCUtil.getConnection();
+            stat = conn.createStatement();
+            resultSet = stat.executeQuery(sql);
+            return resultSet;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static void joinAction(String type , String id , String date){
+        java.sql.Connection conn = null;
+        Statement stat = null;
+        try {
+            conn = JDBCUtil.getConnection();
+            String sql = null;
+            stat = conn.createStatement();
+            // 表存在 insert
+            sql = "INSERT INTO id_info (type,id,date) VALUES ('" + type + "','" + id + "','" + date + "')";
+            stat.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            JDBCUtil.close(conn, stat);
+        }
     }
 
     /**
      * 判斷庫是否存在
+     *
      * @param tableName 用戶名ID
      * @return true = 存在 false = 不存在
      * @throws SQLException 連接異常

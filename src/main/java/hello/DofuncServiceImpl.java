@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.linecorp.bot.client.LineMessagingService;
+import com.linecorp.bot.model.PushMessage;
 import com.linecorp.bot.model.ReplyMessage;
 import com.linecorp.bot.model.action.PostbackAction;
 import com.linecorp.bot.model.event.Event;
@@ -17,6 +18,7 @@ import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
 import hello.utils.AccountingUtils;
 
+import hello.utils.JDBCUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jfree.chart.ChartFactory;
@@ -63,7 +65,7 @@ public class DofuncServiceImpl implements DofuncService {
     @Autowired
     private LineMessagingService lineMessagingService;
     @Autowired
-    private TimerUilts timerUilts ;
+    private TimerUilts timerUilts;
 
     private static List<String> grilImgUrlList = new ArrayList<>();
 
@@ -71,11 +73,11 @@ public class DofuncServiceImpl implements DofuncService {
 
     // private static String oilReturnText ;
 
-    private static String currencyReturnText ;
+    private static String currencyReturnText;
 
     private static List<String> dccardSexList = new ArrayList<>();
 
-    private static Map<String,String> weatherMap = new HashMap();
+    private static Map<String, String> weatherMap = new HashMap();
 
     private static Map<String, Integer> prize = new HashMap<>();
 
@@ -110,7 +112,7 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     @Override
-    public void doOliPrice(String replyToken, Event event, TextMessageContent content) throws IOException{
+    public void doOliPrice(String replyToken, Event event, TextMessageContent content) throws IOException {
 
 //        String message = response.message();
 //        if (!message.equals("OK")){
@@ -122,8 +124,8 @@ public class DofuncServiceImpl implements DofuncService {
 //            okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH) ;
 //            oilReturnText =  response.body().string();
 //        }
-        okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH) ;
-        String returnText = response.body().string() ;
+        okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH);
+        String returnText = response.body().string();
         StringBuilder outText = new StringBuilder();
 
 
@@ -136,27 +138,27 @@ public class DofuncServiceImpl implements DofuncService {
         oilName.add("酒精汽油");
         oilName.add("超級柴油");
         oilName.add("液化石油氣");
-        for (int i = 1; i <= 6 ; i++) {
-            String item = "sPrice"+i;
+        for (int i = 1; i <= 6; i++) {
+            String item = "sPrice" + i;
             int index = returnText.indexOf(item);
-            String oilPrice = returnText.substring(index+10, index + 14);
+            String oilPrice = returnText.substring(index + 10, index + 14);
             outText.append(oilName.get(i - 1)).append(" -> ").append(oilPrice).append("\n");
         }
         /** 公布的油價 漲或跌 */
-        int upDownIndex = returnText.indexOf("class=\\\"sys\\\"")+19;
-        int upDownEndIndex = upDownIndex+2 ;
+        int upDownIndex = returnText.indexOf("class=\\\"sys\\\"") + 19;
+        int upDownEndIndex = upDownIndex + 2;
         String upOrDown = returnText.substring(
-                upDownIndex,upDownEndIndex
+                upDownIndex, upDownEndIndex
         );
-        int upDownPriceIndex = returnText.indexOf("class=\\\"rate\\")+33;
-        int upDownPriceEndIndex = upDownPriceIndex+3;
+        int upDownPriceIndex = returnText.indexOf("class=\\\"rate\\") + 33;
+        int upDownPriceEndIndex = upDownPriceIndex + 3;
         String upDownPrice = returnText.substring(
-                upDownPriceIndex,upDownPriceEndIndex
+                upDownPriceIndex, upDownPriceEndIndex
         );
         outText.append("本週汽油價格 ").append(upOrDown).append(" -> ").append(upDownPrice).append(" 元\n");
         /** 實施日期 */
-        int priceUpdateDateIndex = returnText.indexOf("PriceUpdate")+14;
-        int endIndex = priceUpdateDateIndex+5;
+        int priceUpdateDateIndex = returnText.indexOf("PriceUpdate") + 14;
+        int endIndex = priceUpdateDateIndex + 5;
         String oilPriceUpdate = returnText.substring(
                 priceUpdateDateIndex, endIndex
         );
@@ -166,24 +168,24 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     @Override
-    public void doCurrency(String replyToken, Event event, TextMessageContent content) throws IOException{
+    public void doCurrency(String replyToken, Event event, TextMessageContent content) throws IOException {
 
-        if (currencyReturnText == null ){
-            okhttp3.Response response = timerUilts.clientHttp(EXRATE_PATH) ;
+        if (currencyReturnText == null) {
+            okhttp3.Response response = timerUilts.clientHttp(EXRATE_PATH);
             currencyReturnText = response.body().string();
         }
-        String returnText = currencyReturnText ;
+        String returnText = currencyReturnText;
 
-        Map<String,String> currExrateMap = new HashMap<>(); //匯率表
-        String text = returnText.substring(1,returnText.length()-1);
+        Map<String, String> currExrateMap = new HashMap<>(); //匯率表
+        String text = returnText.substring(1, returnText.length() - 1);
         String[] strings = text.split(",");
-        for (int i = 0;i < strings.length;i++){
-            if (i%2==0){
+        for (int i = 0; i < strings.length; i++) {
+            if (i % 2 == 0) {
                 String[] mapKeySet = strings[i].split(":");
                 String str = mapKeySet[0];
-                String key = str.substring(str.indexOf("\"")+1,str.lastIndexOf("\"")).trim();
+                String key = str.substring(str.indexOf("\"") + 1, str.lastIndexOf("\"")).trim();
                 String value = mapKeySet[2].trim();
-                currExrateMap.put(key,value);
+                currExrateMap.put(key, value);
             }
         }
         // 獲得訊息
@@ -192,39 +194,39 @@ public class DofuncServiceImpl implements DofuncService {
         String money = textMessage.split("[-|\\s]")[0];
         BigDecimal moneyCurrFrom = new BigDecimal(money);
         // 獲得來源幣種
-        int currFromIndex = (money).length()+1;
-        String currFrom = textMessage.substring(textMessage.indexOf(money)+currFromIndex,textMessage.indexOf("等於多少"));
+        int currFromIndex = (money).length() + 1;
+        String currFrom = textMessage.substring(textMessage.indexOf(money) + currFromIndex, textMessage.indexOf("等於多少"));
         // 獲得目標幣種
-        String currTo = textMessage.substring(textMessage.indexOf("等於多少")+4);
+        String currTo = textMessage.substring(textMessage.indexOf("等於多少") + 4);
         // 把來源金額轉美金
         String currFromExrate = timerUilts.getKeyTextChanage().get(currFrom); // 轉為國際代碼
-        if (currFromExrate==null) {
+        if (currFromExrate == null) {
             this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
             return;
         }
-        BigDecimal moneyCurrTo = null ;
-        if (!currFromExrate.equals("USD")){
+        BigDecimal moneyCurrTo = null;
+        if (!currFromExrate.equals("USD")) {
             // 來源幣種不是美金 要轉換
             // Map格式 USDXXX 獲得匯率
-            String exrateFrom = currExrateMap.get("USD"+currFromExrate);
+            String exrateFrom = currExrateMap.get("USD" + currFromExrate);
             // 來源金額 = 多少美金?
             BigDecimal bigDecimal = new BigDecimal(exrateFrom);
-            moneyCurrTo = moneyCurrFrom.divide(bigDecimal,3,BigDecimal.ROUND_HALF_UP);
-        }else {
+            moneyCurrTo = moneyCurrFrom.divide(bigDecimal, 3, BigDecimal.ROUND_HALF_UP);
+        } else {
             // 來源金額是美金
-            moneyCurrTo = moneyCurrFrom ;
+            moneyCurrTo = moneyCurrFrom;
         }
         // 目標幣種
         String currToExrate = timerUilts.getKeyTextChanage().get(currTo); // 轉為國際代碼
-        if (currToExrate==null) {
+        if (currToExrate == null) {
             this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
             return;
         }
-        if (currToExrate.equals(currFromExrate)){
-            this.replyText(replyToken,"are u joke me ?");
-        }else if(currToExrate.equals("USD")){
+        if (currToExrate.equals(currFromExrate)) {
+            this.replyText(replyToken, "are u joke me ?");
+        } else if (currToExrate.equals("USD")) {
             // 是美金 直接輸出
-            this.replyText(replyToken, "約等於 "+moneyCurrTo.toString()+" 元");
+            this.replyText(replyToken, "約等於 " + moneyCurrTo.toString() + " 元");
         } else {
             // 獲得目標匯率
             String exrateTo = currExrateMap.get("USD" + currToExrate);
@@ -315,9 +317,12 @@ public class DofuncServiceImpl implements DofuncService {
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
         this.reply(replyToken, templateMessage);
     }
-    private static int doCount  ;
+
+    private static int doCount;
+
     /**
      * 處理 表特抽卡
+     *
      * @param event
      * @param content
      * @throws IOException
@@ -330,43 +335,43 @@ public class DofuncServiceImpl implements DofuncService {
          *        為了讓內容的地址因多次調用APP端沒有進入休眠
          *        而無法更新最新
          */
-        if ( doCount > 100) {
+        if (doCount > 100) {
             dccardSexList.clear();
             grilImgUrlList.clear();
-            doCount = 0 ;
+            doCount = 0;
         }
 
         String text = content.getText();
         Random random = new Random();
-        int index ;
-        String url ;
-        doCount ++ ;
-        if(text.contains("西施")|| text.contains("西斯") || text.contains("sex")){
+        int index;
+        String url;
+        doCount++;
+        if (text.contains("西施") || text.contains("西斯") || text.contains("sex")) {
             if (dccardSexList.size() < 1) {
-                dccardSexInit(DCCARD_SEX_PATH,80);
-                dccardSexInit(DCARD_SEX_NEW_PATH,150);
+                dccardSexInit(DCCARD_SEX_PATH, 80);
+                dccardSexInit(DCARD_SEX_NEW_PATH, 150);
             }
             index = random.nextInt(dccardSexList.size());
             url = dccardSexList.get(index);
-        }else {
-            if (grilImgUrlList.size() < 1){
+        } else {
+            if (grilImgUrlList.size() < 1) {
                 long start = System.currentTimeMillis();
                 beautyInit();
                 long beautyEnd = System.currentTimeMillis();
                 itubaInit();
                 long itubaEnd = System.currentTimeMillis();
-                log.info("\n 表特版加仔時間 ："+(beautyEnd-start)+"\n ituba 加載時間 ："+(itubaEnd-beautyEnd));
+                log.info("\n 表特版加仔時間 ：" + (beautyEnd - start) + "\n ituba 加載時間 ：" + (itubaEnd - beautyEnd));
             }
             index = random.nextInt(grilImgUrlList.size());
             url = grilImgUrlList.get(index);
         }
 
-        log.info("抽卡集合元素 : "+grilImgUrlList.size()+"\n 西施集合元素 : "+dccardSexList.size()+"\n 執行次數 : "+doCount);
+        log.info("抽卡集合元素 : " + grilImgUrlList.size() + "\n 西施集合元素 : " + dccardSexList.size() + "\n 執行次數 : " + doCount);
 
-        return url ;
+        return url;
     }
 
-    public static void itubaInit() throws IOException{
+    public static void itubaInit() throws IOException {
 //        String IMG_GRIL_PATH = "https://m.ituba.cc/meinvtupian/p";
 //        int[] index = timerUilts.getRandomArrayByValue(2,500);
         List<String> urlLiat = new ArrayList<>();
@@ -386,7 +391,7 @@ public class DofuncServiceImpl implements DofuncService {
             Elements elements = document.select(".libox img");
             for (Element element : elements) {
                 String url = element.absUrl("src");
-                if(url.length()!=0){
+                if (url.length() != 0) {
                     grilImgUrlList.add(url);
                 }
             }
@@ -396,6 +401,7 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 處理AV搜尋 - 並默認隨機返回一個搜尋結果
+     *
      * @param replyToken
      * @param event
      * @param content
@@ -407,21 +413,21 @@ public class DofuncServiceImpl implements DofuncService {
         ArrayList<ArrayList<String>> lists = new ArrayList<>();
 
         String text = content.getText();
-        String searchText = text.substring(text.indexOf("!av")+4);
+        String searchText = text.substring(text.indexOf("!av") + 4);
 
         Document doc = jsoupClient(AV01_SEARCH_PATH + searchText);
 
-        Elements vedio =  doc.getElementsByClass("col-lg-4");
-        if (vedio == null){
-            this.replyText(replyToken,"沒有找到你要的關鍵字 \n 試著打女優作品或是名子 \n 你的關鍵字 : "+searchText);
+        Elements vedio = doc.getElementsByClass("col-lg-4");
+        if (vedio == null) {
+            this.replyText(replyToken, "沒有找到你要的關鍵字 \n 試著打女優作品或是名子 \n 你的關鍵字 : " + searchText);
             return null;
         }
         for (Element element : vedio) {
-            ArrayList<String>list = new ArrayList<>();
+            ArrayList<String> list = new ArrayList<>();
             Elements elements = element.getElementsByTag("a");
             String vedioUrl = elements.get(0).absUrl("href");
             String imgUrl = element.getElementsByTag("img").get(0).absUrl("src");
-            if (imgUrl.length()==0){
+            if (imgUrl.length() == 0) {
                 imgUrl = element.getElementsByTag("img").get(0).absUrl("data-src");
             }
             list.add(vedioUrl);
@@ -432,28 +438,29 @@ public class DofuncServiceImpl implements DofuncService {
         int listSize = lists.size();
         ArrayList<ArrayList<String>> returnList = new ArrayList<>();
         // 元素小於三個直接給
-        if (listSize <= 3){
-            return lists ;
+        if (listSize <= 3) {
+            return lists;
         }
-        int[] index = timerUilts.getRandomArrayByValue(3,listSize);
+        int[] index = timerUilts.getRandomArrayByValue(3, listSize);
         for (int i = 0; i < index.length; i++) {
             returnList.add(lists.get(index[i]));
         }
-        return returnList ;
+        return returnList;
     }
 
     /**
      * 處理 城市天氣  目前做一天的
+     *
      * @param replyToken
      * @param event
      * @param content
      * @throws IOException
      */
     @Override
-    public void doCityTemp(String replyToken, Event event, TextMessageContent content,String city) throws IOException {
-        Document doc = jsoupClient(WEATHER_SEARCH_TODAY_PATH,false);
+    public void doCityTemp(String replyToken, Event event, TextMessageContent content, String city) throws IOException {
+        Document doc = jsoupClient(WEATHER_SEARCH_TODAY_PATH, false);
         String str = doc.body().text();
-        String jsonString = str.substring(str.indexOf("{"),str.length()-1);
+        String jsonString = str.substring(str.indexOf("{"), str.length() - 1);
         JSONObject jsonObject = JSON.parseObject(jsonString);
         JSONArray jsonArray = jsonObject.getJSONArray(city);
         StringBuilder outputText = new StringBuilder();
@@ -478,24 +485,24 @@ public class DofuncServiceImpl implements DofuncService {
                 .append("       氣溫 : ").append(temp[2].getString("L")).append(" ～ ").append(temp[2].getString("H")).append("\n")
                 .append("       降雨機率 : ").append(jsonObjects[2].getString("PoP")).append(" %").append("\n")
                 .append("       舒適度 : ").append(jsonObjects[2].getString("CI")).append("\n");
-        this.replyText(replyToken,outputText.toString());
+        this.replyText(replyToken, outputText.toString());
     }
 
     @Override
     public void doWorldTemp(String replyToken, Event event, TextMessageContent content) throws IOException {
-        if (weatherMap.size() == 0){
+        if (weatherMap.size() == 0) {
             inItWorldCityMap();
         }
         String text = content.getText();
-        String userInput = text.substring(text.indexOf("全球天氣")+5);
+        String userInput = text.substring(text.indexOf("全球天氣") + 5);
         String cId = weatherMap.get(userInput);
-        log.info("doWorldTemp **  CID = "+cId+" ** userInput : "+userInput+"** weatherMap : "+weatherMap.size());
-        if (cId == null){
-            this.replyText(replyToken,"找不到你說的城市");
-            return ;
+        log.info("doWorldTemp **  CID = " + cId + " ** userInput : " + userInput + "** weatherMap : " + weatherMap.size());
+        if (cId == null) {
+            this.replyText(replyToken, "找不到你說的城市");
+            return;
         }
         String cityPath = "http://worldweather.wmo.int/tc/json/";
-        Document document1 = jsoupClient(cityPath+cId+"_tc.xml");
+        Document document1 = jsoupClient(cityPath + cId + "_tc.xml");
         String citySearch = document1.text();
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("你查詢的城市為 ：").append(userInput).append("\n");
@@ -508,12 +515,13 @@ public class DofuncServiceImpl implements DofuncService {
                     .append("       溫度 ： ").append(json.getString("minTemp")).append("  ～  ").append(json.getString("maxTemp")).append("\n")
                     .append("       天氣描述 ：").append(json.getString("weather")).append("\n\n");
         }
-        this.replyText(replyToken,stringBuilder.toString());
+        this.replyText(replyToken, stringBuilder.toString());
         return;
     }
 
     /**
      * 處理顯示發票邏輯
+     *
      * @param replyToken
      * @param event
      * @param content
@@ -524,12 +532,12 @@ public class DofuncServiceImpl implements DofuncService {
         Document document = jsoupClient(INVOICE_PATH);
         Element titleDate = document.select("#area1 h2").get(1);
         String dataTime = titleDate.text();
-        Elements table =  document.select("#area1 table tr");
+        Elements table = document.select("#area1 table tr");
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(dataTime).append("\n");
         for (Element item : table) {
             Elements td = item.select("td");
-            if (td.size() == 0){
+            if (td.size() == 0) {
                 continue;
             }
             String tdTitle = td.get(0).text();
@@ -537,11 +545,12 @@ public class DofuncServiceImpl implements DofuncService {
             String desc = td.get(1).text();
             stringBuilder.append(desc).append("\n\n");
         }
-        this.replyText(replyToken,stringBuilder.toString());
+        this.replyText(replyToken, stringBuilder.toString());
     }
 
     /**
      * 處理發票兌獎
+     *
      * @param replyToken
      * @param event
      * @param content
@@ -549,68 +558,68 @@ public class DofuncServiceImpl implements DofuncService {
      */
     @Override
     public void doInvoice4Check(String replyToken, Event event, TextMessageContent content) throws IOException {
-        if(prize.size() == 0){
+        if (prize.size() == 0) {
             inItPrize();
         }
         String number = content.getText();
-        String str = number.replaceAll("[!|！| ]","");
+        String str = number.replaceAll("[!|！| ]", "");
         List<Integer> list = new ArrayList<>();
-        prize.keySet().forEach((key)->{
-            if (str.endsWith(key)){
+        prize.keySet().forEach((key) -> {
+            if (str.endsWith(key)) {
                 list.add(prize.get(key));
             }
         });
-        if (list.size() == 0){
-            this.replyText(replyToken,"很遺憾 沒有中獎");
-        }else {
-            Integer now ;
+        if (list.size() == 0) {
+            this.replyText(replyToken, "很遺憾 沒有中獎");
+        } else {
+            Integer now;
             Integer old = 0;
             for (Integer money : list) {
                 now = money;
-                if (now > old){
-                    old = now ;
+                if (now > old) {
+                    old = now;
                 }
             }
-            String outText ;
-            switch (old){
-                case 200 :{
+            String outText;
+            switch (old) {
+                case 200: {
                     outText = "恭喜你 中了 二百元";
                     break;
                 }
-                case 1000 :{
+                case 1000: {
                     outText = "恭喜你 中了 一千元  小確幸<3";
                     break;
                 }
-                case 4000 :{
+                case 4000: {
                     outText = "恭喜你 中了 四千元  天啊!! 可以吃一頓大餐了";
                     break;
                 }
-                case 10000 :{
+                case 10000: {
                     outText = "恭喜你 中了 一萬元  挖~這運氣也太好了吧!!";
                     break;
                 }
-                case 40000 :{
+                case 40000: {
                     outText = "恭喜你 中了 四萬元   這..可以考慮出國一趟摟 !!";
                     break;
                 }
-                case 200000 :{
+                case 200000: {
                     outText = "恭喜你 !!  中了頭獎 二十萬元  要不...考慮抖個幾千塊給我 ?";
                     break;
                 }
-                case 2000000 :{
+                case 2000000: {
                     outText = "恭喜你 !! 特獎 二百萬元 人生少奮鬥二年 可惡..羨慕";
                     break;
                 }
-                case 10000000 :{
+                case 10000000: {
                     outText = "天之驕子是你 ? 特別獎 一千萬元";
                     break;
                 }
-                default:{
-                    this.replyText(replyToken,"出現錯誤了~");
+                default: {
+                    this.replyText(replyToken, "出現錯誤了~");
                     return;
                 }
             }
-            this.replyText(replyToken,outText);
+            this.replyText(replyToken, outText);
         }
 
     }
@@ -623,39 +632,39 @@ public class DofuncServiceImpl implements DofuncService {
         //獲得用戶ID
         String userId = event.getSource().getUserId();
         String text = content.getText();
-        if (text.matches("[$][0-9]{1,20}[_|\\s](Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)[_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+        if (text.matches("[$][0-9]{1,20}[_|\\s](Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)[_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")) {
             // 完整語法
-            String[]strings = text.split("[_|\\s]");
-            String money = strings[0].replaceAll("[$]","");
+            String[] strings = text.split("[_|\\s]");
+            String money = strings[0].replaceAll("[$]", "");
             String type = strings[1].toLowerCase();     // 默認寫入小寫
             String remarks = strings[2];
-            String tableName = TABLE_PERFIX + userId.toLowerCase() ;
+            String tableName = TABLE_PERFIX + userId.toLowerCase();
             ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String date = dtf.format(zonedDateTime);
-            int insertRow = AccountingUtils.insertDatabase(tableName,type,money,remarks,date);
-            if (insertRow == 0 ){
-                this.replyText(replyToken,"出錯拉~");
-                log.info("\n TYPE : "+type+" MONEY : "+money+" REMARKS : "+remarks+"\n");
+            int insertRow = AccountingUtils.insertDatabase(tableName, type, money, remarks, date);
+            if (insertRow == 0) {
+                this.replyText(replyToken, "出錯拉~");
+                log.info("\n TYPE : " + type + " MONEY : " + money + " REMARKS : " + remarks + "\n");
                 return;
             }
-            this.replyText(replyToken,"已為你新增 \n"+type+" \n金額 ："+money);
+            this.replyText(replyToken, "已為你新增 \n" + type + " \n金額 ：" + money);
             return;
         }
-        log.info("\n doAccounting4User :{ text - "+text+" } \n");
+        log.info("\n doAccounting4User :{ text - " + text + " } \n");
         // 獲得用戶輸入的類型 錢 備註
         String[] strings = text.split(" ");
-        String remorks = null ;
-        if (strings.length<2){
-            if (strings[0].startsWith("$") || strings[0].matches("[$][0-9]{1,20}")){
+        String remorks = null;
+        if (strings.length < 2) {
+            if (strings[0].startsWith("$") || strings[0].matches("[$][0-9]{1,20}")) {
                 remorks = "沒有輸入備註";
             }
         }
-        if (remorks == null){
+        if (remorks == null) {
             remorks = strings[1];
         }
         String money = strings[0];  // $XX
-        money = money.replaceAll("[^0-9]","");
+        money = money.replaceAll("[^0-9]", "");
 
         String imgUrl1 = createUri("/static/AccountingImage/AccountingImage1.jpg");
         String imgUrl2 = createUri("/static/AccountingImage/AccountingImage2.jpg");
@@ -668,13 +677,13 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 飲 食 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_Food",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Food",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "吃的拉"),
                                         new PostbackAction(" 衣 褲 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_Clothing",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Clothing",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "穿的拉"),
                                         new PostbackAction(" 住 宿 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_Housing",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Housing",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "住的拉")
                                 )
                         ),
@@ -684,33 +693,34 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 交 通 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_Transportation",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Transportation",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "行的拉"),
                                         new PostbackAction(" 遊 樂 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_Play",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Play",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "玩的拉"),
                                         new PostbackAction(" 不 好 說 ",
-                                                "$_"+userId+"_"+money+"_"+remorks+"_Other",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Other",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
                                                 "噓......")
                                 )
                         )
                 )
         );
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
-        this.reply(replyToken,Arrays.asList(new TextMessage("收到 ! 選個分類吧~"), templateMessage));
+        this.reply(replyToken, Arrays.asList(new TextMessage("收到 ! 選個分類吧~"), templateMessage));
     }
 
     /**
      * 處理記帳功能數據庫邏輯
+     *
      * @param replyToken
      * @param data
      * @throws IOException
      */
     @Override
-    public void doDataBase4Accounting(String replyToken, Event event,String data) throws IOException {
-        String[]strings = data.split("_");
-        if (strings.length < 2){
-            this.replyText(replyToken,data);
+    public void doDataBase4Accounting(String replyToken, Event event, String data) throws IOException {
+        String[] strings = data.split("_");
+        if (strings.length < 2) {
+            this.replyText(replyToken, data);
             return;
         }
         String userId = strings[1].toLowerCase();
@@ -720,23 +730,24 @@ public class DofuncServiceImpl implements DofuncService {
         //創建表 (表不存在創建 存在新增)
         String oldtableName = TABLE_PERFIX + userId;
         String newtableName = getTableName(event);
-        if (!oldtableName.equals(newtableName)){
-            this.replyText(replyToken,"不要亂點拉～");
+        if (!oldtableName.equals(newtableName)) {
+            this.replyText(replyToken, "不要亂點拉～");
             return;
         }
         ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String date = dtf.format(zonedDateTime);
-        int insertRow = AccountingUtils.insertDatabase(oldtableName,moneyType,money,remorks,date);
-        if (insertRow == 0 ){
-            this.replyText(replyToken,"出錯拉~");
+        int insertRow = AccountingUtils.insertDatabase(oldtableName, moneyType, money, remorks, date);
+        if (insertRow == 0) {
+            this.replyText(replyToken, "出錯拉~");
             return;
         }
-        this.replyText(replyToken,"已為你新增 \n"+moneyType+" \n金額 ："+money);
+        this.replyText(replyToken, "已為你新增 \n" + moneyType + " \n金額 ：" + money);
     }
 
     /**
      * 　接入指令 $$ 顯示當前月圖表
+     *
      * @param replyToken
      * @param event
      * @throws IOException
@@ -744,31 +755,31 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
-        try(ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName)){
-            if (!AccountingUtils.checkTableExits(tableName)){
-                this.replyText(replyToken,"你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
+        try (ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName)) {
+            if (!AccountingUtils.checkTableExits(tableName)) {
+                this.replyText(replyToken, "你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
                 return null;
             }
-            if (null == resultSet){
-                this.replyText(replyToken,"出錯拉~");
+            if (null == resultSet) {
+                this.replyText(replyToken, "出錯拉~");
                 return null;
             }
-            Map<String,Map<String,Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
+            Map<String, Map<String, Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
 
 //             当前月的资料
             LocalDate localDate = LocalDate.now();
             String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
-            Map<String,Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
+            Map<String, Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
             DefaultPieDataset dataset = new DefaultPieDataset();
             for (String key : nowDate4Accounting.keySet()) {
-                dataset.setValue(key,nowDate4Accounting.get(key));
+                dataset.setValue(key, nowDate4Accounting.get(key));
             }
-            JFreeChart chart = ChartFactory.createPieChart3D("Accounting Text",dataset,true,false,false);
-            chart.setTitle(new TextTitle("Accounting Text",new Font("宋体", Font.ITALIC, 22)));
-            LegendTitle legend =chart.getLegend(0);
+            JFreeChart chart = ChartFactory.createPieChart3D("Accounting Text", dataset, true, false, false);
+            chart.setTitle(new TextTitle("Accounting Text", new Font("宋体", Font.ITALIC, 22)));
+            LegendTitle legend = chart.getLegend(0);
             chart.setBackgroundPaint(Color.white);
             //設定圖的部分
-            PiePlot plot =(PiePlot)chart.getPlot();
+            PiePlot plot = (PiePlot) chart.getPlot();
             plot.setBackgroundImage(Toolkit.getDefaultToolkit().getImage("AccountingImage1.jpg"));
             plot.setBackgroundAlpha(0.9f);
             plot.setForegroundAlpha(0.80f);
@@ -789,7 +800,7 @@ public class DofuncServiceImpl implements DofuncService {
 //                }
 //            }
 //            this.replyText(replyToken,sb.toString());
-        }catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
@@ -797,6 +808,7 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 用戶顯示操作模板
+     *
      * @param replyToken
      * @param event
      * @param content
@@ -805,12 +817,12 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public void doAccountingOperating(String replyToken, Event event, TextMessageContent content) throws IOException {
         String tableName = getTableName(event);
-        try{
+        try {
             if (!AccountingUtils.checkTableExits(tableName)) {
-                this.replyText(replyToken,"先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
+                this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
                 return;
             }
-        }catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         String imgUrl2 = createUri("/static/AccountingImage/AccountingImage2.jpg");
@@ -835,11 +847,12 @@ public class DofuncServiceImpl implements DofuncService {
                 )
         );
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
-        this.reply(replyToken,templateMessage);
+        this.reply(replyToken, templateMessage);
     }
 
     /**
-     *  顯示記帳的詳細記錄 用於用戶知道Id 輸出做 刪除 & 更改 動作
+     * 顯示記帳的詳細記錄 用於用戶知道Id 輸出做 刪除 & 更改 動作
+     *
      * @param replyToken
      * @param event
      * @throws IOException
@@ -847,40 +860,41 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public void doShowAccountingMonth4Detailed(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
-        try{
+        try {
             if (!AccountingUtils.checkTableExits(tableName)) {
-                this.replyText(replyToken,"先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
+                this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
                 return;
             }
-        }catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         LocalDate localDate = LocalDate.now();
         String time = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
-        try(ResultSet resultSet = AccountingUtils.selectAccounting4Month(tableName,time)){
-            if (null == resultSet){
-                this.replyText(replyToken,"出錯拉~");
+        try (ResultSet resultSet = AccountingUtils.selectAccounting4Month(tableName, time)) {
+            if (null == resultSet) {
+                this.replyText(replyToken, "出錯拉~");
                 return;
             }
             StringBuilder outputText = new StringBuilder();
             outputText.append("當前月 您的詳細記錄 ：如想操作紀錄指令再次輸入你的紀錄ID\n")
                     .append("刪除操作 ： !del ID\n更新操作 ：!update ID $123 晚餐 Food\n")
                     .append("ID  . 類型  . 金額  . 備註 . 日期\n");
-            while (resultSet.next()){
+            while (resultSet.next()) {
                 outputText.append(resultSet.getString("id")).append(" /")
                         .append(resultSet.getString("money_type")).append(" / ")
                         .append(resultSet.getString("money")).append(" / ")
                         .append(resultSet.getString("remarks")).append(" / ")
                         .append(resultSet.getString("insert_time")).append("\n");
             }
-            this.replyText(replyToken,outputText.toString());
-        }catch (SQLException e){
+            this.replyText(replyToken, outputText.toString());
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     /**
      * 顯示全部記錄圖表
+     *
      * @param replyToken
      * @param event
      * @return
@@ -889,60 +903,31 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public JFreeChart doShowAllAccountByUser(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
-        try{
+        try {
             if (!AccountingUtils.checkTableExits(tableName)) {
-                this.replyText(replyToken,"先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
+                this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
                 return null;
             }
-        }catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         // 拿到數據
         ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName);
         try {
-            Map<String,Map<String,Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
-            String[] rowKey = {"Food","Clothing","Housing","Transportation","Play","Other"}; //6
-            //String[] colKey = new String[dateMap.keySet().size()]; //1
-           // double[][] data = new double[colKey.length][rowKey.length]; // [1][6] like {{100},{0},{100},{400},{200},{0}}
-            int colIndex = 0 ;
-//            for (String key : dateMap.keySet() ){
-//                colKey[colIndex] = key ; // 時間
-//                Map<String,Integer> typeMap = dateMap.get(key); // 當前月份的種類與錢
-//                // 所有日期
-//                for (int i = 0; i < rowKey.length; i++) {
-//                    // 每一個月都循環找各種類的錢
-//                    String type = rowKey[i];
-//                    Integer typeOfmoney = typeMap.get(type);
-//             //       log.info("\n\n type : "+type+"\n\n money : "+typeOfmoney+"\n\n");
-//                    if (typeOfmoney != null){
-//                        // 這個月的這個種類有紀錄就給值
-//                        data[colIndex][i] = typeOfmoney ;
-//                    }else {
-//                        // 沒紀錄就給0
-//                        data[colIndex][i] = 0;
-//                    }
-//                }
-//                colIndex++;
-//            }
+            Map<String, Map<String, Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
+            String[] rowKey = {"Food", "Clothing", "Housing", "Transportation", "Play", "Other"}; //6
             DefaultCategoryDataset defaultCategoryDataset = new DefaultCategoryDataset();
 
             for (String key : dateMap.keySet()) {   // key dateMap中的時間月份
-                Map<String,Integer> typeMap = dateMap.get(key); // 拿到種類 : 錢
+                Map<String, Integer> typeMap = dateMap.get(key); // 拿到種類 : 錢
                 for (String type : rowKey) {    // type 6個種類的錢
                     Integer money = typeMap.get(type.toLowerCase());  // 拿到這個月的種類是否有錢 由於默認類型默認寫入小寫 所以get要小寫處理
-                    if(money == null){  // 沒錢就給0
-                        money = 0 ;
+                    if (money == null) {  // 沒錢就給0
+                        money = 0;
                     }
-                    defaultCategoryDataset.addValue(money,type,key);
+                    defaultCategoryDataset.addValue(money, type, key);
                 }
             }
-
-
-//            Arrays.stream(data).forEach(doubles -> {
-//                Arrays.stream(doubles).forEach(dou ->{
-//                    log.info("\n\n dou : "+dou+"\n\n");
-//                });
-//            });
 
             JFreeChart jFreeChart = ChartFactory.createLineChart("User Accounting Line Chart",
                     "year/month",
@@ -953,19 +938,19 @@ public class DofuncServiceImpl implements DofuncService {
                     true,
                     false);
             jFreeChart.setBackgroundPaint(Color.WHITE);
-            CategoryPlot plot = (CategoryPlot)jFreeChart.getPlot();
+            CategoryPlot plot = (CategoryPlot) jFreeChart.getPlot();
             // 背景色 透明度
             plot.setBackgroundAlpha(0.5f);
             // 前景色 透明度
             plot.setForegroundAlpha(0.9f);
             // 其他设置 参考 CategoryPlot类
-            LineAndShapeRenderer renderer = (LineAndShapeRenderer)plot.getRenderer();
+            LineAndShapeRenderer renderer = (LineAndShapeRenderer) plot.getRenderer();
             renderer.setBaseShapesVisible(true); // series 点（即数据点）可见
             renderer.setBaseLinesVisible(true); // series 点（即数据点）间有连线可见
             renderer.setUseSeriesOffset(true); // 设置偏移量
             renderer.setBaseItemLabelGenerator(new StandardCategoryItemLabelGenerator());
             renderer.setBaseItemLabelsVisible(true);
-            return jFreeChart ;
+            return jFreeChart;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -974,6 +959,7 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 記帳刪除操作
+     *
      * @param replyToken
      * @param event
      * @param content
@@ -982,26 +968,27 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public void doAccountingDelete(String replyToken, Event event, TextMessageContent content) throws IOException {
         String text = content.getText();
-        if (!text.matches("[!|！](del)[_|\\s][0-9]{1,10}")){
+        if (!text.matches("[!|！](del)[_|\\s][0-9]{1,10}")) {
             // 語法不正確
-            this.replyText(replyToken,"語法錯誤? 範例 ：!del ID or !del_ID");
+            this.replyText(replyToken, "語法錯誤? 範例 ：!del ID or !del_ID");
             return;
         }
         String tableName = getTableName(event);
         String[] strings = text.split("[_|\\s]");
         String id = strings[1];
         // util
-        int delCount = AccountingUtils.delByRowId(tableName,id);
-        if (delCount == 0){
-            log.info("\n\n ERROR \ndoAccountingDelete : "+text+"\n");
-            this.replyText(replyToken,"刪除出錯拉~");
+        int delCount = AccountingUtils.delByRowId(tableName, id);
+        if (delCount == 0) {
+            log.info("\n\n ERROR \ndoAccountingDelete : " + text + "\n");
+            this.replyText(replyToken, "刪除出錯拉~");
             return;
         }
-        this.replyText(replyToken,"刪除成功");
+        this.replyText(replyToken, "刪除成功");
     }
 
     /**
      * 記帳更改操作
+     *
      * @param replyToken
      * @param event
      * @param content
@@ -1010,34 +997,100 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public void doAccountingUpdate(String replyToken, Event event, TextMessageContent content) throws IOException {
         String text = content.getText();
-        if (!text.matches("[!|！](update)[_|\\s][0-9]{1,10}[_|\\s][$][0-9]{1,10}[_|\\s](Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)[_|\\s][a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+        if (!text.matches("[!|！](update)[_|\\s][0-9]{1,10}[_|\\s][$][0-9]{1,10}[_|\\s](Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)[_|\\s][a-zA-Z0-9\\u4e00-\\u9fa5]*")) {
             // 語法不正確
-            this.replyText(replyToken,"語法錯誤? 範例 ：!update_ID_$200_play_玩的拉");
+            this.replyText(replyToken, "語法錯誤? 範例 ：!update_ID_$200_play_玩的拉");
             return;
         }
         String tableName = getTableName(event);
         String[] strings = text.split("[_|\\s]");
         String rowId = strings[1];
-        String money = strings[2].replaceAll("[$]","");
+        String money = strings[2].replaceAll("[$]", "");
         String type = strings[3].toLowerCase(); // 寫入時默認類型小寫
         String remarks = strings[4];
         // util
-        int updateConut = AccountingUtils.updateByRowId(tableName,rowId,money,type,remarks);
+        int updateConut = AccountingUtils.updateByRowId(tableName, rowId, money, type, remarks);
         if (updateConut == 0) {
-            log.info("\n\n ERROR \ndoAccountingUpdate : "+text+"\n");
-            this.replyText(replyToken,"更新出錯拉");
+            log.info("\n\n ERROR \ndoAccountingUpdate : " + text + "\n");
+            this.replyText(replyToken, "更新出錯拉");
             return;
         }
-        this.replyText(replyToken,"更新成功");
+        this.replyText(replyToken, "更新成功");
     }
 
-    private String getTableName(Event event){
+    /**
+     * 處理群發消息 全部 獲得結果集
+     *
+     * @param message
+     */
+    @Override
+    public void doPushMessage4All(Message message, Event event) {
+        try (ResultSet resultSet = AccountingUtils.selectIdInfo()) {
+            pushMessage(resultSet, message, event);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 拿id 發送消息
+     *
+     * @param resultSet 結果ID
+     * @param message   要發送的消息
+     * @throws SQLException 操作異常
+     */
+    private void pushMessage(ResultSet resultSet, Message message, Event event) throws SQLException {
+        if (resultSet == null) {
+            PushMessage pushMessage = new PushMessage(event.getSource().getUserId(), new TextMessage("ERROR : result = null"));
+            Response<BotApiResponse> apiResponse =
+                    null;
+            try {
+                apiResponse = lineMessagingService
+                        .pushMessage(pushMessage)
+                        .execute();
+                log.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+        while (resultSet.next()) {
+            String id = resultSet.getString("id");
+            PushMessage pushMessage = new PushMessage(id, message);
+            Response<BotApiResponse> apiResponse =
+                    null;
+            try {
+                apiResponse = lineMessagingService
+                        .pushMessage(pushMessage)
+                        .execute();
+                log.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 處理群發消息 依分類 獲得結果
+     *
+     * @param message
+     */
+    @Override
+    public void doPushMessage2Type(Message message, Event event, String... args) {
+        try (ResultSet resultSet = AccountingUtils.selectIdInfo(args)) {
+            pushMessage(resultSet, message, event);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getTableName(Event event) {
         String userId = event.getSource().getUserId().toLowerCase();
-        return TABLE_PERFIX + userId ;
+        return TABLE_PERFIX + userId;
     }
 
 
-    private void inItPrize() throws IOException{
+    private void inItPrize() throws IOException {
         Document document = jsoupClient(INVOICE_PATH);
         Elements elements = document.select(".t18Red");
         Integer specialDesc = 10000000;
@@ -1048,81 +1101,81 @@ public class DofuncServiceImpl implements DofuncService {
         Integer fourthDesc = 4000;
         Integer fifthDesc = 1000;
         Integer sixthDesc = 200;
-        prize.put(elements.get(0).text(),specialDesc);
-        prize.put(elements.get(1).text(),extraDesc);
+        prize.put(elements.get(0).text(), specialDesc);
+        prize.put(elements.get(1).text(), extraDesc);
         String[] firstNum = elements.get(2).text().split("、");
         for (String number : firstNum) {
-            prize.put(number,firstDesc);
-            prize.put(number.substring(1),secondDesc);
-            prize.put(number.substring(2),thirdDesc);
-            prize.put(number.substring(3),fourthDesc);
-            prize.put(number.substring(4),fifthDesc);
-            prize.put(number.substring(5),sixthDesc);
+            prize.put(number, firstDesc);
+            prize.put(number.substring(1), secondDesc);
+            prize.put(number.substring(2), thirdDesc);
+            prize.put(number.substring(3), fourthDesc);
+            prize.put(number.substring(4), fifthDesc);
+            prize.put(number.substring(5), sixthDesc);
         }
         String[] pulsNum = elements.get(3).text().split("、");
         for (String puls : pulsNum) {
-            prize.put(puls,sixthDesc);
+            prize.put(puls, sixthDesc);
         }
     }
 
-    private void dccardSexInit(String path,int count) throws IOException{
+    private void dccardSexInit(String path, int count) throws IOException {
         log.info("DcardList finction INIT ...");
         okhttp3.Response response = timerUilts.clientHttp(path);
-        String returnText =  response.body().string();
+        String returnText = response.body().string();
         JSONArray page = JSONArray.parseArray(returnText);
         String pageId = null;
         for (int i = 0; i < page.size(); i++) {
             JSONObject item = page.getJSONObject(i);
             JSONArray media = item.getJSONArray("media");
-            if (media.size()==0){
+            if (media.size() == 0) {
                 continue;
             }
             String gender = item.getString("gender");
-            if (gender.equals("F")){
+            if (gender.equals("F")) {
                 for (int j = 0; j < media.size(); j++) {
                     dccardSexList.add(media.getJSONObject(j).getString("url"));
-                    if (dccardSexList.size() > count){
+                    if (dccardSexList.size() > count) {
                         return;
                     }
                 }
             }
             String str = item.getString("id");
-            if (str != null){
+            if (str != null) {
                 pageId = str;
             }
         }
-        if (path.contains("&before=")){
-            path = path.substring(0,path.indexOf("&before="));
+        if (path.contains("&before=")) {
+            path = path.substring(0, path.indexOf("&before="));
         }
-        String nextPath = path+"&before="+pageId;
-        dccardSexInit(nextPath,count);
+        String nextPath = path + "&before=" + pageId;
+        dccardSexInit(nextPath, count);
     }
 
 
-    public static void beautyInit() throws IOException{
+    public static void beautyInit() throws IOException {
         log.info("beautyList Function INIT ... ");
         Document doc = jsoupClient(PTT_BEAUTY_URL);
         Elements lastPageArray = doc.getElementsByClass("btn-group-paging");
-        Element lastPage = null ;
-        for (Element element : lastPageArray){
+        Element lastPage = null;
+        for (Element element : lastPageArray) {
             lastPage = element.getElementsByClass("btn").get(1);
         }
         String lastPageUrl = lastPage.attr("abs:href"); //獲得路徑
-        String lastPageIndex = lastPageUrl.substring(lastPageUrl.indexOf("index")+5,lastPageUrl.indexOf(".html"));
+        String lastPageIndex = lastPageUrl.substring(lastPageUrl.indexOf("index") + 5, lastPageUrl.indexOf(".html"));
         //  獲得當前頁碼
-        Integer nowPageIndex = Integer.parseInt(lastPageIndex)+1;
+        Integer nowPageIndex = Integer.parseInt(lastPageIndex) + 1;
 
         List<Integer> pageIndexArray = new ArrayList<>();
         pageIndexArray.add(nowPageIndex);
         // 獲得頁碼地址
-        for (int i = 1 ; i < 5 ; i++){
+        for (int i = 1; i < 5; i++) {
             // 獲得最新頁面的往前5頁(包含本身)
-            pageIndexArray.add(nowPageIndex-i);
+            pageIndexArray.add(nowPageIndex - i);
         }
         // 往網頁發送 獲取消息 並把抓下來的image url 存入
-        pageIndexArray.forEach((pageIndex)->{
-            String url =  "https://www.ptt.cc/bbs/Beauty/index"+pageIndex+".html";
-            Document pageDoc = null ;
+        pageIndexArray.forEach((pageIndex) -> {
+            String url = "https://www.ptt.cc/bbs/Beauty/index" + pageIndex + ".html";
+            Document pageDoc = null;
             try {
                 // 獲得表特版頁面
                 pageDoc = jsoupClient(url);
@@ -1131,53 +1184,53 @@ public class DofuncServiceImpl implements DofuncService {
                 for (Element pageTag : allPageTag) {
                     // 拿到標題組中的文字與網址
                     Elements titles = pageTag.getElementsByClass("title").get(0).getElementsByTag("a");
-                    if (titles.size()==0){
+                    if (titles.size() == 0) {
                         continue;
                     }
                     Element title = titles.get(0);
                     String titleText = title.text();    // 獲得每個標籤的文字 有 [正妹] ,[公告] ,[神人] ,[帥哥] ,[廣告] ...etc
                     String titleHref = title.attr("abs:href");
-                    if (titleText.contains("[正妹]")){
+                    if (titleText.contains("[正妹]")) {
                         Document grilDoc = jsoupClient(titleHref);
-                        Elements img = grilDoc.getElementById("main-content").getElementsByAttributeValueContaining("href","https://i.imgur.com/");
+                        Elements img = grilDoc.getElementById("main-content").getElementsByAttributeValueContaining("href", "https://i.imgur.com/");
                         for (Element imgTag : img) {
                             String str = imgTag.attr("href");
                             // 過濾掉一些奇奇怪怪的圖片
-                            if (!str.contains(".jpg")){
+                            if (!str.contains(".jpg")) {
                                 continue;
                             }
-                            if (titleText.contains("[正妹]")){
+                            if (titleText.contains("[正妹]")) {
                                 grilImgUrlList.add(str);
                             }
                         }
                     }
                 }
-            }catch (IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         });
     }
 
-    private void inItWorldCityMap()throws IOException{
+    private void inItWorldCityMap() throws IOException {
         String path = "https://worldweather.wmo.int/tc/json/full_city_list.txt";
         Document document = jsoupClient(path);
         String text = document.text();
-        String[]item = text.split(" ");
+        String[] item = text.split(" ");
 
-        Arrays.stream(item).forEach((str)->{
-            String city = str.substring(str.indexOf(";")+1);
-            if (city.startsWith("\"")){
-                city = city.replaceAll("\"","");
+        Arrays.stream(item).forEach((str) -> {
+            String city = str.substring(str.indexOf(";") + 1);
+            if (city.startsWith("\"")) {
+                city = city.replaceAll("\"", "");
                 String[] strings = city.split(";");
-                if (!(strings.length < 2)){
-                    if (strings[0].contains(",")){
-                        strings[0] = strings[0].substring(0,strings[0].indexOf(","));
-                    }else if (strings[0].contains(" - ")){
-                        strings[0] = strings[0].substring(0,strings[0].indexOf(" - "));
-                    }else if (strings[0].contains("，")){
-                        strings[0] = strings[0].substring(0,strings[0].indexOf("，"));
+                if (!(strings.length < 2)) {
+                    if (strings[0].contains(",")) {
+                        strings[0] = strings[0].substring(0, strings[0].indexOf(","));
+                    } else if (strings[0].contains(" - ")) {
+                        strings[0] = strings[0].substring(0, strings[0].indexOf(" - "));
+                    } else if (strings[0].contains("，")) {
+                        strings[0] = strings[0].substring(0, strings[0].indexOf("，"));
                     }
-                    weatherMap.put(strings[0],strings[1]);
+                    weatherMap.put(strings[0], strings[1]);
                 }
             }
         });
@@ -1185,8 +1238,8 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
 
-    private static Document jsoupClient(String path)throws IOException{
-        Connection.Response response= Jsoup.connect(path)
+    private static Document jsoupClient(String path) throws IOException {
+        Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
                 .referrer("http://www.google.com")
@@ -1195,8 +1248,9 @@ public class DofuncServiceImpl implements DofuncService {
                 .execute();
         return response.parse();
     }
-    private static Document jsoupClient(String path,boolean b)throws IOException{
-        Connection.Response response= Jsoup.connect(path)
+
+    private static Document jsoupClient(String path, boolean b) throws IOException {
+        Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
                 .referrer("http://www.google.com")
@@ -1228,6 +1282,7 @@ public class DofuncServiceImpl implements DofuncService {
             throw new UncheckedIOException(e);
         }
     }
+
     private void replyText(@NonNull String replyToken, @NonNull String message) {
         if (replyToken.isEmpty()) {
             throw new IllegalArgumentException("replyToken must not be empty");

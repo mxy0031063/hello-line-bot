@@ -27,6 +27,7 @@ import com.linecorp.bot.model.message.template.ConfirmTemplate;
 import com.linecorp.bot.model.profile.UserProfileResponse;
 import com.linecorp.bot.model.response.BotApiResponse;
 import hello.dao.TestDao;
+import hello.utils.AccountingUtils;
 import hello.utils.JDBCUtil;
 import hello.utils.SQLSessionFactory;
 import lombok.NonNull;
@@ -69,6 +70,8 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
@@ -253,7 +256,13 @@ public class HelloController {
      */
     @EventMapping
     public void handleFollowEvent(FollowEvent event) {
-        log.info("Got follow event: {}", event);
+        ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String date = dtf.format(zonedDateTime);
+        String id = event.getSource().getUserId();
+        String type = "user";
+        AccountingUtils.joinAction(type,id,date);
+        log.info("\n\nGot follow event: {}", event);
         String replyToken = event.getReplyToken();
         try {
             this.replyText(replyToken, "Hello ! " + getUserName(event.getSource().getUserId()));
@@ -272,12 +281,23 @@ public class HelloController {
         log.info("Got join event: {}", event);
         String replyToken = event.getReplyToken();
         Source source = event.getSource();
+        ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String date = dtf.format(zonedDateTime);
         if (source instanceof GroupSource) {
-            this.replyText(replyToken, "I joined a group : " + ((GroupSource) source).getGroupId());
+            String type = "group";
+            String id = ((GroupSource) source).getGroupId();
+            AccountingUtils.joinAction(type,id,date);
+            log.info("\n\njoin Group ID : {}", id);
+            this.replyText(replyToken, "大家安安");
         } else if (source instanceof RoomSource) {
-            this.replyText(replyToken, "I joined a room : " + ((RoomSource) source).getRoomId());
+            String type = "room";
+            String id = ((RoomSource) source).getRoomId();
+            AccountingUtils.joinAction(type,id,date);
+            log.info("\n\njoin Room ID : {}", id);
+            this.replyText(replyToken, " 拉我進這什麼房間 ");
         } else {
-            this.replyText(replyToken, "I joined ??? : " + source);
+            this.replyText(replyToken, "我加入了沙小 : ");
         }
     }
 
@@ -611,18 +631,9 @@ public class HelloController {
         } else if(text.contains("push")){
             String userId = event.getSource().getUserId();
             String[]strings = text.split("-");
-            String message = strings[1];
-            PushMessage pushMessage = new PushMessage(userId,new TextMessage(message));
-            Response<BotApiResponse> apiResponse =
-                null;
-            try {
-                apiResponse = lineMessagingService
-                        .pushMessage(pushMessage)
-                        .execute();
-                log.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            String type = strings[1];
+            String message = strings[2];
+            service.doPushMessage2Type(new TextMessage(message),event,type);
         } else if (text.contains("全球天氣")){
             service.doWorldTemp(replyToken,event,content);
         } else if (text.matches("[$][0-9]{1,20}[\\s]?(Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)?[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){

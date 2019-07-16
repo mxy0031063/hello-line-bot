@@ -2,6 +2,7 @@ package hello;
 
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.message.TextMessageContent;
+import com.linecorp.bot.model.message.Message;
 import org.jfree.chart.JFreeChart;
 import org.springframework.stereotype.Service;
 
@@ -123,6 +124,14 @@ public interface DofuncService {
      * 處理帳本更改紀錄實際操作
      */
     void doAccountingUpdate(String replyToken, Event event ,TextMessageContent content)throws IOException;
+    /**
+     * 群發消息處理 - 全部
+     */
+    void doPushMessage4All(Message message, Event event);
+    /**
+     * 群發消息處理 - 依分類
+     */
+    void doPushMessage2Type(Message message, Event event, String... args);
 
 
 
