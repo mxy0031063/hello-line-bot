@@ -4,6 +4,7 @@ Hello Line Bot
 簡易的實現Line聊天機器人
 ----------------
 -	[x] 這個項目是基於 Line API 的簡單實現
+-  [x] 底下是項目引用的來源
 -	[x] 從零開始, 建立 Gradle 的 IntelljJ 專案, e.g., [Building Java Projects with Gradle](https://spring.io/guides/gs/gradle/)
 -	[x] 從零開始, 建立 Spring Boot 的 IntelljJ 專案, e.g., [Building a RESTful Web Service](https://spring.io/guides/gs/rest-service/)
 -	[x] 從零開始, 建立簡易的 Line Bot, 只做訊息的回應 [Ref.](https://github.com/line/line-bot-sdk-java/tree/master/sample-spring-boot-echo), 並佈署到 Heroku [Ref.](https://devcenter.heroku.com/articles/getting-started-with-gradle-on-heroku)
