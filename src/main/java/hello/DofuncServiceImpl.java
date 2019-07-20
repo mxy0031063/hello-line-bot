@@ -1148,6 +1148,9 @@ public class DofuncServiceImpl implements DofuncService {
         if (path.contains("&before=")) {
             path = path.substring(0, path.indexOf("&before="));
         }
+        if (pageId == null) {
+            return;
+        }
         String nextPath = path + "&before=" + pageId;
         dccardSexInit(nextPath, count);
     }
