@@ -1135,7 +1135,7 @@ public class DofuncServiceImpl implements DofuncService {
         JSONObject result = results.getJSONObject(resultIndex);
         // 對請求提取參數
         String rating = result.getString("rating"); // 評分
-        String userRatingTotal = result.getString("user_rating_total"); // 評論總數
+        String userRatingTotal = result.getString("user_ratings_total"); // 評論總數
         String name = result.getString("name"); // 名子
         String placeId = result.getString("place_id"); // 商店IP
         String vicinity = result.getString("vicinity"); // 地址
@@ -1174,11 +1174,11 @@ public class DofuncServiceImpl implements DofuncService {
         String photoToken = result.getJSONArray("photos").getJSONObject(0).getString("photo_reference"); // 找圖片的ID
         //飯飯&query_place_id=ChIJv6EC4BM9aTQR_I5oRaLYSHU
         // 模板賦值
-        String imageUrl3 = createUri("https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&maxheight=600&photoreference=" + photoToken);
+        //String imageUrl3 = createUri();
         CarouselTemplate carouselTemplate = new CarouselTemplate(
                 Arrays.asList(
                         new CarouselColumn(
-                                imageUrl3,
+                                "https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&maxheight=600&photoreference=" + photoToken,
                                 name,
                                 "Google 評分 :" + rating + "\n" +
                                         isOpening+
