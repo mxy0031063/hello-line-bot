@@ -54,7 +54,7 @@ public interface DofuncService {
     /*
     GoogleMap API Prefix
      */
-    String GOOGLE_MAP_API_PREFIX = "https://maps.googleapis.com/maps/api/place";
+    String GOOGLE_MAP_API_PREFIX = "https://maps.googleapis.com/maps/api/place/";
 
     /**
      * 處理天氣
