@@ -1180,10 +1180,8 @@ public class DofuncServiceImpl implements DofuncService {
                         new CarouselColumn(
                                 "https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&maxheight=600&photoreference=" + photoToken,
                                 name,
-                                "Google 評分 :" + rating + "\n" +
-                                        isOpening+
-                                        userRatingTotal + " 則評論+\n" +
-                                        (priceLevel == null ? "" : "價位 : " + priceLevel + "\n") +
+                                "Google 評分 :" + rating + "  " +userRatingTotal + " 則評論\n" +
+                                        isOpening+"   "+ (priceLevel == null ? "" : "價位 : " + priceLevel + "\n") +
                                         vicinity,
                                 Arrays.asList(
                                         new URIAction(
