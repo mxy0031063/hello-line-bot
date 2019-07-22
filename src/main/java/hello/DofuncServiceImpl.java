@@ -1174,7 +1174,7 @@ public class DofuncServiceImpl implements DofuncService {
         }
         String photoToken = result.getJSONArray("photos").getJSONObject(0).getString("photo_reference"); // 找圖片的ID
         // 模板賦值
-        String imgUrl = "https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&maxheight=600&photoreference=" + photoToken;
+        String imgUrl = "https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&photoreference=" + photoToken;
         String outputText = "Google 評分 :" + rating + " 有 :" +userRatingTotal + " 則評論\n" +
                                         isOpening+"   "+ (priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n") +
                                         vicinity;
