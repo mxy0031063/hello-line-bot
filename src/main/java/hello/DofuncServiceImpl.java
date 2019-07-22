@@ -1173,26 +1173,7 @@ public class DofuncServiceImpl implements DofuncService {
             isOpening = "休息中";
         }
         String photoToken = result.getJSONArray("photos").getJSONObject(0).getString("photo_reference"); // 找圖片的ID
-        //飯飯&query_place_id=ChIJv6EC4BM9aTQR_I5oRaLYSHU
         // 模板賦值
-        //String imageUrl3 = createUri();
-        CarouselTemplate carouselTemplate = new CarouselTemplate(
-                Arrays.asList(
-                        new CarouselColumn(
-                                "https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&maxheight=600&photoreference=" + photoToken,
-                                name,
-                                "Google 評分 :" + rating + " 有 :" +userRatingTotal + " 則評論\n" +
-                                        isOpening+"   "+ (priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n") +
-                                        vicinity,
-                                Arrays.asList(
-                                        new URIAction(
-                                                "去看看",
-                                                "https://www.google.com/maps/search/?api=1&query="+name+"&query_place_id="+placeId
-                                        )
-                                )
-                        )
-                )
-        );
         String imgUrl = "https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&maxheight=600&photoreference=" + photoToken;
         String outputText = "Google 評分 :" + rating + " 有 :" +userRatingTotal + " 則評論\n" +
                                         isOpening+"   "+ (priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n") +
@@ -1201,8 +1182,6 @@ public class DofuncServiceImpl implements DofuncService {
 
         String [] returnString = {imgUrl,name,outputText,gotoUrl};
         return returnString;
-        TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
-//        this.reply(replyToken, templateMessage);
     }
 
     private String getTableName(Event event) {
