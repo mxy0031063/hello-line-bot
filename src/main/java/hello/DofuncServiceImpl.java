@@ -1094,7 +1094,7 @@ public class DofuncServiceImpl implements DofuncService {
      * @throws IOException
      */
     @Override
-    public void doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) throws IOException {
+    public String[] doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) throws IOException {
         String text = content.getText();
         text = text.replaceAll("[-|_|\\s]","");
         // 地區識別
@@ -1119,7 +1119,7 @@ public class DofuncServiceImpl implements DofuncService {
             }
             default: {
                 this.replyText(replyToken, "還未增加你說的地點 ~~~~");
-                return;
+                return null;
             }
         }
         String type = "restaurant"; // 查找類型
@@ -1193,8 +1193,16 @@ public class DofuncServiceImpl implements DofuncService {
                         )
                 )
         );
+        String imgUrl = "https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&maxheight=600&photoreference=" + photoToken;
+        String outputText = "Google 評分 :" + rating + " 有 :" +userRatingTotal + " 則評論\n" +
+                                        isOpening+"   "+ (priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n") +
+                                        vicinity;
+        String gotoUrl = "https://www.google.com/maps/search/?api=1&query="+name+"&query_place_id="+placeId;
+
+        String [] returnString = {imgUrl,name,outputText,gotoUrl};
+        return returnString;
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
-        this.reply(replyToken, templateMessage);
+//        this.reply(replyToken, templateMessage);
     }
 
     private String getTableName(Event event) {

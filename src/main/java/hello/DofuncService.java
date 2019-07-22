@@ -139,7 +139,7 @@ public interface DofuncService {
     /**
      * 處理google map api 搜尋
      */
-    void doGoogleMapSearch(String replyToken, Event event ,TextMessageContent content)throws IOException;
+    String[] doGoogleMapSearch(String replyToken, Event event ,TextMessageContent content)throws IOException;
 
 
 

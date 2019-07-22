@@ -497,6 +497,37 @@ public class HelloController {
     }
 
     /**
+     *  發送google
+     * @param replyToken
+     * @param strings
+     */
+    private void showGoogleSearch(String replyToken, String[] strings) {
+        okhttp3.Response response = timerUilts.clientHttp(strings[0]);
+        DownloadedContent jpg = saveContent("jpg", response.body());
+        String imageUrl = createUri("/static/buttons/googleSearchFood.jpg");
+        CarouselTemplate carouselTemplate = new CarouselTemplate(
+                Arrays.asList(
+                        new CarouselColumn(
+                                imageUrl,
+                                strings[1],
+                                strings[2],
+                                Arrays.asList(
+                                        new URIAction(
+                                                "去看看",
+                                                strings[3]
+                                        )
+                                )
+                        )
+                )
+        );
+        TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
+        this.reply(replyToken, Arrays.asList(
+                new ImageMessage(jpg.getUri(), jpg.getUri()),
+                templateMessage
+        ));
+    }
+
+    /**
      * 貼圖事件
      * @param event
      */
@@ -629,7 +660,17 @@ public class HelloController {
             //改成模板 按模版 選擇想要觀看的東西
             service.doWeather(replyToken,event,content);
         } else if(text.matches("(台中)(吃什麼)[-|_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
-            service.doGoogleMapSearch(replyToken,event,content);
+            try{
+                String [] strings = service.doGoogleMapSearch(replyToken,event,content);
+                if (strings == null){
+                    this.replyText(replyToken,"出錯拉～");
+                    return;
+                }
+                showGoogleSearch(replyToken,strings);
+            }catch (NullPointerException e){
+                this.replyText(replyToken,"沒找到你說的關鍵字");
+                e.printStackTrace();
+            }
         } else if(text.contains("push")){
             /** 推送消息 */
             String userId = event.getSource().getUserId();
