@@ -1131,7 +1131,7 @@ public class DofuncServiceImpl implements DofuncService {
         JSONObject jsonObject = JSONObject.parseObject(retrunText);
         JSONArray results = jsonObject.getJSONArray("results");
         // 隨機獲取
-        int resultIndex = random.nextInt(20);
+        int resultIndex = random.nextInt(results.size());
         JSONObject result = results.getJSONObject(resultIndex);
         // 對請求提取參數
         String rating = result.getString("rating"); // 評分
