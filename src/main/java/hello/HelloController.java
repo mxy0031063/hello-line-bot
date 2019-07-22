@@ -628,7 +628,10 @@ public class HelloController {
             // 找不到城市就輸出
             //改成模板 按模版 選擇想要觀看的東西
             service.doWeather(replyToken,event,content);
+        } else if(text.matches("(台中)(吃什麼)[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+            service.doGoogleMapSearch(replyToken,event,content);
         } else if(text.contains("push")){
+            /** 推送消息 */
             String userId = event.getSource().getUserId();
             String[]strings = text.split("-");
             if (text.contains("pushAll")){
@@ -639,6 +642,7 @@ public class HelloController {
             String message = strings[2];
             service.doPushMessage2Type(new TextMessage(message),event,type);
         } else if (text.contains("全球天氣")){
+            /** 世界天氣api */
             service.doWorldTemp(replyToken,event,content);
         } else if (text.matches("[$][0-9]{1,20}[\\s]?(Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)?[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
             /** 用戶模板記帳輸入 */

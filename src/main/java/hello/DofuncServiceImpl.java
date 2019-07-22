@@ -7,6 +7,7 @@ import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.model.PushMessage;
 import com.linecorp.bot.model.ReplyMessage;
 import com.linecorp.bot.model.action.PostbackAction;
+import com.linecorp.bot.model.action.URIAction;
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.message.TextMessageContent;
 import com.linecorp.bot.model.message.Message;
@@ -638,7 +639,7 @@ public class DofuncServiceImpl implements DofuncService {
             String money = strings[0].replaceAll("[$]", "");
             String type = strings[1].toLowerCase();     // 默認寫入小寫
             String remarks = strings[2];
-            String tableName = TABLE_PERFIX + userId.toLowerCase();
+            String tableName = getTableName(event);
             ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String date = dtf.format(zonedDateTime);
@@ -728,7 +729,7 @@ public class DofuncServiceImpl implements DofuncService {
         String remorks = strings[3];
         String moneyType = strings[4].toLowerCase();    // 默認寫入類型小寫
         //創建表 (表不存在創建 存在新增)
-        String oldtableName = TABLE_PERFIX + userId;
+        String oldtableName = TABLE_PREFIX + userId;
         String newtableName = getTableName(event);
         if (!oldtableName.equals(newtableName)) {
             this.replyText(replyToken, "不要亂點拉～");
@@ -1084,9 +1085,122 @@ public class DofuncServiceImpl implements DofuncService {
         }
     }
 
+    /**
+     * 處理Google地圖 地區搜尋
+     *
+     * @param replyToken 回覆令牌
+     * @param event      事件元
+     * @param content    文字事件
+     * @throws IOException
+     */
+    @Override
+    public void doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) throws IOException {
+        String text = content.getText();
+        text = text.replaceAll("[-|_|\\s]","");
+        // 地區識別
+        String[] strings = text.split("(吃什麼)");
+        String keyword = null;
+        if (strings.length > 1){
+            keyword = strings[1];
+        }
+        String city = strings[0];
+        String localtion = null;
+        int latitude = 0;
+        int longitude = 0;
+        Random random = new Random();
+        // 經緯度賦值
+        switch (city) {
+            case "台中": {
+                // 24.127162 120.629490
+                latitude = random.nextInt(54949) + 27162;
+                longitude = random.nextInt(72351) + 629490;
+                localtion = "24.1" + latitude + ",120." + longitude;
+                break;
+            }
+            default: {
+                this.replyText(replyToken, "還未增加你說的地點 ~~~~");
+                return;
+            }
+        }
+
+        // 發送請求
+        String path = GOOGLE_MAP_API_PREFIX + "nearbysearch/json?location=" + localtion + "&radius=1500&type=restaurant&" +
+                (keyword == null ? "" : "keyword=" + keyword + "&") + "key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&language=zh-TW";
+        Document document = jsoupClient(path);
+        String retrunText = document.text();
+        JSONObject jsonObject = JSONObject.parseObject(retrunText);
+        JSONArray results = jsonObject.getJSONArray("results");
+        // 隨機獲取
+        int resultIndex = random.nextInt(20);
+        JSONObject result = results.getJSONObject(resultIndex);
+        // 對請求提取參數
+        String rating = result.getString("rating"); // 評分
+        String userRatingTotal = result.getString("user_rating_total"); // 評論總數
+        String name = result.getString("name"); // 名子
+        String placeId = result.getString("place_id"); // 商店IP
+        String vicinity = result.getString("vicinity"); // 地址
+        String priceLevel = null;// 價位
+        String price = result.getString("price_level");
+        if (price != null) {
+            switch (Integer.parseInt(price)) {
+                case 0: {
+                    priceLevel = "自由";
+                    break;
+                }
+                case 1: {
+                    priceLevel = "便宜";
+                    break;
+                }
+                case 2: {
+                    priceLevel = "中等";
+                    break;
+                }
+                case 3: {
+                    priceLevel = "小貴";
+                    break;
+                }
+                case 4: {
+                    priceLevel = "較貴";
+                    break;
+                }
+            }
+        }
+        String isOpening = result.getJSONObject("opening_hours").getString("open_now"); // 現在有沒有開
+        if ("true".equals(isOpening)){
+            isOpening = "營業中";
+        }else {
+            isOpening = "休息中";
+        }
+        String photoToken = result.getJSONArray("photos").getJSONObject(0).getString("photo_reference"); // 找圖片的ID
+        //飯飯&query_place_id=ChIJv6EC4BM9aTQR_I5oRaLYSHU
+        // 模板賦值
+        String imageUrl3 = createUri("https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&maxheight=600&photoreference=" + photoToken);
+        CarouselTemplate carouselTemplate = new CarouselTemplate(
+                Arrays.asList(
+                        new CarouselColumn(
+                                imageUrl3,
+                                name,
+                                "Google 評分 :" + rating + "\n" +
+                                        isOpening+
+                                        userRatingTotal + " 則評論+\n" +
+                                        (priceLevel == null ? "" : "價位 : " + priceLevel + "\n") +
+                                        vicinity,
+                                Arrays.asList(
+                                        new URIAction(
+                                                "去看看",
+                                                "https://www.google.com/maps/search/?api=1&query="+name+"&query_place_id="+placeId
+                                        )
+                                )
+                        )
+                )
+        );
+        TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
+        this.reply(replyToken, templateMessage);
+    }
+
     private String getTableName(Event event) {
         String userId = event.getSource().getUserId().toLowerCase();
-        return TABLE_PERFIX + userId;
+        return TABLE_PREFIX + userId;
     }
 
 

@@ -50,7 +50,11 @@ public interface DofuncService {
     /*
     記帳表統一前綴
      */
-    String TABLE_PERFIX = "accounting_";
+    String TABLE_PREFIX = "accounting_";
+    /*
+    GoogleMap API Prefix
+     */
+    String GOOGLE_MAP_API_PREFIX = "https://maps.googleapis.com/maps/api/place";
 
     /**
      * 處理天氣
@@ -132,6 +136,10 @@ public interface DofuncService {
      * 群發消息處理 - 依分類
      */
     void doPushMessage2Type(Message message, Event event, String... args);
+    /**
+     * 處理google map api 搜尋
+     */
+    void doGoogleMapSearch(String replyToken, Event event ,TextMessageContent content)throws IOException;
 
 
 
