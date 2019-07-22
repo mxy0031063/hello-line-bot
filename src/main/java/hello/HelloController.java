@@ -628,7 +628,7 @@ public class HelloController {
             // 找不到城市就輸出
             //改成模板 按模版 選擇想要觀看的東西
             service.doWeather(replyToken,event,content);
-        } else if(text.matches("(台中)(吃什麼)[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+        } else if(text.matches("(台中)(吃什麼)[-|_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
             service.doGoogleMapSearch(replyToken,event,content);
         } else if(text.contains("push")){
             /** 推送消息 */
