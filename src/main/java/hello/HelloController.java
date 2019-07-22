@@ -668,7 +668,7 @@ public class HelloController {
                 }
                 showGoogleSearch(replyToken,strings);
             }catch (NullPointerException e){
-                this.replyText(replyToken,"沒找到你說的關鍵字");
+                this.replyText(replyToken,"沒找到你說的關鍵字 在試一次吧");
                 e.printStackTrace();
             }
         } else if(text.contains("push")){
