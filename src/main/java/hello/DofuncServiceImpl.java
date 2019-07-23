@@ -20,6 +20,7 @@ import com.linecorp.bot.model.response.BotApiResponse;
 import hello.utils.AccountingUtils;
 
 import hello.utils.JDBCUtil;
+import hello.utils.JedisFactory;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jfree.chart.ChartFactory;
@@ -45,12 +46,15 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import retrofit2.Response;
 
 import java.awt.*;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
+import java.net.URISyntaxException;
 import java.sql.*;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -1094,16 +1098,71 @@ public class DofuncServiceImpl implements DofuncService {
      * @throws IOException
      */
     @Override
-    public String[] doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) throws IOException {
+    public String[] doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) throws IOException ,URISyntaxException{
         String text = content.getText();
         text = text.replaceAll("[-|_|\\s]","");
         // 地區識別
         String[] strings = text.split("(吃什麼)");
+        String city = strings[0];
         String keyword = null;
+        String redisKey = city+GOOGLE_MAP_API_REDIS_FOOD ;
+        int listSize = 120 ;
         if (strings.length > 1){
             keyword = strings[1];
+            redisKey = keyword + redisKey ; // 有關鍵字的另外分出來
+            listSize = 30 ; // 有關鍵字的結果較少
         }
-        String city = strings[0];
+        //  類型先固定寫死 以後要加類型要把redis 的 key做一點更動
+        // 數據庫連接 ? 數據沒必要持久因必須具有時效性
+        String type = "restaurant" ;
+        // 知道要什麼之後 去jedis拿
+        Jedis jedis = JedisFactory.getJedis();
+        boolean checkTime = false ;
+        long createTime = Long.parseLong(jedis.get(redisKey+"time"));
+        long nowTime = System.currentTimeMillis();
+        if ((nowTime - createTime) > 1000*60*60 ){
+            checkTime = true ;
+        }
+        int listLength = jedis.llen(redisKey).intValue(); //集合元素不可能超過21億 所以類型強制轉換 long -> int
+        if ( listLength == 0 || listLength < listSize || checkTime){  // 沒有元素 或者 元素數量不足 或 時間超過1小時
+            // 類型 城市 關鍵字 拿要找的路徑
+            String path = getPath4GoogleMap(replyToken,type,city,keyword);
+            Document document = jsoupClient(path);
+            String retrunText = document.text();
+            JSONObject jsonObject = JSONObject.parseObject(retrunText);
+            String nextPage = jsonObject.getString("next_page_token");
+            // 加載當前頁
+            redisInit4googleMap(jsonObject,redisKey);
+            while (nextPage != null){
+                // 有下一頁
+                // 拿到下一頁數據 把nextPage 重新給值
+                path = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken="+nextPage+"&key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&language=zh-TW";
+                document = jsoupClient(path);
+                retrunText = document.text();
+                jsonObject = JSONObject.parseObject(retrunText);
+                // 把下一頁存入 redis
+                redisInit4googleMap(jsonObject,redisKey);
+                nextPage = jsonObject.getString("next_page_token");
+            }
+        }
+        // 隨機往jedis 拿元素
+        int listIndex = new Random().nextInt(listLength);
+        String redisText = jedis.lindex(redisKey,listIndex);
+        // 拿到元素處理返回
+        //{imgUrl,name,outputText,gotoUrl};
+        return redisText.split("%");
+    }
+
+    /**
+     * 得到googleMap 的查詢path
+     * @param replyToken 程式錯誤直接返回
+     * @param type  查詢種類
+     * @param city  查詢城市
+     * @param keyword   關鍵字
+     * @return 路徑
+     */
+    private String getPath4GoogleMap(String replyToken, String type, String city, String keyword) {
+        String radius = "5000"; // 查找範圍 <M>　默認
         String localtion = null;
         int latitude = 0;
         int longitude = 0;
@@ -1117,71 +1176,112 @@ public class DofuncServiceImpl implements DofuncService {
                 localtion = "24.1" + latitude + ",120." + longitude;
                 break;
             }
+            case "豐原" : {
+                // 24.251993 120.718006
+                localtion = "24.251993,120.718006";
+                radius = "4000" ;
+                break;
+            }
+            case "大甲" : {
+                // 24.350528, 120.620291
+                localtion = "24.350528,120.620291";
+                radius = "2000" ;
+                break;
+            }
+            case "新社" : {
+                // 24.219979, 120.807054
+                localtion = "24.219979,120.807054";
+                radius = "3000" ;
+                break;
+            }
+            case "彰化" : {
+                // 24.082460, 120.541680 彰化市
+                // 24.057584, 120.432935 鹿港
+                int index = random.nextInt(10);
+                if (index < 5 ) {
+                    localtion = "24.082460,120.541680";
+                }else {
+                    localtion = "24.057584,120.432935";
+                }
+                break;
+            }
+            case "苑裡" : {
+                // 24.442970, 120.652453  車站
+                // 24.406031, 120.677288 苑裡鎮
+                int index = random.nextInt(10);
+                if (index < 5 ) {
+                    localtion = "24.442970,120.652453";
+                }else {
+                    localtion = "24.406031,120.677288";
+                }
+                radius = "6000";
+                break;
+            }
             default: {
                 this.replyText(replyToken, "還未增加你說的地點 ~~~~");
                 return null;
             }
         }
-        String type = "restaurant"; // 查找類型
-        String radius = "5000"; // 查找範圍 <M>
-        // 發送請求
-        String path = GOOGLE_MAP_API_PREFIX + "nearbysearch/json?location=" + localtion + "&radius="+radius+"&type="+type+"&" +
+        // 返回路徑
+        return GOOGLE_MAP_API_PREFIX + "nearbysearch/json?location=" + localtion + "&radius="+radius+"&type="+type+"&" +
                 (keyword == null ? "" : "keyword=" + keyword + "&") + "key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&language=zh-TW";
-        Document document = jsoupClient(path);
-        String retrunText = document.text();
-        JSONObject jsonObject = JSONObject.parseObject(retrunText);
+    }
+
+    private void redisInit4googleMap(JSONObject jsonObject, String redisKey) throws URISyntaxException{
+        // 加載當前頁
         JSONArray results = jsonObject.getJSONArray("results");
-        // 隨機獲取
-        int resultIndex = random.nextInt(results.size());
-        JSONObject result = results.getJSONObject(resultIndex);
-        // 對請求提取參數
-        String rating = result.getString("rating"); // 評分
-        String userRatingTotal = result.getString("user_ratings_total"); // 評論總數
-        String name = result.getString("name"); // 名子
-        String placeId = result.getString("place_id"); // 商店IP
-        String vicinity = result.getString("vicinity"); // 地址
-        String priceLevel = null;// 價位
-        String price = result.getString("price_level");
-        if (price != null) {
-            switch (Integer.parseInt(price)) {
-                case 0: {
-                    priceLevel = "自由";
-                    break;
-                }
-                case 1: {
-                    priceLevel = "便宜";
-                    break;
-                }
-                case 2: {
-                    priceLevel = "中等";
-                    break;
-                }
-                case 3: {
-                    priceLevel = "小貴";
-                    break;
-                }
-                case 4: {
-                    priceLevel = "較貴";
-                    break;
+        for (JSONObject result : results.toJavaList(JSONObject.class)) {
+            String rating = result.getString("rating"); // 評分
+            String userRatingTotal = result.getString("user_ratings_total"); // 評論總數
+            String name = result.getString("name"); // 名子
+            String placeId = result.getString("place_id"); // 商店IP
+            String vicinity = result.getString("vicinity"); // 地址
+            String priceLevel = null;// 價位
+            String price = result.getString("price_level");
+            if (price != null) {
+                switch (Integer.parseInt(price)) {
+                    case 0: {
+                        priceLevel = "自由";
+                        break;
+                    }
+                    case 1: {
+                        priceLevel = "便宜";
+                        break;
+                    }
+                    case 2: {
+                        priceLevel = "中等";
+                        break;
+                    }
+                    case 3: {
+                        priceLevel = "小貴";
+                        break;
+                    }
+                    case 4: {
+                        priceLevel = "較貴";
+                        break;
+                    }
                 }
             }
-        }
-        String isOpening = result.getJSONObject("opening_hours").getString("open_now"); // 現在有沒有開
-        if ("true".equals(isOpening)){
-            isOpening = "營業中";
-        }else {
-            isOpening = "休息中";
-        }
-        String photoToken = result.getJSONArray("photos").getJSONObject(0).getString("photo_reference"); // 找圖片的ID
-        // 模板賦值
-        String imgUrl = "https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&photoreference=" + photoToken;
-        String outputText = "Google 評分 :" + rating + " 有 :" +userRatingTotal + " 則評論\n" +
-                                        isOpening+"   "+ (priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n") +
-                                        vicinity;
-        String gotoUrl = "https://www.google.com/maps/search/?api=1&query="+name+"&query_place_id="+placeId;
+            String isOpening = result.getJSONObject("opening_hours").getString("open_now"); // 現在有沒有開
+            if ("true".equals(isOpening)){
+                isOpening = "營業中";
+            }else {
+                isOpening = "休息中";
+            }
+            String photoToken = result.getJSONArray("photos").getJSONObject(0).getString("photo_reference"); // 找圖片的ID
+            // 模板賦值
 
-        String [] returnString = {imgUrl,name,outputText,gotoUrl};
-        return returnString;
+            String item = ("https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&photoreference=")+(photoToken)
+                    +("%")+(name)
+                    +("%")+("Google 評分 :")+(rating)+(" 有 :")+(userRatingTotal)+(" 則評論\n")
+                    +(isOpening)+("   ")+((priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n"))+(vicinity)
+                    +("%")+("https://www.google.com/maps/search/?api=1&query=")+(name)+("&query_place_id=")+(placeId);
+            // 存起來
+            Jedis jedis = JedisFactory.getJedis();
+            jedis.lpush(redisKey,item);
+        }
+        // 重新加載的時間
+        JedisFactory.getJedis().set(redisKey+"time",String.valueOf(System.currentTimeMillis()));
     }
 
     private String getTableName(Event event) {

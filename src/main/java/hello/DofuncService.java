@@ -7,6 +7,7 @@ import org.jfree.chart.JFreeChart;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 @Service
@@ -55,6 +56,10 @@ public interface DofuncService {
     GoogleMap API Prefix
      */
     String GOOGLE_MAP_API_PREFIX = "https://maps.googleapis.com/maps/api/place/";
+    /*
+    GoogleMap API Redis Food
+     */
+    String GOOGLE_MAP_API_REDIS_FOOD = "googlemap4food";
 
     /**
      * 處理天氣
@@ -139,7 +144,7 @@ public interface DofuncService {
     /**
      * 處理google map api 搜尋
      */
-    String[] doGoogleMapSearch(String replyToken, Event event ,TextMessageContent content)throws IOException;
+    String[] doGoogleMapSearch(String replyToken, Event event ,TextMessageContent content)throws IOException,URISyntaxException;
 
 
 
