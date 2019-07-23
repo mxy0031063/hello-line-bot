@@ -1267,6 +1267,7 @@ public class DofuncServiceImpl implements DofuncService {
                 }
             }
             String isOpening = result.getJSONObject("opening_hours").getString("open_now"); // 現在有沒有開
+            log.info("\nname : "+name+"\n"+isOpening);
             if ("true".equals(isOpening)){
                 isOpening = "營業中";
             }else {
