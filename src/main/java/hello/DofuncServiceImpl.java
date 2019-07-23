@@ -1267,7 +1267,7 @@ public class DofuncServiceImpl implements DofuncService {
                 }
             }
             JSONObject jsonOpen = result.getJSONObject("opening_hours") ;
-            String isOpening = null ;
+            String isOpening = "" ;
             if (jsonOpen != null) {
                 isOpening = jsonOpen.getString("open_now"); // 現在有沒有開
             }
@@ -1276,10 +1276,16 @@ public class DofuncServiceImpl implements DofuncService {
             }else {
                 isOpening = "休息中";
             }
-            String photoToken = result.getJSONArray("photos").getJSONObject(0).getString("photo_reference"); // 找圖片的ID
+            JSONArray array = result.getJSONArray("photos");
+            String photoToken = "";
+            String imgPath = "null";
+            if (array != null){
+                photoToken = array.getJSONObject(0).getString("photo_reference"); // 找圖片的ID
+                imgPath =("https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&photoreference=")+(photoToken);
+            }
             // 模板賦值
 
-            String item = ("https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&photoreference=")+(photoToken)
+            String item = imgPath
                     +("%")+(name)
                     +("%")+("Google 評分 :")+(rating)+(" 有 :")+(userRatingTotal)+(" 則評論\n")
                     +(isOpening)+("   ")+((priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n"))+(vicinity)

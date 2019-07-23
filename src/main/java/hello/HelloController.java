@@ -503,8 +503,6 @@ public class HelloController {
      * @param strings
      */
     private void showGoogleSearch(String replyToken, String[] strings) {
-        okhttp3.Response response = timerUilts.clientHttp(strings[0]);
-        DownloadedContent jpg = saveContent("jpg", response.body());
         String imageUrl = createUri("/static/buttons/googleSearchFood.jpg");
         CarouselTemplate carouselTemplate = new CarouselTemplate(
                 Arrays.asList(
@@ -522,6 +520,14 @@ public class HelloController {
                 )
         );
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
+        String imgPath = strings[0] ;
+        if ("null".equals(imgPath)){
+            // 沒有圖片
+            this.reply(replyToken, templateMessage);
+            return;
+        }
+        okhttp3.Response response = timerUilts.clientHttp(imgPath);
+        DownloadedContent jpg = saveContent("jpg", response.body());
         this.reply(replyToken, Arrays.asList(
                 new ImageMessage(jpg.getUri(), jpg.getUri()),
                 templateMessage
