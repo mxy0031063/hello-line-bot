@@ -63,6 +63,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -667,7 +668,9 @@ public class HelloController {
                     return;
                 }
                 showGoogleSearch(replyToken,strings);
-            }catch (NullPointerException e){
+            } catch (URISyntaxException e){
+                e.printStackTrace();
+            } catch (NullPointerException e){
                 this.replyText(replyToken,"沒找到你說的關鍵字 在試一次吧");
                 e.printStackTrace();
             }
