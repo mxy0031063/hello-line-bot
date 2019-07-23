@@ -1118,7 +1118,11 @@ public class DofuncServiceImpl implements DofuncService {
         // 知道要什麼之後 去jedis拿
         Jedis jedis = JedisFactory.getJedis();
         boolean checkTime = false ;
-        long createTime = Long.parseLong(jedis.get(redisKey+"time"));
+        long createTime = 0 ;
+        String oldTime = jedis.get(redisKey+"time") ;
+        if (oldTime != null ){
+            createTime = Long.parseLong(oldTime);
+        }
         long nowTime = System.currentTimeMillis();
         if ((nowTime - createTime) > 1000*60*60 ){
             checkTime = true ;
