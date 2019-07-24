@@ -144,7 +144,7 @@ public interface DofuncService {
     /**
      * 處理google map api 搜尋
      */
-    String[] doGoogleMapSearch(String replyToken, Event event ,TextMessageContent content)throws IOException,URISyntaxException;
+    String[] doGoogleMapSearch(String replyToken, Event event ,TextMessageContent content)throws IOException;
 
 
 

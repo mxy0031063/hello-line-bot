@@ -1098,71 +1098,77 @@ public class DofuncServiceImpl implements DofuncService {
      * @throws IOException
      */
     @Override
-    public String[] doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) throws IOException ,URISyntaxException{
+    public String[] doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) throws IOException {
         String text = content.getText();
-        text = text.replaceAll("[-|_|\\s]","");
+        text = text.replaceAll("[-|_|\\s]", "");
         // 地區識別
         String[] strings = text.split("(吃什麼)");
         String city = strings[0];
         String keyword = null;
-        String redisKey = city+GOOGLE_MAP_API_REDIS_FOOD ;
-        int listSize = 120 ;
-        if (strings.length > 1){
+        String redisKey = city + GOOGLE_MAP_API_REDIS_FOOD;
+        int listSize = 120;
+        if (strings.length > 1) {
             keyword = strings[1];
-            redisKey = keyword + redisKey ; // 有關鍵字的另外分出來
-            listSize = 30 ; // 有關鍵字的結果較少
+            redisKey = keyword + redisKey; // 有關鍵字的另外分出來
+            listSize = 30; // 有關鍵字的結果較少
         }
         //  類型先固定寫死 以後要加類型要把redis 的 key做一點更動
         // 數據庫連接 ? 數據沒必要持久因必須具有時效性
-        String type = "restaurant" ;
+        String type = "restaurant";
         // 知道要什麼之後 去jedis拿
-        Jedis jedis = JedisFactory.getJedis();
-        boolean checkTime = false ;
-        long createTime = 0 ;
-        String oldTime = jedis.get(redisKey+"time") ;
-        if (oldTime != null ){
-            createTime = Long.parseLong(oldTime);
-        }
-        long nowTime = System.currentTimeMillis();
-        if ((nowTime - createTime) > 1000*60*60 ){
-            checkTime = true ;
-        }
-        int listLength = jedis.llen(redisKey).intValue(); //集合元素不可能超過21億 所以類型強制轉換 long -> int
-        if ( listLength == 0 || listLength < listSize || checkTime){  // 沒有元素 或者 元素數量不足 或 時間超過1小時
-            // 類型 城市 關鍵字 拿要找的路徑
-            String path = getPath4GoogleMap(replyToken,type,city,keyword);
-            Document document = jsoupClient(path);
-            String retrunText = document.text();
-            JSONObject jsonObject = JSONObject.parseObject(retrunText);
-            String nextPage = jsonObject.getString("next_page_token");
-            // 加載當前頁
-            redisInit4googleMap(jsonObject,redisKey);
-            while (nextPage != null){
-                // 有下一頁
-                // 拿到下一頁數據 把nextPage 重新給值
-                path = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken="+nextPage+"&key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&language=zh-TW";
-                document = jsoupClient(path);
-                retrunText = document.text();
-                jsonObject = JSONObject.parseObject(retrunText);
-                // 把下一頁存入 redis
-                redisInit4googleMap(jsonObject,redisKey);
-                nextPage = jsonObject.getString("next_page_token");
+        try (Jedis jedis = JedisFactory.getJedis()) {
+            boolean checkTime = false;
+            long createTime = 0;
+            String oldTime = jedis.get(redisKey + "time");
+            if (oldTime != null) {
+                createTime = Long.parseLong(oldTime);
             }
+            long nowTime = System.currentTimeMillis();
+            if ((nowTime - createTime) > 1000 * 60 * 60) {
+                checkTime = true;
+            }
+            int listLength = jedis.llen(redisKey).intValue(); //集合元素不可能超過21億 所以類型強制轉換 long -> int
+            if (listLength == 0 || listLength < listSize || checkTime) {  // 沒有元素 或者 元素數量不足 或 時間超過1小時
+                // 類型 城市 關鍵字 拿要找的路徑
+                String path = getPath4GoogleMap(replyToken, type, city, keyword);
+                Document document = jsoupClient(path);
+                String retrunText = document.text();
+                JSONObject jsonObject = JSONObject.parseObject(retrunText);
+                String nextPage = jsonObject.getString("next_page_token");
+                // 加載當前頁
+                redisInit4googleMap(jsonObject, redisKey, jedis);
+                while (nextPage != null) {
+                    // 有下一頁
+                    // 拿到下一頁數據 把nextPage 重新給值
+                    path = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=" + nextPage + "&key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&language=zh-TW";
+                    document = jsoupClient(path);
+                    retrunText = document.text();
+                    jsonObject = JSONObject.parseObject(retrunText);
+                    // 把下一頁存入 redis
+                    redisInit4googleMap(jsonObject, redisKey, jedis);
+                    nextPage = jsonObject.getString("next_page_token");
+                }
+            }
+            // 隨機往jedis 拿元素
+            int listIndex = new Random().nextInt(listLength);
+            String redisText = jedis.lindex(redisKey, listIndex);
+
+            // 拿到元素處理返回
+            //{imgUrl,name,outputText,gotoUrl};
+            return redisText.split("%");
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
-        // 隨機往jedis 拿元素
-        int listIndex = new Random().nextInt(listLength);
-        String redisText = jedis.lindex(redisKey,listIndex);
-        // 拿到元素處理返回
-        //{imgUrl,name,outputText,gotoUrl};
-        return redisText.split("%");
+        return null;
     }
 
     /**
      * 得到googleMap 的查詢path
+     *
      * @param replyToken 程式錯誤直接返回
-     * @param type  查詢種類
-     * @param city  查詢城市
-     * @param keyword   關鍵字
+     * @param type       查詢種類
+     * @param city       查詢城市
+     * @param keyword    關鍵字
      * @return 路徑
      */
     private String getPath4GoogleMap(String replyToken, String type, String city, String keyword) {
@@ -1180,42 +1186,42 @@ public class DofuncServiceImpl implements DofuncService {
                 localtion = "24.1" + latitude + ",120." + longitude;
                 break;
             }
-            case "豐原" : {
+            case "豐原": {
                 // 24.251993 120.718006
                 localtion = "24.251993,120.718006";
-                radius = "4000" ;
+                radius = "4000";
                 break;
             }
-            case "大甲" : {
+            case "大甲": {
                 // 24.350528, 120.620291
                 localtion = "24.350528,120.620291";
-                radius = "2000" ;
+                radius = "2000";
                 break;
             }
-            case "新社" : {
+            case "新社": {
                 // 24.219979, 120.807054
                 localtion = "24.219979,120.807054";
-                radius = "3000" ;
+                radius = "3000";
                 break;
             }
-            case "彰化" : {
+            case "彰化": {
                 // 24.082460, 120.541680 彰化市
                 // 24.057584, 120.432935 鹿港
                 int index = random.nextInt(10);
-                if (index < 5 ) {
+                if (index < 5) {
                     localtion = "24.082460,120.541680";
-                }else {
+                } else {
                     localtion = "24.057584,120.432935";
                 }
                 break;
             }
-            case "苑裡" : {
+            case "苑裡": {
                 // 24.442970, 120.652453  車站
                 // 24.406031, 120.677288 苑裡鎮
                 int index = random.nextInt(10);
-                if (index < 5 ) {
+                if (index < 5) {
                     localtion = "24.442970,120.652453";
-                }else {
+                } else {
                     localtion = "24.406031,120.677288";
                 }
                 radius = "6000";
@@ -1227,13 +1233,14 @@ public class DofuncServiceImpl implements DofuncService {
             }
         }
         // 返回路徑
-        return GOOGLE_MAP_API_PREFIX + "nearbysearch/json?location=" + localtion + "&radius="+radius+"&type="+type+"&" +
+        return GOOGLE_MAP_API_PREFIX + "nearbysearch/json?location=" + localtion + "&radius=" + radius + "&type=" + type + "&" +
                 (keyword == null ? "" : "keyword=" + keyword + "&") + "key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&language=zh-TW";
     }
 
-    private void redisInit4googleMap(JSONObject jsonObject, String redisKey) throws URISyntaxException{
+    private void redisInit4googleMap(JSONObject jsonObject, String redisKey, Jedis jedis) {
         // 加載當前頁
         JSONArray results = jsonObject.getJSONArray("results");
+
         for (JSONObject result : results.toJavaList(JSONObject.class)) {
             String rating = result.getString("rating"); // 評分
             String userRatingTotal = result.getString("user_ratings_total"); // 評論總數
@@ -1266,36 +1273,35 @@ public class DofuncServiceImpl implements DofuncService {
                     }
                 }
             }
-            JSONObject jsonOpen = result.getJSONObject("opening_hours") ;
-            String isOpening = "" ;
+            JSONObject jsonOpen = result.getJSONObject("opening_hours");
+            String isOpening = "";
             if (jsonOpen != null) {
                 isOpening = jsonOpen.getString("open_now"); // 現在有沒有開
             }
-            if ("true".equals(isOpening)){
+            if ("true".equals(isOpening)) {
                 isOpening = "營業中";
-            }else {
+            } else {
                 isOpening = "休息中";
             }
             JSONArray array = result.getJSONArray("photos");
             String photoToken = "";
             String imgPath = "null";
-            if (array != null){
+            if (array != null) {
                 photoToken = array.getJSONObject(0).getString("photo_reference"); // 找圖片的ID
-                imgPath =("https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&photoreference=")+(photoToken);
+                imgPath = ("https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=600&photoreference=") + (photoToken);
             }
             // 模板賦值
 
             String item = imgPath
-                    +("%")+(name)
-                    +("%")+("Google 評分 :")+(rating)+(" 有 :")+(userRatingTotal)+(" 則評論\n")
-                    +(isOpening)+("   ")+((priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n"))+(vicinity)
-                    +("%")+("https://www.google.com/maps/search/?api=1&query=")+(name)+("&query_place_id=")+(placeId);
+                    + ("%") + (name)
+                    + ("%") + ("Google 評分 :") + (rating) + (" 有 :") + (userRatingTotal) + (" 則評論\n")
+                    + (isOpening) + ("   ") + ((priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n")) + (vicinity)
+                    + ("%") + ("https://www.google.com/maps/search/?api=1&query=") + (name) + ("&query_place_id=") + (placeId);
             // 存起來
-            Jedis jedis = JedisFactory.getJedis();
-            jedis.lpush(redisKey,item);
+
+            jedis.lpush(redisKey, item);
         }
-        // 重新加載的時間
-        JedisFactory.getJedis().set(redisKey+"time",String.valueOf(System.currentTimeMillis()));
+        jedis.set(redisKey + "time", String.valueOf(System.currentTimeMillis()));
     }
 
     private String getTableName(Event event) {

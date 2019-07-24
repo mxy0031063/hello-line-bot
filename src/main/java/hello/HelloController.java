@@ -674,8 +674,6 @@ public class HelloController {
                     return;
                 }
                 showGoogleSearch(replyToken,strings);
-            } catch (URISyntaxException e){
-                e.printStackTrace();
             } catch (NullPointerException e){
                 this.replyText(replyToken,"沒找到你說的關鍵字 在試一次吧");
                 e.printStackTrace();
