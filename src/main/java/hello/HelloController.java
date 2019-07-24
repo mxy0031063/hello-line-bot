@@ -666,7 +666,7 @@ public class HelloController {
             // 找不到城市就輸出
             //改成模板 按模版 選擇想要觀看的東西
             service.doWeather(replyToken,event,content);
-        } else if(text.matches("(台中)(吃什麼)[-|_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+        } else if(text.matches("(台中|豐原|彰化|大甲|新社|苑裡)(吃什麼)[-|_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
             try{
                 String [] strings = service.doGoogleMapSearch(replyToken,event,content);
                 if (strings == null){
