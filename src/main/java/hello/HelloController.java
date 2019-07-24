@@ -528,8 +528,9 @@ public class HelloController {
         }
         okhttp3.Response response = timerUilts.clientHttp(imgPath);
         DownloadedContent jpg = saveContent("jpg", response.body());
+        log.info("\n\njpg : "+jpg.uri+" *** "+jpg.path);
         this.reply(replyToken, Arrays.asList(
-                new ImageMessage(jpg.getUri()+"#", jpg.getUri()+"#"),
+                new ImageMessage(jpg.getPath()+"#", jpg.getPath()+"#"),
                 templateMessage
         ));
     }
