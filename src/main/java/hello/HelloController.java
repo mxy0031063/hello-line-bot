@@ -530,7 +530,7 @@ public class HelloController {
         DownloadedContent jpg = saveContent("jpg", response.body());
         log.info("\n\nimgpath : "+imgPath+" *** jpg : "+jpg.uri+" *** "+jpg.path);
         this.reply(replyToken, Arrays.asList(
-                new ImageMessage(jpg.getUri(), jpg.getUri()+"?"),
+                new ImageMessage(imgPath, imgPath),
                 templateMessage
         ));
     }
