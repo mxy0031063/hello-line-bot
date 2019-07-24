@@ -1124,7 +1124,7 @@ public class DofuncServiceImpl implements DofuncService {
                 createTime = Long.parseLong(oldTime);
             }
             long nowTime = System.currentTimeMillis();
-            if ((nowTime - createTime) > 1000 * 60 * 60) {
+            if ((nowTime - createTime) > 1000 * 60 * 60) {  // 數據超時設置
                 checkTime = true;
             }
             int listLength = jedis.llen(redisKey).intValue(); //集合元素不可能超過21億 所以類型強制轉換 long -> int
@@ -1149,6 +1149,7 @@ public class DofuncServiceImpl implements DofuncService {
                     redisInit4googleMap(jsonObject, redisKey, jedis);
                     nextPage = jsonObject.getString("next_page_token");
                 }
+                listLength = jedis.llen(redisKey).intValue(); // jedis操作後 重新獲取長度
             }
             // 隨機往jedis 拿元素
             int listIndex = new Random().nextInt(listLength);
