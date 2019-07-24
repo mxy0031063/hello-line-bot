@@ -526,10 +526,10 @@ public class HelloController {
             this.reply(replyToken, templateMessage);
             return;
         }
-        okhttp3.Response response = timerUilts.clientHttp(imgPath+"#");
+        okhttp3.Response response = timerUilts.clientHttp(imgPath);
         DownloadedContent jpg = saveContent("jpg", response.body());
         this.reply(replyToken, Arrays.asList(
-                new ImageMessage(jpg.getUri(), jpg.getUri()),
+                new ImageMessage(jpg.getUri()+"#", jpg.getUri()+"#"),
                 templateMessage
         ));
     }
