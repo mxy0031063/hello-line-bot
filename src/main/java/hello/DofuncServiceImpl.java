@@ -396,6 +396,7 @@ public class DofuncServiceImpl implements DofuncService {
         urlLiat.add("https://m.ituba.cc/tag/802_1.html");
         urlLiat.add("https://m.ituba.cc/tag/802_2.html");
         try (Jedis jedis = JedisFactory.getJedis()) {
+            if (jedis.llen("pump") > 1000) return;
             for (String str : urlLiat) {
                 Document document = jsoupClient(str);
                 Elements elements = document.select(".libox img");
@@ -1412,6 +1413,7 @@ public class DofuncServiceImpl implements DofuncService {
             String url = "https://www.ptt.cc/bbs/Beauty/index" + pageIndex + ".html";
             Document pageDoc = null;
             try (Jedis jedis = JedisFactory.getJedis()) {
+                if (jedis.llen("pump") > 1500 ) return;
                 // 獲得表特版頁面
                 pageDoc = jsoupClient(url);
                 // 獲得標題組
