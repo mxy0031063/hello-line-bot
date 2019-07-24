@@ -359,7 +359,7 @@ public class DofuncServiceImpl implements DofuncService {
                     sexLength = jedis.llen("sex").intValue();
                 }
                 index = random.nextInt(sexLength);
-                url = jedis.lindex("pump",index);
+                url = jedis.lindex("sex",index);
             } else {
                 int pumpLength = jedis.llen("pump").intValue();
                 if (pumpLength == 0){
