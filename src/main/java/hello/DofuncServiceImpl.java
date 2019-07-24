@@ -72,7 +72,7 @@ public class DofuncServiceImpl implements DofuncService {
     @Autowired
     private TimerUilts timerUilts;
 
-    private static List<String> grilImgUrlList = new ArrayList<>();
+//    private static List<String> grilImgUrlList = new ArrayList<>();
 
     // private static List<String> manImgUrlList = new ArrayList<>();
 
@@ -80,7 +80,7 @@ public class DofuncServiceImpl implements DofuncService {
 
     private static String currencyReturnText;
 
-    private static List<String> dccardSexList = new ArrayList<>();
+//    private static List<String> dccardSexList = new ArrayList<>();
 
     private static Map<String, String> weatherMap = new HashMap();
 
@@ -340,40 +340,44 @@ public class DofuncServiceImpl implements DofuncService {
          *        為了讓內容的地址因多次調用APP端沒有進入休眠
          *        而無法更新最新
          */
-        if (doCount > 100) {
-            dccardSexList.clear();
-            grilImgUrlList.clear();
-            doCount = 0;
-        }
-
-        String text = content.getText();
-        Random random = new Random();
-        int index;
-        String url;
-        doCount++;
-        if (text.contains("西施") || text.contains("西斯") || text.contains("sex")) {
-            if (dccardSexList.size() < 1) {
-                dccardSexInit(DCCARD_SEX_PATH, 80);
-                dccardSexInit(DCARD_SEX_NEW_PATH, 150);
+        try (Jedis jedis = JedisFactory.getJedis()) {
+            Integer count = Integer.parseInt(jedis.get("pumpcount"));
+            if ( count > 100) {
+                jedis.set("pumpcount","0");
+                jedis.ltrim("pump",1,0);
+                jedis.ltrim("sex",1,0);
             }
-            index = random.nextInt(dccardSexList.size());
-            url = dccardSexList.get(index);
-        } else {
-            if (grilImgUrlList.size() < 1) {
-                long start = System.currentTimeMillis();
-                beautyInit();
-                long beautyEnd = System.currentTimeMillis();
-                itubaInit();
-                long itubaEnd = System.currentTimeMillis();
-                log.info("\n 表特版加仔時間 ：" + (beautyEnd - start) + "\n ituba 加載時間 ：" + (itubaEnd - beautyEnd));
+            String text = content.getText();
+            Random random = new Random();
+            int index;
+            String url;
+            if (text.contains("西施") || text.contains("西斯") || text.contains("sex")) {
+                int sexLength = jedis.llen("sex").intValue();
+                if (sexLength == 0){
+                    dccardSexInit(DCCARD_SEX_PATH, 80, jedis);
+                    dccardSexInit(DCARD_SEX_NEW_PATH, 150, jedis);;
+                    sexLength = jedis.llen("sex").intValue();
+                }
+                index = random.nextInt(sexLength);
+                url = jedis.lindex("pump",index);
+            } else {
+                int pumpLength = jedis.llen("pump").intValue();
+                if (pumpLength == 0){
+                    beautyInit();
+                    itubaInit();
+                    pumpLength = jedis.llen("pump").intValue();
+                }
+                index = random.nextInt(pumpLength);
+                url = jedis.lindex("pump",index);
             }
-            index = random.nextInt(grilImgUrlList.size());
-            url = grilImgUrlList.get(index);
+            ++count ;
+            jedis.set("pumpcount",String.valueOf(count));
+            log.info("抽卡集合元素 : " + jedis.llen("pump") + "\n 西施集合元素 : " + jedis.llen("sex") + "\n 執行次數 : " + jedis.get("pumpcount"));
+            return url;
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
-
-        log.info("抽卡集合元素 : " + grilImgUrlList.size() + "\n 西施集合元素 : " + dccardSexList.size() + "\n 執行次數 : " + doCount);
-
-        return url;
+        return null ;
     }
 
     public static void itubaInit() throws IOException {
@@ -391,15 +395,19 @@ public class DofuncServiceImpl implements DofuncService {
         urlLiat.add("https://m.ituba.cc/tag/739.html");
         urlLiat.add("https://m.ituba.cc/tag/802_1.html");
         urlLiat.add("https://m.ituba.cc/tag/802_2.html");
-        for (String str : urlLiat) {
-            Document document = jsoupClient(str);
-            Elements elements = document.select(".libox img");
-            for (Element element : elements) {
-                String url = element.absUrl("src");
-                if (url.length() != 0) {
-                    grilImgUrlList.add(url);
+        try (Jedis jedis = JedisFactory.getJedis()) {
+            for (String str : urlLiat) {
+                Document document = jsoupClient(str);
+                Elements elements = document.select(".libox img");
+                for (Element element : elements) {
+                    String url = element.absUrl("src");
+                    if (url.length() != 0) {
+                        jedis.lpush("pump", url);
+                    }
                 }
             }
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
 
     }
@@ -1128,7 +1136,7 @@ public class DofuncServiceImpl implements DofuncService {
                 checkTime = true;
             }
             int listLength = jedis.llen(redisKey).intValue(); //集合元素不可能超過21億 所以類型強制轉換 long -> int
-            log.info("\n\n listLength : "+listLength+" listSize : "+listSize+" checkTime : "+checkTime+"\n");
+            log.info("\n\n listLength : " + listLength + " listSize : " + listSize + " checkTime : " + checkTime + "\n");
             if (listLength == 0 || listLength < listSize || checkTime) {  // 沒有元素 或者 元素數量不足 或 時間超過1小時
                 // 類型 城市 關鍵字 拿要找的路徑
                 String path = getPath4GoogleMap(replyToken, type, city, keyword);
@@ -1296,7 +1304,7 @@ public class DofuncServiceImpl implements DofuncService {
 
             String item = imgPath
                     + ("%") + (name)
-                    + ("%") + (rating==null?"":("Google 評分 :") + (rating)) + (userRatingTotal==null?"\n":(" 有 :") + (userRatingTotal) + (" 則評論\n"))
+                    + ("%") + (rating == null ? "" : ("Google 評分 :") + (rating)) + (userRatingTotal == null ? "\n" : (" 有 :") + (userRatingTotal) + (" 則評論\n"))
                     + (isOpening) + ("   ") + ((priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n")) + (vicinity)
                     + ("%") + ("https://www.google.com/maps/search/?api=1&query=") + (name) + ("&query_place_id=") + (placeId);
             // 存起來
@@ -1340,7 +1348,7 @@ public class DofuncServiceImpl implements DofuncService {
         }
     }
 
-    public static void dccardSexInit(String path, int count) throws IOException {
+    public static void dccardSexInit(String path, int count, Jedis jedis) throws IOException {
         log.info("DcardList finction INIT ...");
 //        okhttp3.Response response = timerUilts.clientHttp(path);
 //        String returnText = response.body().string();
@@ -1356,8 +1364,9 @@ public class DofuncServiceImpl implements DofuncService {
             String gender = item.getString("gender");
             if (gender.equals("F")) {
                 for (int j = 0; j < media.size(); j++) {
-                    dccardSexList.add(media.getJSONObject(j).getString("url"));
-                    if (dccardSexList.size() > count) {
+                    jedis.lpush("sex", media.getJSONObject(j).getString("url"));
+//                    dccardSexList.add(media.getJSONObject(j).getString("url"));
+                    if (jedis.llen("sex") > count) {
                         return;
                     }
                 }
@@ -1374,7 +1383,7 @@ public class DofuncServiceImpl implements DofuncService {
             return;
         }
         String nextPath = path + "&before=" + pageId;
-        dccardSexInit(nextPath, count);
+        dccardSexInit(nextPath, count, jedis);
     }
 
 
@@ -1402,7 +1411,7 @@ public class DofuncServiceImpl implements DofuncService {
         pageIndexArray.forEach((pageIndex) -> {
             String url = "https://www.ptt.cc/bbs/Beauty/index" + pageIndex + ".html";
             Document pageDoc = null;
-            try {
+            try (Jedis jedis = JedisFactory.getJedis()) {
                 // 獲得表特版頁面
                 pageDoc = jsoupClient(url);
                 // 獲得標題組
@@ -1426,12 +1435,13 @@ public class DofuncServiceImpl implements DofuncService {
                                 continue;
                             }
                             if (titleText.contains("[正妹]")) {
-                                grilImgUrlList.add(str);
+                                jedis.lpush("pump", str);
+                                // grilImgUrlList.add(str);
                             }
                         }
                     }
                 }
-            } catch (IOException e) {
+            } catch (URISyntaxException | IOException e) {
                 e.printStackTrace();
             }
         });

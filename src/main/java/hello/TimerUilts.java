@@ -3,14 +3,17 @@ package hello;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.JSONPObject;
+import hello.utils.JedisFactory;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 
 import static hello.DofuncService.DCARD_SEX_NEW_PATH;
@@ -114,10 +117,10 @@ public class TimerUilts implements ApplicationRunner {
             @Override
             public void run() {
                 super.run();
-                try {
-                    dccardSexInit(DCCARD_SEX_PATH, 80);
-                    dccardSexInit(DCARD_SEX_NEW_PATH, 150);
-                } catch (IOException e) {
+                try (Jedis jedis = JedisFactory.getJedis()){
+                    dccardSexInit(DCCARD_SEX_PATH, 80, jedis);
+                    dccardSexInit(DCARD_SEX_NEW_PATH, 150, jedis);
+                } catch (IOException|URISyntaxException e) {
                     e.printStackTrace();
                 }
             }
