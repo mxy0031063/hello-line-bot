@@ -1128,6 +1128,7 @@ public class DofuncServiceImpl implements DofuncService {
                 checkTime = true;
             }
             int listLength = jedis.llen(redisKey).intValue(); //集合元素不可能超過21億 所以類型強制轉換 long -> int
+            log.info("\n\n listLength : "+listLength+" listSize : "+listSize+" checkTime : "+checkTime+"\n");
             if (listLength == 0 || listLength < listSize || checkTime) {  // 沒有元素 或者 元素數量不足 或 時間超過1小時
                 // 類型 城市 關鍵字 拿要找的路徑
                 String path = getPath4GoogleMap(replyToken, type, city, keyword);
