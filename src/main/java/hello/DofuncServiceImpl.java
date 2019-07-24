@@ -341,7 +341,7 @@ public class DofuncServiceImpl implements DofuncService {
          *        而無法更新最新
          */
         try (Jedis jedis = JedisFactory.getJedis()) {
-            Integer count = Integer.parseInt(jedis.get("pumpcount").length()==0?"0":jedis.get("pumpcount"));
+            Integer count = Integer.parseInt(jedis.get("pumpcount"));
             if ( count > 100) {
                 jedis.set("pumpcount","0");
                 jedis.ltrim("pump",1,0);
