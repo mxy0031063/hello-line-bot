@@ -335,34 +335,38 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public String doBeauty(Event event, TextMessageContent content) throws IOException {
         /**
-         * clear 方法會把元素清空
-         * 目的 ：再次數超過上限101次時的當下進行 原有數據清空
-         *        為了讓內容的地址因多次調用APP端沒有進入休眠
-         *        而無法更新最新
+         *　抽卡超時　：
+         *          西施版超時設定　１　小時
+         *          表特版超時設定　２　小時
          */
         try (Jedis jedis = JedisFactory.getJedis()) {
-            Integer count = Integer.parseInt(jedis.get("pumpcount"));
-            if ( count > 100) {
-                jedis.set("pumpcount","0");
-                jedis.ltrim("pump",1,0);
-                jedis.ltrim("sex",1,0);
-            }
+//            Integer count = Integer.parseInt(jedis.get("pumpcount"));
+//            if ( count > 100) {
+//                jedis.set("pumpcount","0");
+//                jedis.ltrim("pump",1,0);
+//                jedis.ltrim("sex",1,0);
+//            }
             String text = content.getText();
             Random random = new Random();
             int index;
             String url;
+            long nowTime = System.currentTimeMillis();
+            long sexTime = Long.parseLong(jedis.get("sexTime"));
+            long beautyTime = Long.parseLong(jedis.get("beautyTime"));
             if (text.contains("西施") || text.contains("西斯") || text.contains("sex")) {
                 int sexLength = jedis.llen("sex").intValue();
-                if (sexLength == 0){
+                if (sexLength == 0 || (nowTime - sexTime) > 1000*60*60 ){ // 超時1小時
+                    jedis.ltrim("sex",1,0); // 清空
                     dccardSexInit(DCCARD_SEX_PATH, 80, jedis);
-                    dccardSexInit(DCARD_SEX_NEW_PATH, 150, jedis);;
+                    dccardSexInit(DCARD_SEX_NEW_PATH, 150, jedis);
                     sexLength = jedis.llen("sex").intValue();
                 }
                 index = random.nextInt(sexLength);
                 url = jedis.lindex("sex",index);
             } else {
                 int pumpLength = jedis.llen("pump").intValue();
-                if (pumpLength == 0){
+                if (pumpLength == 0 || (nowTime - beautyTime) > 1000*60*120 ){ // 超時2小時
+                    jedis.ltrim("pump",1,0);
                     beautyInit();
                     itubaInit();
                     pumpLength = jedis.llen("pump").intValue();
@@ -370,9 +374,13 @@ public class DofuncServiceImpl implements DofuncService {
                 index = random.nextInt(pumpLength);
                 url = jedis.lindex("pump",index);
             }
-            ++count ;
-            jedis.set("pumpcount",String.valueOf(count));
-            log.info("抽卡集合元素 : " + jedis.llen("pump") + "\n 西施集合元素 : " + jedis.llen("sex") + "\n 執行次數 : " + jedis.get("pumpcount"));
+//            ++count ;
+//            jedis.set("pumpcount",String.valueOf(count));
+//            執行次數 + jedis.get("pumpcount")
+            log.info("抽卡集合元素 : " + jedis.llen("pump") + "\n 西施集合元素 : " + jedis.llen("sex") +
+                    "\n 西施版上次加載時間 : " + (nowTime - sexTime)/1000/60 + "分前"+
+                    "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime)/1000/60 + "分前\n"
+            );
             return url;
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -1350,6 +1358,7 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     public static void dccardSexInit(String path, int count, Jedis jedis) throws IOException {
+        jedis.set("sexTime",String.valueOf(System.currentTimeMillis()));    // 西施版加載時間
         log.info("DcardList finction INIT ...");
 //        okhttp3.Response response = timerUilts.clientHttp(path);
 //        String returnText = response.body().string();
@@ -1366,7 +1375,6 @@ public class DofuncServiceImpl implements DofuncService {
             if (gender.equals("F")) {
                 for (int j = 0; j < media.size(); j++) {
                     jedis.lpush("sex", media.getJSONObject(j).getString("url"));
-//                    dccardSexList.add(media.getJSONObject(j).getString("url"));
                     if (jedis.llen("sex") > count) {
                         return;
                     }
@@ -1445,6 +1453,7 @@ public class DofuncServiceImpl implements DofuncService {
                         }
                     }
                 }
+                jedis.set("beautyTime",String.valueOf(System.currentTimeMillis()));     // 表特加載時間
             } catch (URISyntaxException | IOException e) {
                 e.printStackTrace();
             }
