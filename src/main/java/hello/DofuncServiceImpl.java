@@ -123,7 +123,10 @@ public class DofuncServiceImpl implements DofuncService {
             String oli = jedis.get("oli");
             String oliTimeString = jedis.get("oliTime");
             long nowTime = System.currentTimeMillis();
-            long oliTime = Long.parseLong(oliTimeString);
+            long oliTime = 0 ;
+            if (oliTimeString.length() != 0){
+                oliTime = Long.parseLong(oliTimeString) ;
+            }
             if (oli.length() != 0 || (nowTime - oliTime) < 1000*60*60*6 ){ //超時12小時
                 // 緩存有資料
                 this.replyText(replyToken,oli);
