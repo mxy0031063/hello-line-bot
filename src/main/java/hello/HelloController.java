@@ -421,26 +421,54 @@ public class HelloController {
      * @throws IOException
      */
     private void showConStellation(String replyToken, String data) throws IOException{
-        okhttp3.Response response = timerUilts.clientHttp(CONSTELLATION_PATH);
-        String returnText = response.body().string() ;
-        JSONArray pageReturn = JSONArray.parseArray(returnText);//返回的星座列表
-        JSONObject jsonObject = null ;
-        for (int i = 0; i < pageReturn.size(); i++) {
-            JSONObject item = pageReturn.getJSONObject(i);
-            if (item.getString("name").equals(data)){
-                jsonObject = item ;
-            }
-        }
-        if (!"OK".equals(response.message()) || pageReturn.size() == 0){
-            this.replyText(replyToken,"很抱歉 ! 資料出問題了");
-            return;
-        }
-        if (jsonObject == null){
-            this.replyText(replyToken,"data : "+data+"\n returnText : "+returnText);
-        }else {
-            this.replyText(replyToken, "今日短評 : " + jsonObject.getString("TODAY_WORD") + "\n" + "幸運數字 : " + jsonObject.getString("LUCKY_NUMERAL") + "\n" + "幸運色 : " + jsonObject.getString("LUCKY_COLOR") + "\n" + "小確幸時間 : " + jsonObject.getString("LUCKY_TIME") + "\n" + "開運方位 : " + jsonObject.getString("LUCKY_DIRECTION") + "\n" + "幸運星座 : " + jsonObject.getString("LUCKY_ASTRO") + "\n\n" + "整體運勢 : " + jsonObject.getString("STAR_ENTIRETY") + "\n" + jsonObject.getString("DESC_ENTIRETY") + "\n" + "愛情運勢 : " + jsonObject.getString("STAR_LOVE") + "\n" + jsonObject.getString("DESC_LOVE") + "\n" + "事業運勢 : " + jsonObject.getString("STAR_WORK") + "\n" + jsonObject.getString("DESC_WORK") + "\n" + "財運運勢 : " + jsonObject.getString("STAR_MONEY") + "\n" + jsonObject.getString("DESC_MONEY") + "\n");
 
+        try(Jedis jedis = JedisFactory.getJedis()){
+
+            // 獲取時間
+            long nowTime = System.currentTimeMillis();
+            long constellationTime = 0 ;
+            if (jedis.exists("constellationTime")){
+                constellationTime = Long.parseLong(jedis.get("constellationTime"));
+            }
+            // 判斷存在 與 不超時
+            if (jedis.exists(data) && (nowTime - constellationTime) < 1000*60*60*2 ){   // 超時2小時
+                this.replyText(replyToken,jedis.get(data));
+                return;
+            }
+            // 不存在則更新
+            okhttp3.Response response = timerUilts.clientHttp(CONSTELLATION_PATH);
+            String returnText = response.body().string() ;
+            JSONArray pageReturn = JSONArray.parseArray(returnText);//返回的星座列表
+            if (!"OK".equals(response.message()) || pageReturn.size() == 0){
+                this.replyText(replyToken,"很抱歉 ! 資料出問題了");
+                return;
+            }
+            for (int i = 0; i < pageReturn.size(); i++) {
+                JSONObject jsonObject = pageReturn.getJSONObject(i);
+                String key = jsonObject.getString("name");
+                String value =
+                        "今日短評 : " + jsonObject.getString("TODAY_WORD") + "\n" +
+                        "幸運數字 : " + jsonObject.getString("LUCKY_NUMERAL") + "\n" +
+                        "幸運色 : " + jsonObject.getString("LUCKY_COLOR") + "\n" +
+                        "小確幸時間 : " + jsonObject.getString("LUCKY_TIME") + "\n" +
+                        "開運方位 : " + jsonObject.getString("LUCKY_DIRECTION") + "\n" +
+                        "幸運星座 : " + jsonObject.getString("LUCKY_ASTRO") + "\n\n" +
+                        "整體運勢 : " + jsonObject.getString("STAR_ENTIRETY") + "\n" +
+                        jsonObject.getString("DESC_ENTIRETY") + "\n\n" +
+                        "愛情運勢 : " + jsonObject.getString("STAR_LOVE") + "\n" +
+                        jsonObject.getString("DESC_LOVE") + "\n\n" +
+                        "事業運勢 : " + jsonObject.getString("STAR_WORK") +
+                        "\n" + jsonObject.getString("DESC_WORK") + "\n\n" +
+                        "財運運勢 : " + jsonObject.getString("STAR_MONEY") +
+                        "\n" + jsonObject.getString("DESC_MONEY") ;
+                jedis.set(key,value);
+            }
+            jedis.set("constellationTime",String.valueOf(System.currentTimeMillis()));
+            this.replyText(replyToken,jedis.get(data));
+        }catch (URISyntaxException e){
+            e.printStackTrace();
         }
+
     }
 
     /**
