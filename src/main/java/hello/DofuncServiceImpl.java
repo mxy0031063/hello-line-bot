@@ -377,7 +377,7 @@ public class DofuncServiceImpl implements DofuncService {
 //            ++count ;
 //            jedis.set("pumpcount",String.valueOf(count));
 //            執行次數 + jedis.get("pumpcount")
-            log.info("抽卡集合元素 : " + jedis.llen("pump") + "\n 西施集合元素 : " + jedis.llen("sex") +
+            log.info("\n抽卡集合元素 : " + jedis.llen("pump") + "\n 西施集合元素 : " + jedis.llen("sex") +
                     "\n 西施版上次加載時間 : " + (nowTime - sexTime)/1000/60 + "分前"+
                     "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime)/1000/60 + "分前\n"
             );
