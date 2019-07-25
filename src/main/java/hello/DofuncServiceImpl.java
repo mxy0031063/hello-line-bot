@@ -1390,7 +1390,9 @@ public class DofuncServiceImpl implements DofuncService {
 
     public static void beautyInit() throws IOException {
         log.info("beautyList Function INIT ... ");
-        Document doc = jsoupClient(PTT_BEAUTY_URL,"over18","1");
+        Map<String,String> cookies = new HashMap<>();
+        cookies.put("over18","1");
+        Document doc = jsoupClient(PTT_BEAUTY_URL,cookies);
         Elements lastPageArray = doc.getElementsByClass("btn-group-paging");
         Element lastPage = null;
         for (Element element : lastPageArray) {
@@ -1415,7 +1417,7 @@ public class DofuncServiceImpl implements DofuncService {
             try (Jedis jedis = JedisFactory.getJedis()) {
                 if (jedis.llen("pump") > 1500 ) return;
                 // 獲得表特版頁面
-                pageDoc = jsoupClient(url);
+                pageDoc = jsoupClient(url,cookies);
                 // 獲得標題組
                 Elements allPageTag = pageDoc.getElementsByClass("r-ent");
                 for (Element pageTag : allPageTag) {
@@ -1477,9 +1479,6 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 單純網路連接
-     * @param path
-     * @return
-     * @throws IOException
      */
     private static Document jsoupClient(String path) throws IOException {
         Connection.Response response = Jsoup.connect(path)
@@ -1494,10 +1493,6 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      *  不處理重定向
-     * @param path
-     * @param b
-     * @return
-     * @throws IOException
      */
     private static Document jsoupClient(String path, boolean b) throws IOException {
         Connection.Response response = Jsoup.connect(path)
@@ -1512,20 +1507,15 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * cok 設定
-     * @param path
-     * @param cookieKey
-     * @param cookieVal
-     * @return
-     * @throws IOException
      */
-    private static Document jsoupClient(String path,String cookieKey, String cookieVal) throws IOException {
+    private static Document jsoupClient(String path,Map<String, String>cookies) throws IOException {
         Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
                 .referrer("http://www.google.com")
                 .timeout(10000)
                 .followRedirects(true)
-                .cookie(cookieKey,cookieVal)
+                .cookies(cookies)
                 .execute();
         return response.parse();
     }
