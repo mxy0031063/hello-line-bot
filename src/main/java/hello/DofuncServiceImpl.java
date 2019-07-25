@@ -1398,7 +1398,7 @@ public class DofuncServiceImpl implements DofuncService {
         for (Element element : lastPageArray) {
             lastPage = element.getElementsByClass("btn").get(1);
         }
-        String lastPageUrl = lastPage.attr("abs:href"); //獲得路徑
+        String lastPageUrl = lastPage.absUrl("href"); //獲得路徑
         String lastPageIndex = lastPageUrl.substring(lastPageUrl.indexOf("index") + 5, lastPageUrl.indexOf(".html"));
         //  獲得當前頁碼
         Integer nowPageIndex = Integer.parseInt(lastPageIndex) + 1;
@@ -1428,9 +1428,9 @@ public class DofuncServiceImpl implements DofuncService {
                     }
                     Element title = titles.get(0);
                     String titleText = title.text();    // 獲得每個標籤的文字 有 [正妹] ,[公告] ,[神人] ,[帥哥] ,[廣告] ...etc
-                    String titleHref = title.attr("abs:href");
+                    String titleHref = title.absUrl("href");
                     if (titleText.contains("[正妹]")) {
-                        Document grilDoc = jsoupClient(titleHref);
+                        Document grilDoc = jsoupClient(titleHref,cookies);
                         Elements img = grilDoc.getElementById("main-content").getElementsByAttributeValueContaining("href", "https://i.imgur.com/");
                         for (Element imgTag : img) {
                             String str = imgTag.attr("href");
