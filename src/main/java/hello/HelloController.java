@@ -188,7 +188,9 @@ public class HelloController {
         try(Jedis jedis = JedisFactory.getJedis()){
             int pumpLength = jedis.llen("pump").intValue();
             Random random = new Random();
-            return jedis.lindex("pump",random.nextInt(pumpLength));
+            String output = jedis.lindex("pump",random.nextInt(pumpLength));
+            log.info("\n\n ===================================\n"+output+"\n"+random.nextInt(pumpLength));
+            return output;
         }catch (URISyntaxException e){
             e.printStackTrace();
         }
