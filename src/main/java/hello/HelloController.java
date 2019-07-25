@@ -29,6 +29,7 @@ import com.linecorp.bot.model.response.BotApiResponse;
 import hello.dao.TestDao;
 import hello.utils.AccountingUtils;
 import hello.utils.JDBCUtil;
+import hello.utils.JedisFactory;
 import hello.utils.SQLSessionFactory;
 import lombok.NonNull;
 import lombok.Value;
@@ -180,6 +181,18 @@ public class HelloController {
         TestDao testDao = sqlSession.getMapper(TestDao.class);
         //Greeter greeter = new Greeter();
         return testDao.funcTest().toString();
+    }
+
+    @RequestMapping("/abyss")
+    public String webTest(){
+        try(Jedis jedis = JedisFactory.getJedis()){
+            int pumpLength = jedis.llen("pump").intValue();
+            Random random = new Random();
+            return jedis.lindex("pump",random.nextInt(pumpLength));
+        }catch (URISyntaxException e){
+            e.printStackTrace();
+        }
+        return "ERROR";
     }
 
     @RequestMapping("/line")
