@@ -190,6 +190,7 @@ public class HelloController {
             Random random = new Random();
             String output = jedis.lindex("pump",random.nextInt(pumpLength));
             log.info("\n\n ===================================\n"+output+"\n"+random.nextInt(pumpLength));
+            jedis.close();
             return output;
         }catch (URISyntaxException e){
             e.printStackTrace();
