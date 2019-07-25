@@ -118,58 +118,67 @@ public class DofuncServiceImpl implements DofuncService {
 
     @Override
     public void doOliPrice(String replyToken, Event event, TextMessageContent content) throws IOException {
+        try (Jedis jedis = JedisFactory.getJedis()) {
 
-//        String message = response.message();
-//        if (!message.equals("OK")){
-//            /** 返回不正確提前退出 */
-//            this.reply(replyToken, new TextMessage("哎呀 ! 資料發生錯誤了"));
-//            return;
-//        }
-//        if (oilReturnText == null){
-//            okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH) ;
-//            oilReturnText =  response.body().string();
-//        }
-        okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH);
-        String returnText = response.body().string();
-        StringBuilder outText = new StringBuilder();
+            String oli = jedis.get("oli");
+            String oliTimeString = jedis.get("oliTime");
+            long nowTime = System.currentTimeMillis();
+            long oliTime = Long.parseLong(oliTimeString);
+            if (oli.length() != 0 || (nowTime - oliTime) < 1000*60*60*6 ){ //超時12小時
+                // 緩存有資料
+                this.replyText(replyToken,oli);
+                log.info("\n油價api 執行 ** 資料存活時間 : "+ (nowTime - oliTime)/1000/60/60 + " 分鐘");
+                return;
+            }
+            okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH);
+            String returnText = response.body().string();
+            StringBuilder outText = new StringBuilder();
 
 
-        /** 現在的油價 */
-        outText.append("本日油價 : \n");
-        List<String> oilName = new ArrayList<>();
-        oilName.add("92無鉛汽油");
-        oilName.add("95無鉛汽油");
-        oilName.add("98無鉛汽油");
-        oilName.add("酒精汽油");
-        oilName.add("超級柴油");
-        oilName.add("液化石油氣");
-        for (int i = 1; i <= 6; i++) {
-            String item = "sPrice" + i;
-            int index = returnText.indexOf(item);
-            String oilPrice = returnText.substring(index + 10, index + 14);
-            outText.append(oilName.get(i - 1)).append(" -> ").append(oilPrice).append("\n");
+            /** 現在的油價 */
+            outText.append("本日油價 : \n");
+            List<String> oilName = new ArrayList<>();
+            oilName.add("92無鉛汽油");
+            oilName.add("95無鉛汽油");
+            oilName.add("98無鉛汽油");
+            oilName.add("酒精汽油");
+            oilName.add("超級柴油");
+            oilName.add("液化石油氣");
+            for (int i = 1; i <= 6; i++) {
+                String item = "sPrice" + i;
+                int index = returnText.indexOf(item);
+                String oilPrice = returnText.substring(index + 10, index + 14);
+                outText.append(oilName.get(i - 1)).append(" -> ").append(oilPrice).append("\n");
+            }
+            /** 公布的油價 漲或跌 */
+            int upDownIndex = returnText.indexOf("class=\\\"sys\\\"") + 19;
+            int upDownEndIndex = upDownIndex + 2;
+            String upOrDown = returnText.substring(
+                    upDownIndex, upDownEndIndex
+            );
+            int upDownPriceIndex = returnText.indexOf("class=\\\"rate\\") + 33;
+            int upDownPriceEndIndex = upDownPriceIndex + 3;
+            String upDownPrice = returnText.substring(
+                    upDownPriceIndex, upDownPriceEndIndex
+            );
+
+            /** 實施日期 */
+            int priceUpdateDateIndex = returnText.indexOf("PriceUpdate") + 14;
+            int endIndex = priceUpdateDateIndex + 5;
+            String oilPriceUpdate = returnText.substring(
+                    priceUpdateDateIndex, endIndex
+            );
+            outText.append("\n實施日期  : ").append(oilPriceUpdate).append("\n");
+            outText.append("汽油價格 更動").append(upOrDown).append(" -> ").append(upDownPrice).append(" 元\n");
+            outText.append("以上資料來源  :  中油");
+
+            jedis.set("oli", outText.toString());    // 油價訊息存入
+            jedis.set("oliTime", String.valueOf(System.currentTimeMillis()));    // 油價查詢的時間
+            // 直接輸出更快 不從內存查了
+            this.replyText(replyToken,outText.toString());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
-        /** 公布的油價 漲或跌 */
-        int upDownIndex = returnText.indexOf("class=\\\"sys\\\"") + 19;
-        int upDownEndIndex = upDownIndex + 2;
-        String upOrDown = returnText.substring(
-                upDownIndex, upDownEndIndex
-        );
-        int upDownPriceIndex = returnText.indexOf("class=\\\"rate\\") + 33;
-        int upDownPriceEndIndex = upDownPriceIndex + 3;
-        String upDownPrice = returnText.substring(
-                upDownPriceIndex, upDownPriceEndIndex
-        );
-        outText.append("本週汽油價格 ").append(upOrDown).append(" -> ").append(upDownPrice).append(" 元\n");
-        /** 實施日期 */
-        int priceUpdateDateIndex = returnText.indexOf("PriceUpdate") + 14;
-        int endIndex = priceUpdateDateIndex + 5;
-        String oilPriceUpdate = returnText.substring(
-                priceUpdateDateIndex, endIndex
-        );
-        outText.append("實施日期  : ").append(oilPriceUpdate).append("\n");
-        outText.append("以上資料來源  :  中油");
-        this.reply(replyToken, new TextMessage(outText.toString()));
     }
 
     @Override
@@ -355,37 +364,37 @@ public class DofuncServiceImpl implements DofuncService {
             long beautyTime = Long.parseLong(jedis.get("beautyTime"));
             if (text.contains("西施") || text.contains("西斯") || text.contains("sex")) {
                 int sexLength = jedis.llen("sex").intValue();
-                if (sexLength == 0 || (nowTime - sexTime) > 1000*60*60 ){ // 超時1小時
-                    jedis.ltrim("sex",1,0); // 清空
+                if (sexLength == 0 || (nowTime - sexTime) > 1000 * 60 * 60) { // 超時1小時
+                    jedis.ltrim("sex", 1, 0); // 清空
                     dccardSexInit(DCCARD_SEX_PATH, 80, jedis);
                     dccardSexInit(DCARD_SEX_NEW_PATH, 150, jedis);
                     sexLength = jedis.llen("sex").intValue();
                 }
                 index = random.nextInt(sexLength);
-                url = jedis.lindex("sex",index);
+                url = jedis.lindex("sex", index);
             } else {
                 int pumpLength = jedis.llen("pump").intValue();
-                if (pumpLength == 0 || (nowTime - beautyTime) > 1000*60*120 ){ // 超時2小時
-                    jedis.ltrim("pump",1,0);
+                if (pumpLength == 0 || (nowTime - beautyTime) > 1000 * 60 * 120) { // 超時2小時
+                    jedis.ltrim("pump", 1, 0);
                     beautyInit();
                     itubaInit();
                     pumpLength = jedis.llen("pump").intValue();
                 }
                 index = random.nextInt(pumpLength);
-                url = jedis.lindex("pump",index);
+                url = jedis.lindex("pump", index);
             }
 //            ++count ;
 //            jedis.set("pumpcount",String.valueOf(count));
 //            執行次數 + jedis.get("pumpcount")
             log.info("\n抽卡集合元素 : " + jedis.llen("pump") + "\n 西施集合元素 : " + jedis.llen("sex") +
-                    "\n 西施版上次加載時間 : " + (nowTime - sexTime)/1000/60 + "分前"+
-                    "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime)/1000/60 + "分前\n"
+                    "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前" +
+                    "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime) / 1000 / 60 + "分前\n"
             );
             return url;
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
-        return null ;
+        return null;
     }
 
     public static void itubaInit() throws IOException {
@@ -1358,7 +1367,7 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     public static void dccardSexInit(String path, int count, Jedis jedis) throws IOException {
-        jedis.set("sexTime",String.valueOf(System.currentTimeMillis()));    // 西施版加載時間
+        jedis.set("sexTime", String.valueOf(System.currentTimeMillis()));    // 西施版加載時間
         log.info("DcardList finction INIT ...");
 //        okhttp3.Response response = timerUilts.clientHttp(path);
 //        String returnText = response.body().string();
@@ -1398,9 +1407,9 @@ public class DofuncServiceImpl implements DofuncService {
 
     public static void beautyInit() throws IOException {
         log.info("beautyList Function INIT ... ");
-        Map<String,String> cookies = new HashMap<>();
-        cookies.put("over18","1");
-        Document doc = jsoupClient(PTT_BEAUTY_URL,cookies);
+        Map<String, String> cookies = new HashMap<>();
+        cookies.put("over18", "1");
+        Document doc = jsoupClient(PTT_BEAUTY_URL, cookies);
         Elements lastPageArray = doc.getElementsByClass("btn-group-paging");
         Element lastPage = null;
         for (Element element : lastPageArray) {
@@ -1423,9 +1432,9 @@ public class DofuncServiceImpl implements DofuncService {
             String url = "https://www.ptt.cc/bbs/Beauty/index" + pageIndex + ".html";
             Document pageDoc = null;
             try (Jedis jedis = JedisFactory.getJedis()) {
-                if (jedis.llen("pump") > 1500 ) return;
+                if (jedis.llen("pump") > 1500) return;
                 // 獲得表特版頁面
-                pageDoc = jsoupClient(url,cookies);
+                pageDoc = jsoupClient(url, cookies);
                 // 獲得標題組
                 Elements allPageTag = pageDoc.getElementsByClass("r-ent");
                 for (Element pageTag : allPageTag) {
@@ -1438,7 +1447,7 @@ public class DofuncServiceImpl implements DofuncService {
                     String titleText = title.text();    // 獲得每個標籤的文字 有 [正妹] ,[公告] ,[神人] ,[帥哥] ,[廣告] ...etc
                     String titleHref = title.absUrl("href");
                     if (titleText.contains("[正妹]")) {
-                        Document grilDoc = jsoupClient(titleHref,cookies);
+                        Document grilDoc = jsoupClient(titleHref, cookies);
                         Elements img = grilDoc.getElementById("main-content").getElementsByAttributeValueContaining("href", "https://i.imgur.com/");
                         for (Element imgTag : img) {
                             String str = imgTag.attr("href");
@@ -1453,7 +1462,7 @@ public class DofuncServiceImpl implements DofuncService {
                         }
                     }
                 }
-                jedis.set("beautyTime",String.valueOf(System.currentTimeMillis()));     // 表特加載時間
+                jedis.set("beautyTime", String.valueOf(System.currentTimeMillis()));     // 表特加載時間
             } catch (URISyntaxException | IOException e) {
                 e.printStackTrace();
             }
@@ -1501,7 +1510,7 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     /**
-     *  不處理重定向
+     * 不處理重定向
      */
     private static Document jsoupClient(String path, boolean b) throws IOException {
         Connection.Response response = Jsoup.connect(path)
@@ -1517,7 +1526,7 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * cok 設定
      */
-    private static Document jsoupClient(String path,Map<String, String>cookies) throws IOException {
+    private static Document jsoupClient(String path, Map<String, String> cookies) throws IOException {
         Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
