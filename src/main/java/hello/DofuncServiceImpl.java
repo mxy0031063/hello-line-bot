@@ -120,19 +120,20 @@ public class DofuncServiceImpl implements DofuncService {
     public void doOliPrice(String replyToken, Event event, TextMessageContent content) throws IOException {
         try (Jedis jedis = JedisFactory.getJedis()) {
 
-            String oli = jedis.get("oli");
-            String oliTimeString = jedis.get("oliTime");
             long nowTime = System.currentTimeMillis();
             long oliTime = 0 ;
-            if (oliTimeString.length() != 0){
-                oliTime = Long.parseLong(oliTimeString) ;
+            // 存在給值
+            if ( jedis.exists("oliTime") ){
+                oliTime = Long.parseLong(jedis.get("oliTime")) ;
             }
-            if (oli.length() != 0 || (nowTime - oliTime) < 1000*60*60*6 ){ //超時12小時
+            // 判斷存在 或 時間超時
+            if (jedis.exists("oli") || (nowTime - oliTime) < 1000*60*60*6 ){ //超時6小時
                 // 緩存有資料
-                this.replyText(replyToken,oli);
+                this.replyText(replyToken,jedis.get("oli"));
                 log.info("\n油價api 執行 ** 資料存活時間 : "+ (nowTime - oliTime)/1000/60/60 + " 分鐘");
                 return;
             }
+
             okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH);
             String returnText = response.body().string();
             StringBuilder outText = new StringBuilder();
@@ -352,43 +353,43 @@ public class DofuncServiceImpl implements DofuncService {
          *          表特版超時設定　２　小時
          */
         try (Jedis jedis = JedisFactory.getJedis()) {
-//            Integer count = Integer.parseInt(jedis.get("pumpcount"));
-//            if ( count > 100) {
-//                jedis.set("pumpcount","0");
-//                jedis.ltrim("pump",1,0);
-//                jedis.ltrim("sex",1,0);
-//            }
+
             String text = content.getText();
             Random random = new Random();
             int index;
             String url;
+            // 拿到現在時間
             long nowTime = System.currentTimeMillis();
-            long sexTime = Long.parseLong(jedis.get("sexTime"));
-            long beautyTime = Long.parseLong(jedis.get("beautyTime"));
+            // 拿西施加載時間
+            long sexTime = 0;
+            if (jedis.exists("sexTime")){
+                sexTime = Long.parseLong(jedis.get("sexTime"));
+            }
+            // 拿到抽卡時間
+            long beautyTime = 0 ;
+            if (jedis.exists("beautyTime")){
+                beautyTime = Long.parseLong(jedis.get("beautyTime"));
+            }
+            // 判斷抽哪區的卡
             if (text.contains("西施") || text.contains("西斯") || text.contains("sex")) {
-                int sexLength = jedis.llen("sex").intValue();
-                if (sexLength == 0 || (nowTime - sexTime) > 1000 * 60 * 60) { // 超時1小時
+                if ( !jedis.exists("sex") || (nowTime - sexTime) > 1000 * 60 * 60) { // 超時1小時
                     jedis.ltrim("sex", 1, 0); // 清空
                     dccardSexInit(DCCARD_SEX_PATH, 80, jedis);
                     dccardSexInit(DCARD_SEX_NEW_PATH, 150, jedis);
-                    sexLength = jedis.llen("sex").intValue();
                 }
+                int sexLength = jedis.llen("sex").intValue();
                 index = random.nextInt(sexLength);
                 url = jedis.lindex("sex", index);
             } else {
-                int pumpLength = jedis.llen("pump").intValue();
-                if (pumpLength == 0 || (nowTime - beautyTime) > 1000 * 60 * 120) { // 超時2小時
+                if ( !jedis.exists("pump") || (nowTime - beautyTime) > 1000 * 60 * 120) { // 超時2小時
                     jedis.ltrim("pump", 1, 0);
                     beautyInit();
                     itubaInit();
-                    pumpLength = jedis.llen("pump").intValue();
                 }
+                int pumpLength = jedis.llen("pump").intValue();
                 index = random.nextInt(pumpLength);
                 url = jedis.lindex("pump", index);
             }
-//            ++count ;
-//            jedis.set("pumpcount",String.valueOf(count));
-//            執行次數 + jedis.get("pumpcount")
             log.info("\n抽卡集合元素 : " + jedis.llen("pump") + "\n 西施集合元素 : " + jedis.llen("sex") +
                     "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前" +
                     "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime) / 1000 / 60 + "分前\n"
