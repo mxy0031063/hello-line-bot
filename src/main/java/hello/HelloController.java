@@ -185,15 +185,20 @@ public class HelloController {
 
     @RequestMapping("/abyss")
     public String webTest(){
-        try(Jedis jedis = JedisFactory.getJedis()){
+        Jedis jedis = null ;
+        try{
+            jedis = JedisFactory.getJedis();
             int pumpLength = jedis.llen("pump").intValue();
             Random random = new Random();
             String output = jedis.lindex("pump",random.nextInt(pumpLength));
             log.info("\n\n ===================================\n"+output+"\n"+random.nextInt(pumpLength));
-            jedis.close();
             return output;
         }catch (URISyntaxException e){
             e.printStackTrace();
+        }finally {
+            if (jedis != null) {
+                jedis.close();
+            }
         }
         return "ERROR";
     }
