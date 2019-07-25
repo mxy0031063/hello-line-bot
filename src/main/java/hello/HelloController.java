@@ -759,9 +759,9 @@ public class HelloController {
             }else {
                 service.doInvoice4Check(replyToken,event,content);
             }
-        } else {
-            messagePush.add(text);  //消息存入
-            flowPush(replyToken);
+//        } else {
+//            messagePush.add(text);  //消息存入
+//            flowPush(replyToken);
         }
     }
 
