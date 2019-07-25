@@ -1390,7 +1390,7 @@ public class DofuncServiceImpl implements DofuncService {
 
     public static void beautyInit() throws IOException {
         log.info("beautyList Function INIT ... ");
-        Document doc = jsoupClient(PTT_BEAUTY_URL);
+        Document doc = jsoupClient(PTT_BEAUTY_URL,"over18","1");
         Elements lastPageArray = doc.getElementsByClass("btn-group-paging");
         Element lastPage = null;
         for (Element element : lastPageArray) {
@@ -1475,7 +1475,12 @@ public class DofuncServiceImpl implements DofuncService {
 
     }
 
-
+    /**
+     * 單純網路連接
+     * @param path
+     * @return
+     * @throws IOException
+     */
     private static Document jsoupClient(String path) throws IOException {
         Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
@@ -1487,6 +1492,13 @@ public class DofuncServiceImpl implements DofuncService {
         return response.parse();
     }
 
+    /**
+     *  不處理重定向
+     * @param path
+     * @param b
+     * @return
+     * @throws IOException
+     */
     private static Document jsoupClient(String path, boolean b) throws IOException {
         Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
@@ -1494,6 +1506,26 @@ public class DofuncServiceImpl implements DofuncService {
                 .referrer("http://www.google.com")
                 .timeout(10000)
                 .followRedirects(b)
+                .execute();
+        return response.parse();
+    }
+
+    /**
+     * cok 設定
+     * @param path
+     * @param cookieKey
+     * @param cookieVal
+     * @return
+     * @throws IOException
+     */
+    private static Document jsoupClient(String path,String cookieKey, String cookieVal) throws IOException {
+        Connection.Response response = Jsoup.connect(path)
+                .ignoreContentType(true)
+                .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
+                .referrer("http://www.google.com")
+                .timeout(10000)
+                .followRedirects(true)
+                .cookie(cookieKey,cookieVal)
                 .execute();
         return response.parse();
     }
