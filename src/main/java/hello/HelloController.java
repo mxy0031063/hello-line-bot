@@ -57,9 +57,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import redis.clients.jedis.Jedis;
 import retrofit2.Response;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -137,6 +139,32 @@ public class HelloController {
                                           .toUriString();
 
     }
+
+    private static DownloadedContent saveContent(String ext, ResponseBody responseBody ,int newWidth ,int newHeight) {
+        log.info("Got content-type: {}", responseBody.contentType());
+        DownloadedContent tempFile = createTempFile(ext);
+        try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+            // 創建圖片對象
+            Image image = ImageIO.read(responseBody.byteStream());
+            // 創建圖片流
+            BufferedImage tag = new BufferedImage(newWidth,newHeight,BufferedImage.TYPE_INT_RGB);
+            // 創建畫筆
+            Graphics2D graphics2D = tag.createGraphics();
+            // 畫圖
+            tag = graphics2D.getDeviceConfiguration().createCompatibleImage(newWidth,newHeight,Transparency.TRANSLUCENT);
+            graphics2D.dispose();
+
+            int oldheight = tag.getHeight();
+            int oldwidth = tag.getWidth();
+            tag.createGraphics().drawImage(image, (newWidth - oldwidth) / 2, (newHeight - oldheight) / 2, null);
+            ImageIO.write(tag,ext,outputStream);
+            log.info("Saved {}: {}", ext, tempFile);
+            return tempFile;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     private HelloController.DownloadedContent saveContent(String ext, JFreeChart chart) {
         HelloController.DownloadedContent tempFile = createTempFile(ext);
         try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
@@ -521,6 +549,11 @@ public class HelloController {
         this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
     }
 
+    private void showImg(String replyToken,String path,int width,int height)throws IOException {
+        okhttp3.Response response = timerUilts.clientHttp(path);
+        DownloadedContent jpg = saveContent("jpg", response.body(),width,height);
+        this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
+    }
     /**
      * 發送圖片 - AV 服務
      * @param replyToken
@@ -770,7 +803,7 @@ public class HelloController {
         } else if (text.contains("抽")||text.contains("！抽")){
             /** 抽卡 */
             String beautyPath = service.doBeauty(event,content);
-            showImg(replyToken,beautyPath);
+            showImg(replyToken,beautyPath,1040,1040);
         } else if(text.contains("!av")||text.contains("！av")){
             /** 搜尋av */
             ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken,event,content);
