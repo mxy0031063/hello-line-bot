@@ -840,6 +840,7 @@ public class HelloController {
 
     private void handleTextContent(String replyToken, Event event, TextMessageContent content) throws IOException {
         String text = content.getText();
+        text = "6" ;
         String helpText = "你可以輸入消息以查看結果:\n(0)help,\n(1)profile,\n(2)bye,\n(3)confirm,\n(4)buttons,\n(5)carousel,\n(6)imagemap.";
 
         log.info("Got text message from {}: {}", replyToken, text);

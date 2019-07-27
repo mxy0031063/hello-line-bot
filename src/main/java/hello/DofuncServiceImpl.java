@@ -1380,6 +1380,7 @@ public class DofuncServiceImpl implements DofuncService {
         String pageId = null;
         for (int i = 0; i < page.size(); i++) {
             JSONObject item = page.getJSONObject(i);
+            String itemId = item.getString("id");
             JSONArray media = item.getJSONArray("media");
             if (media.size() == 0) {
                 continue;
