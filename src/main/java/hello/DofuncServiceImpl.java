@@ -408,13 +408,12 @@ public class DofuncServiceImpl implements DofuncService {
             }
             if ( !jedis.exists("sex") || (nowTime - sexTime) > 1000 * 60 * 60) { // 超時1小時
                 jedis.ltrim("sex", 1, 0); // 清空
-                dccardSexInit(DCCARD_SEX_PATH, 80, jedis);
-                dccardSexInit(DCARD_SEX_NEW_PATH, 150, jedis);
+                dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
+                dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
             }
             int sexLength = jedis.llen("sex").intValue();
             index = random.nextInt(sexLength);
             url = jedis.lindex("sex", index);
-
             log.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
                     "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
             // imageURL 在前 ID 在後

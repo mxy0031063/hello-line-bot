@@ -120,8 +120,8 @@ public class TimerUilts implements ApplicationRunner {
                 try (Jedis jedis = JedisFactory.getJedis()){
                     jedis.flushAll(); // 項目重啟資料更新
                     jedis.set("pumpcount","0");
-                    dccardSexInit(DCCARD_SEX_PATH, 80, jedis);
-                    dccardSexInit(DCARD_SEX_NEW_PATH, 150, jedis);
+                    dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
+                    dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
                 } catch (IOException|URISyntaxException e) {
                     e.printStackTrace();
                 }
