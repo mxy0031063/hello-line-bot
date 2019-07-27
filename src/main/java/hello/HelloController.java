@@ -159,7 +159,7 @@ public class HelloController {
             // 創建畫筆
             Graphics2D graphics2D = tag.createGraphics();
             // 畫圖
-            tag = graphics2D.getDeviceConfiguration().createCompatibleImage(w,h,Transparency.TRANSLUCENT);
+            tag = graphics2D.getDeviceConfiguration().createCompatibleImage(newWidth,newWidth,Transparency.TRANSLUCENT);
             graphics2D.dispose();
             tag.createGraphics().drawImage(image, w, h, null);
             ImageIO.write(tag,ext,outputStream);
