@@ -148,12 +148,6 @@ public class HelloController {
             Image image = ImageIO.read(responseBody.byteStream());
             int w = image.getWidth(null);
             int h = image.getHeight(null);
-            if (w / h > newWidth / newHeight) {
-                //以宽度为标准，等比例压缩图片
-                h = (int) (newHeight * w / newWidth);
-            }else {
-                w = (int) (newWidth * h / newHeight);
-            }
             // 創建圖片流
             BufferedImage tag = new BufferedImage(newWidth,newHeight,BufferedImage.TYPE_INT_RGB);
             // 創建畫筆
