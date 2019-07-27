@@ -551,7 +551,7 @@ public class HelloController {
 
     private void showImg(String replyToken,String path,int width,int height)throws IOException {
         okhttp3.Response response = timerUilts.clientHttp(path);
-        DownloadedContent jpg = saveContent("jpg", response.body(),width,height);
+        DownloadedContent jpg = saveContent("PNG", response.body(),width,height);
         this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
     }
     /**
