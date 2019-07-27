@@ -82,6 +82,10 @@ public interface DofuncService {
      */
     String doBeauty(Event event, TextMessageContent content) throws IOException;
     /**
+     * 處理西施抽卡
+     */
+    String[] doSex(Event event, TextMessageContent content) throws IOException;
+    /**
      * 處理AV搜尋
      */
     ArrayList doAVsearch(String replyToken, Event event, TextMessageContent content)throws IOException;

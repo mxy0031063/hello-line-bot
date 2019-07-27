@@ -549,10 +549,29 @@ public class HelloController {
         this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
     }
 
-    private void showImg(String replyToken,String path,int width,int height)throws IOException {
-        okhttp3.Response response = timerUilts.clientHttp(path);
-        DownloadedContent jpg = saveContent("PNG", response.body(),width,height);
-        this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
+    /**
+     * 發送 西施imageMap
+     * @param replyToken
+     * @param sex
+     */
+    private void showSexImage(String replyToken, String[] sex) {
+        int ImageWidth = 1040 ;
+        int ImageHeight = 1040 ;
+        okhttp3.Response response = timerUilts.clientHttp(sex[0]);
+        DownloadedContent jpg = saveContent("PNG", response.body(),ImageWidth,ImageHeight);
+        this.reply(replyToken,
+                new ImagemapMessage(
+                        jpg.getUri(),
+                        "Sorry, I don't support the Imagemap function in your platform. :(",
+                        new ImagemapBaseSize(ImageHeight, ImageWidth),
+                        Arrays.asList(
+                                new URIImagemapAction(
+                                        "https://www.dcard.tw/f/sex/p/"+sex[1],
+                                        new ImagemapArea(0, 0, ImageWidth, ImageHeight)
+                                )
+                        )
+
+        ));
     }
     /**
      * 發送圖片 - AV 服務
@@ -802,8 +821,13 @@ public class HelloController {
             service.doConstellation(replyToken,event,content);
         } else if (text.contains("抽")||text.contains("！抽")){
             /** 抽卡 */
-            String beautyPath = service.doBeauty(event,content);
-            showImg(replyToken,beautyPath,1040,1040);
+            if (text.contains("西施") || text.contains("sex")){
+                String[] sex = service.doSex(event,content);
+                showSexImage(replyToken,sex);
+            }else {
+                String beautyPath = service.doBeauty(event,content);
+                showImg(replyToken,beautyPath);
+            }
         } else if(text.contains("!av")||text.contains("！av")){
             /** 搜尋av */
             ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken,event,content);

@@ -360,27 +360,14 @@ public class DofuncServiceImpl implements DofuncService {
             String url;
             // 拿到現在時間
             long nowTime = System.currentTimeMillis();
-            // 拿西施加載時間
-            long sexTime = 0;
-            if (jedis.exists("sexTime")){
-                sexTime = Long.parseLong(jedis.get("sexTime"));
-            }
+
             // 拿到抽卡時間
             long beautyTime = 0 ;
             if (jedis.exists("beautyTime")){
                 beautyTime = Long.parseLong(jedis.get("beautyTime"));
             }
             // 判斷抽哪區的卡
-            if (text.contains("西施") || text.contains("西斯") || text.contains("sex")) {
-                if ( !jedis.exists("sex") || (nowTime - sexTime) > 1000 * 60 * 60) { // 超時1小時
-                    jedis.ltrim("sex", 1, 0); // 清空
-                    dccardSexInit(DCCARD_SEX_PATH, 80, jedis);
-                    dccardSexInit(DCARD_SEX_NEW_PATH, 150, jedis);
-                }
-                int sexLength = jedis.llen("sex").intValue();
-                index = random.nextInt(sexLength);
-                url = jedis.lindex("sex", index);
-            } else {
+
                 if ( !jedis.exists("pump") || (nowTime - beautyTime) > 1000 * 60 * 120) { // 超時2小時
                     jedis.ltrim("pump", 1, 0);
                     beautyInit();
@@ -389,13 +376,50 @@ public class DofuncServiceImpl implements DofuncService {
                 int pumpLength = jedis.llen("pump").intValue();
                 index = random.nextInt(pumpLength);
                 url = jedis.lindex("pump", index);
-            }
-            log.info("\n抽卡集合元素 : " + jedis.llen("pump") + "\n 西施集合元素 : " + jedis.llen("sex") +
-                    "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前" +
+
+            log.info("\n\n抽卡集合元素 : " + jedis.llen("pump")  +
                     "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime) / 1000 / 60 + "分前\n"
             );
             return url;
         } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * 7/27 更改抽卡為兩個分開的方法 因我要把西施版的圖片做成imageMap的形式
+     * @param event
+     * @param content
+     * @return
+     * @throws IOException
+     */
+    @Override
+    public String[] doSex(Event event, TextMessageContent content) throws IOException {
+        try(Jedis jedis = JedisFactory.getJedis()){
+            Random random = new Random();
+            int index;
+            String url;
+            long nowTime = System.currentTimeMillis();
+            // 拿西施加載時間
+            long sexTime = 0;
+            if (jedis.exists("sexTime")){
+                sexTime = Long.parseLong(jedis.get("sexTime"));
+            }
+            if ( !jedis.exists("sex") || (nowTime - sexTime) > 1000 * 60 * 60) { // 超時1小時
+                jedis.ltrim("sex", 1, 0); // 清空
+                dccardSexInit(DCCARD_SEX_PATH, 80, jedis);
+                dccardSexInit(DCARD_SEX_NEW_PATH, 150, jedis);
+            }
+            int sexLength = jedis.llen("sex").intValue();
+            index = random.nextInt(sexLength);
+            url = jedis.lindex("sex", index);
+
+            log.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
+                    "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
+            // imageURL 在前 ID 在後
+            return url.split("%");
+        }catch (URISyntaxException e){
             e.printStackTrace();
         }
         return null;
@@ -1388,7 +1412,8 @@ public class DofuncServiceImpl implements DofuncService {
             String gender = item.getString("gender");
             if (gender.equals("F")) {
                 for (int j = 0; j < media.size(); j++) {
-                    jedis.lpush("sex", media.getJSONObject(j).getString("url"));
+                    String url = media.getJSONObject(j).getString("url");
+                    jedis.lpush("sex", url+"%"+itemId);
                     if (jedis.llen("sex") > count) {
                         return;
                     }
