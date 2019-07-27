@@ -146,17 +146,23 @@ public class HelloController {
         try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
             // 創建圖片對象
             Image image = ImageIO.read(responseBody.byteStream());
+            int w = image.getWidth(null);
+            int h = image.getHeight(null);
+            if (w / h > newWidth / newHeight) {
+                //以宽度为标准，等比例压缩图片
+                h = (int) (newHeight * w / newWidth);
+            }else {
+                w = (int) (newWidth * h / newHeight);
+            }
             // 創建圖片流
             BufferedImage tag = new BufferedImage(newWidth,newHeight,BufferedImage.TYPE_INT_RGB);
             // 創建畫筆
             Graphics2D graphics2D = tag.createGraphics();
             // 畫圖
-            tag = graphics2D.getDeviceConfiguration().createCompatibleImage(newWidth,newHeight,Transparency.TRANSLUCENT);
+            tag = graphics2D.getDeviceConfiguration().createCompatibleImage(w,h,Transparency.TRANSLUCENT);
             graphics2D.dispose();
 
-            int oldheight = tag.getHeight();
-            int oldwidth = tag.getWidth();
-            tag.createGraphics().drawImage(image, (newWidth - oldwidth) / 2, (newHeight - oldheight) / 2, null);
+            tag.createGraphics().drawImage(image, (newWidth - w) / 2, (newHeight - h) / 2, null);
             ImageIO.write(tag,ext,outputStream);
             log.info("Saved {}: {}", ext, tempFile);
             return tempFile;
