@@ -561,7 +561,7 @@ public class HelloController {
         DownloadedContent jpg = saveContent("PNG", response.body(),ImageWidth,ImageHeight);
         this.reply(replyToken,
                 new ImagemapMessage(
-                        jpg.getUri(),
+                        jpg.getUri()+"#",
                         "Sorry, I don't support the Imagemap function in your platform. :(",
                         new ImagemapBaseSize(ImageHeight, ImageWidth),
                         Arrays.asList(
