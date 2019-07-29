@@ -820,7 +820,7 @@ public class HelloController {
             service.doConstellation(replyToken,event,content);
         } else if (text.contains("抽")||text.contains("！抽")){
             /** 抽卡 */
-            if (text.contains("西施") || text.contains("sex")){
+            if (text.contains("西施") || text.contains("sex")|| text.contains("西斯")){
                 String[] sex = service.doSex(event,content);
                 showSexImage(replyToken,sex);
             }else {
