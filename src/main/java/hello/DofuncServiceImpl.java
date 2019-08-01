@@ -972,7 +972,8 @@ public class DofuncServiceImpl implements DofuncService {
         // 拿到數據
 
         try (ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName)){
-            Map<String, Map<String, Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
+            Map<String,Map<String, Integer>>dateMap = new TreeMap<>(String::compareTo);
+            dateMap.putAll(AccountingUtils.resultSet2Map(resultSet));
             String[] rowKey = {"Food", "Clothing", "Housing", "Transportation", "Play", "Other"}; //6
             DefaultCategoryDataset defaultCategoryDataset = new DefaultCategoryDataset();
 
