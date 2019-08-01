@@ -970,8 +970,8 @@ public class DofuncServiceImpl implements DofuncService {
             e.printStackTrace();
         }
         // 拿到數據
-        ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName);
-        try {
+
+        try (ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName)){
             Map<String, Map<String, Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
             String[] rowKey = {"Food", "Clothing", "Housing", "Transportation", "Play", "Other"}; //6
             DefaultCategoryDataset defaultCategoryDataset = new DefaultCategoryDataset();
