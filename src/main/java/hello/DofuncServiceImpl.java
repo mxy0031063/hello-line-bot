@@ -406,7 +406,22 @@ public class DofuncServiceImpl implements DofuncService {
             if (jedis.exists("sexTime")){
                 sexTime = Long.parseLong(jedis.get("sexTime"));
             }
-            if ( !jedis.exists("sex") || (nowTime - sexTime) > 1000 * 60 * 60) { // 超時1小時
+            if ( !jedis.exists("sex") || (nowTime - sexTime) > 1000 * 3) { // 超時1小時
+                // 如果是超時但是集合存在 先返回地址 然後在加載
+                if (jedis.exists("sex")){
+                    try{
+                        int sexLength = jedis.llen("sex").intValue();
+                        index = random.nextInt(sexLength);
+                        url = jedis.lindex("sex", index);
+                        log.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
+                                "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
+                        return url.split("%");
+                    }finally {
+                        jedis.ltrim("sex", 1, 0); // 清空
+                        dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
+                        dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
+                    }
+                }
                 jedis.ltrim("sex", 1, 0); // 清空
                 dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
                 dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
