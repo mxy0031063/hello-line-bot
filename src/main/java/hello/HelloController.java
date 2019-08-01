@@ -98,7 +98,7 @@ public class HelloController {
 
     private static List<String> messagePush = new ArrayList<>();
 
-    private static final int PUSH_AMOUNT = 2 ;
+    private static final int PUSH_AMOUNT = 2;
 
     /*
     全台天氣圖
@@ -107,7 +107,7 @@ public class HelloController {
     /*
     天氣圖 UVI 地址
      */
-    private static final String WEATHER_PATH_UVI  ="https://www.cwb.gov.tw/Data/UVI/UVI_forPreview.png";
+    private static final String WEATHER_PATH_UVI = "https://www.cwb.gov.tw/Data/UVI/UVI_forPreview.png";
     /*
     全台溫度圖
      */
@@ -123,25 +123,24 @@ public class HelloController {
     private static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
 
 
-
     @Autowired
-    private TimerUilts timerUilts ;
+    private TimerUilts timerUilts;
 
     @Autowired
     private LineMessagingService lineMessagingService;
 
     @Autowired
-    private DofuncServiceImpl service ;
+    private DofuncServiceImpl service;
 
 
     private static String createUri(String path) {
         return ServletUriComponentsBuilder.fromCurrentContextPath()
-                                          .path(path).build()
-                                          .toUriString();
+                .path(path).build()
+                .toUriString();
 
     }
 
-    private static DownloadedContent saveContent(String ext, ResponseBody responseBody ,int newWidth ,int newHeight) {
+    private static DownloadedContent saveContent(String ext, ResponseBody responseBody, int newWidth, int newHeight) {
         log.info("Got content-type: {}", responseBody.contentType());
         DownloadedContent tempFile = createTempFile(ext);
         try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
@@ -149,32 +148,31 @@ public class HelloController {
             Image image = ImageIO.read(responseBody.byteStream());
             int w = image.getWidth(null);
             int h = image.getHeight(null);
-
-            // 如果圖片太大 則必須縮小
-            if ( w > newWidth || h > newHeight) {
-                double scale ;
-                if ( w > h){
-                    // 寬大
-                    scale = newWidth / (double)w ;
-                }else {
-                    // 高大
-                    scale = newHeight / (double)h ;
-                }
-                log.info("\n\n ************************** - >>>> " +scale +"\n"+w+"\n"+h);
-                Thumbnails.of(responseBody.byteStream()).scale(scale).outputFormat(ext).toOutputStream(outputStream);
-                image = ImageIO.read(Files.newInputStream(tempFile.path));
-                w = image.getWidth(null);
-                h = image.getHeight(null);
-            }
             // 創建圖片流
-            BufferedImage tag = new BufferedImage(newWidth,newHeight,BufferedImage.TYPE_INT_RGB);
+            BufferedImage tag = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+            // 如果圖片太大 則必須縮小
+            if (w > newWidth || h > newHeight) {
+                double scale;
+                if (w > h) {
+                    // 寬大
+                    scale = newWidth / (double) w;
+                } else {
+                    // 高大
+                    scale = newHeight / (double) h;
+                }
+                log.info("\n\n ************************** - >>>> " + scale + "\n" + w + "\n" + h);
+                tag = Thumbnails.of(responseBody.byteStream()).scale(scale).asBufferedImage();
+                w = tag.getWidth();
+                h = tag.getHeight();
+            }
+
             // 創建畫筆
             Graphics2D graphics2D = tag.createGraphics();
             // 畫圖
-            tag = graphics2D.getDeviceConfiguration().createCompatibleImage(newWidth,newHeight,Transparency.TRANSLUCENT);
+            tag = graphics2D.getDeviceConfiguration().createCompatibleImage(newWidth, newHeight, Transparency.TRANSLUCENT);
             graphics2D.dispose();
-            tag.createGraphics().drawImage(image, (newWidth - w)/2, (newHeight - h)/2, null);
-            ImageIO.write(tag,ext,outputStream);
+            tag.createGraphics().drawImage(image, (newWidth - w) / 2, (newHeight - h) / 2, null);
+            ImageIO.write(tag, ext, outputStream);
             log.info("Saved {}: {}", ext, tempFile);
             return tempFile;
         } catch (IOException e) {
@@ -217,11 +215,11 @@ public class HelloController {
         String fileName = String.valueOf(unixTime) + "-" + UUID.randomUUID().toString() + '.' + ext;
         Path tempFile = HelloApplication.downloadedContentDir.resolve(fileName);
         tempFile.toFile().deleteOnExit();
-        return new DownloadedContent(tempFile, createUri("/downloaded/"+tempFile.getFileName()));
+        return new DownloadedContent(tempFile, createUri("/downloaded/" + tempFile.getFileName()));
     }
 
     @RequestMapping("/")
-        public String index(HttpServletRequest request , HttpServletResponse response) {
+    public String index(HttpServletRequest request, HttpServletResponse response) {
         SqlSession sqlSession = SQLSessionFactory.getSession();
         TestDao testDao = sqlSession.getMapper(TestDao.class);
         //Greeter greeter = new Greeter();
@@ -229,18 +227,18 @@ public class HelloController {
     }
 
     @RequestMapping("/abyss")
-    public String webTest(){
-        Jedis jedis = null ;
-        try{
+    public String webTest() {
+        Jedis jedis = null;
+        try {
             jedis = JedisFactory.getJedis();
             int pumpLength = jedis.llen("pump").intValue();
             Random random = new Random();
-            String output = jedis.lindex("pump",random.nextInt(pumpLength));
-            log.info("\n\n ===================================\n"+output+"\n"+random.nextInt(pumpLength));
+            String output = jedis.lindex("pump", random.nextInt(pumpLength));
+            log.info("\n\n ===================================\n" + output + "\n" + random.nextInt(pumpLength));
             return output;
-        }catch (URISyntaxException e){
+        } catch (URISyntaxException e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             if (jedis != null) {
                 jedis.close();
             }
@@ -249,24 +247,24 @@ public class HelloController {
     }
 
     @RequestMapping("/line")
-    public String lineFilter(){
-        Connection conn = null ;
-        Statement stat = null ;
-        ResultSet rs = null ;
+    public String lineFilter() {
+        Connection conn = null;
+        Statement stat = null;
+        ResultSet rs = null;
         StringBuilder sb = new StringBuilder();
-        try{
+        try {
             conn = JDBCUtil.getConnection();
             stat = conn.createStatement();
             String sql = "SELECT * FROM \"tableCreateTest\"";
             rs = stat.executeQuery(sql);
-            while (rs.next()){
+            while (rs.next()) {
                 sb.append(rs.getString(1));
                 sb.append(rs.getString(2));
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
-        }finally {
-            JDBCUtil.close(conn,stat,rs);
+        } finally {
+            JDBCUtil.close(conn, stat, rs);
         }
 
 //        TextMessage textMessage = new TextMessage(map.toString());
@@ -289,9 +287,9 @@ public class HelloController {
     }
 
     @RequestMapping("/greeting")
-    public String greeting(@RequestParam(value="targetId") String targetId,@RequestParam(value="replyToken") String replyToken,@RequestParam(value="message", defaultValue = "Hello!") String message) {
+    public String greeting(@RequestParam(value = "targetId") String targetId, @RequestParam(value = "replyToken") String replyToken, @RequestParam(value = "message", defaultValue = "Hello!") String message) {
         Message message1 = new TextMessage("pushMessageTest");
-        reply(replyToken,message1);
+        reply(replyToken, message1);
         return "greeting";
     }
 
@@ -302,12 +300,13 @@ public class HelloController {
 
     /**
      * 文字事件
-     *  此事件為關鍵 - 由此事件得到的事件元去調用入口方法
+     * 此事件為關鍵 - 由此事件得到的事件元去調用入口方法
+     *
      * @param event
      * @throws IOException
      */
     @EventMapping
-    public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) throws IOException{
+    public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) throws IOException {
         log.info("Got text event: {}", event);
         abyssLineBot(event.getReplyToken(), event, event.getMessage());
     }
@@ -319,6 +318,7 @@ public class HelloController {
 
     /**
      * 被加為好友
+     *
      * @param event
      */
     @EventMapping
@@ -328,7 +328,7 @@ public class HelloController {
         String date = dtf.format(zonedDateTime);
         String id = event.getSource().getUserId();
         String type = "user";
-        AccountingUtils.joinAction(type,id,date);
+        AccountingUtils.joinAction(type, id, date);
         log.info("\n\nGot follow event: {}", event);
         String replyToken = event.getReplyToken();
         try {
@@ -341,6 +341,7 @@ public class HelloController {
 
     /**
      * 加入群組事件
+     *
      * @param event
      */
     @EventMapping
@@ -354,13 +355,13 @@ public class HelloController {
         if (source instanceof GroupSource) {
             String type = "group";
             String id = ((GroupSource) source).getGroupId();
-            AccountingUtils.joinAction(type,id,date);
+            AccountingUtils.joinAction(type, id, date);
             log.info("\n\njoin Group ID : {}", id);
             this.replyText(replyToken, "大家安安");
         } else if (source instanceof RoomSource) {
             String type = "room";
             String id = ((RoomSource) source).getRoomId();
-            AccountingUtils.joinAction(type,id,date);
+            AccountingUtils.joinAction(type, id, date);
             log.info("\n\njoin Room ID : {}", id);
             this.replyText(replyToken, " 拉我進這什麼房間 ");
         } else {
@@ -371,6 +372,7 @@ public class HelloController {
     /**
      * 處理 post 語意 其中post 值
      * 大多是由模板給定的 -- 為用戶不可見
+     *
      * @param event
      * @throws IOException
      */
@@ -380,8 +382,8 @@ public class HelloController {
         String replyToken = event.getReplyToken();
         String data = event.getPostbackContent().getData();
         Source source = event.getSource();
-        if (data.startsWith("$")){
-            service.doDataBase4Accounting(replyToken,event,data);
+        if (data.startsWith("$")) {
+            service.doDataBase4Accounting(replyToken, event, data);
             return;
         }
         switch (data) {
@@ -398,60 +400,60 @@ public class HelloController {
                 break;
             }
             case "doShowAccountingMonth": {
-                service.doShowAccountingMonth4Detailed(replyToken,event);
+                service.doShowAccountingMonth4Detailed(replyToken, event);
                 break;
             }
             case "doShowAccountingMoneyDate": {
-                JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken,event);
-                showAccountingImage(jFreeChart,replyToken);
+                JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken, event);
+                showAccountingImage(jFreeChart, replyToken);
                 break;
             }
             case "doShowAllAccountByUser": {
-                JFreeChart jFreeChart = service.doShowAllAccountByUser(replyToken,event);
-                showAccountingImage(jFreeChart,replyToken);
+                JFreeChart jFreeChart = service.doShowAllAccountByUser(replyToken, event);
+                showAccountingImage(jFreeChart, replyToken);
                 break;
             }
 
-            case "doTemperature" :{
-                showImg(replyToken,WEATHER_PATH_TEMP);
+            case "doTemperature": {
+                showImg(replyToken, WEATHER_PATH_TEMP);
                 break;
             }
-            case "doUVI" :{
-                showImg(replyToken,WEATHER_PATH_UVI);
+            case "doUVI": {
+                showImg(replyToken, WEATHER_PATH_UVI);
                 break;
             }
-            case "doRainfall" :{
-                showImg(replyToken,WEATHER_PATH_RAIN);
+            case "doRainfall": {
+                showImg(replyToken, WEATHER_PATH_RAIN);
                 break;
             }
-            case "doRadar" :{
-                showImg(replyToken,WEATHER_PATH_RADAR);
+            case "doRadar": {
+                showImg(replyToken, WEATHER_PATH_RADAR);
                 break;
             }
-            case "今日運勢－水瓶座" :{
+            case "今日運勢－水瓶座": {
             }
-            case "今日運勢－天秤座" :{
+            case "今日運勢－天秤座": {
             }
-            case "今日運勢－雙子座" :{
+            case "今日運勢－雙子座": {
             }
-            case "今日運勢－金牛座" :{
+            case "今日運勢－金牛座": {
             }
-            case "今日運勢－處女座" :{
+            case "今日運勢－處女座": {
             }
-            case "今日運勢－摩羯座" :{
+            case "今日運勢－摩羯座": {
             }
-            case "今日運勢－獅子座" :{
+            case "今日運勢－獅子座": {
             }
-            case "今日運勢－牡羊座" :{
+            case "今日運勢－牡羊座": {
             }
-            case "今日運勢－射手座" :{
+            case "今日運勢－射手座": {
             }
-            case "今日運勢－天蠍座" :{
+            case "今日運勢－天蠍座": {
             }
-            case "今日運勢－雙魚座" :{
+            case "今日運勢－雙魚座": {
             }
-            case "今日運勢－巨蟹座" :{
-                showConStellation(replyToken,data);
+            case "今日運勢－巨蟹座": {
+                showConStellation(replyToken, data);
                 break;
             }
             default:
@@ -461,31 +463,32 @@ public class HelloController {
 
     /**
      * 顯示出 用戶 postBack 之後獲得的星座
+     *
      * @param replyToken
      * @param data
      * @throws IOException
      */
-    private void showConStellation(String replyToken, String data) throws IOException{
+    private void showConStellation(String replyToken, String data) throws IOException {
 
-        try(Jedis jedis = JedisFactory.getJedis()){
+        try (Jedis jedis = JedisFactory.getJedis()) {
 
             // 獲取時間
             long nowTime = System.currentTimeMillis();
-            long constellationTime = 0 ;
-            if (jedis.exists("constellationTime")){
+            long constellationTime = 0;
+            if (jedis.exists("constellationTime")) {
                 constellationTime = Long.parseLong(jedis.get("constellationTime"));
             }
             // 判斷存在 與 不超時
-            if (jedis.exists(data) && (nowTime - constellationTime) < 1000*60*60*2 ){   // 超時2小時
-                this.replyText(replyToken,jedis.get(data));
+            if (jedis.exists(data) && (nowTime - constellationTime) < 1000 * 60 * 60 * 2) {   // 超時2小時
+                this.replyText(replyToken, jedis.get(data));
                 return;
             }
             // 不存在則更新
             okhttp3.Response response = timerUilts.clientHttp(CONSTELLATION_PATH);
-            String returnText = response.body().string() ;
+            String returnText = response.body().string();
             JSONArray pageReturn = JSONArray.parseArray(returnText);//返回的星座列表
-            if (!"OK".equals(response.message()) || pageReturn.size() == 0){
-                this.replyText(replyToken,"很抱歉 ! 資料出問題了");
+            if (!"OK".equals(response.message()) || pageReturn.size() == 0) {
+                this.replyText(replyToken, "很抱歉 ! 資料出問題了");
                 return;
             }
             for (int i = 0; i < pageReturn.size(); i++) {
@@ -493,24 +496,24 @@ public class HelloController {
                 String key = jsonObject.getString("name");
                 String value =
                         "今日短評 : " + jsonObject.getString("TODAY_WORD") + "\n" +
-                        "幸運數字 : " + jsonObject.getString("LUCKY_NUMERAL") + "\n" +
-                        "幸運色 : " + jsonObject.getString("LUCKY_COLOR") + "\n" +
-                        "小確幸時間 : " + jsonObject.getString("LUCKY_TIME") + "\n" +
-                        "開運方位 : " + jsonObject.getString("LUCKY_DIRECTION") + "\n" +
-                        "幸運星座 : " + jsonObject.getString("LUCKY_ASTRO") + "\n\n" +
-                        "整體運勢 : " + jsonObject.getString("STAR_ENTIRETY") + "\n" +
-                        jsonObject.getString("DESC_ENTIRETY") + "\n\n" +
-                        "愛情運勢 : " + jsonObject.getString("STAR_LOVE") + "\n" +
-                        jsonObject.getString("DESC_LOVE") + "\n\n" +
-                        "事業運勢 : " + jsonObject.getString("STAR_WORK") +
-                        "\n" + jsonObject.getString("DESC_WORK") + "\n\n" +
-                        "財運運勢 : " + jsonObject.getString("STAR_MONEY") +
-                        "\n" + jsonObject.getString("DESC_MONEY") ;
-                jedis.set(key,value);
+                                "幸運數字 : " + jsonObject.getString("LUCKY_NUMERAL") + "\n" +
+                                "幸運色 : " + jsonObject.getString("LUCKY_COLOR") + "\n" +
+                                "小確幸時間 : " + jsonObject.getString("LUCKY_TIME") + "\n" +
+                                "開運方位 : " + jsonObject.getString("LUCKY_DIRECTION") + "\n" +
+                                "幸運星座 : " + jsonObject.getString("LUCKY_ASTRO") + "\n\n" +
+                                "整體運勢 : " + jsonObject.getString("STAR_ENTIRETY") + "\n" +
+                                jsonObject.getString("DESC_ENTIRETY") + "\n\n" +
+                                "愛情運勢 : " + jsonObject.getString("STAR_LOVE") + "\n" +
+                                jsonObject.getString("DESC_LOVE") + "\n\n" +
+                                "事業運勢 : " + jsonObject.getString("STAR_WORK") +
+                                "\n" + jsonObject.getString("DESC_WORK") + "\n\n" +
+                                "財運運勢 : " + jsonObject.getString("STAR_MONEY") +
+                                "\n" + jsonObject.getString("DESC_MONEY");
+                jedis.set(key, value);
             }
-            jedis.set("constellationTime",String.valueOf(System.currentTimeMillis()));
-            this.replyText(replyToken,jedis.get(data));
-        }catch (URISyntaxException e){
+            jedis.set("constellationTime", String.valueOf(System.currentTimeMillis()));
+            this.replyText(replyToken, jedis.get(data));
+        } catch (URISyntaxException e) {
             e.printStackTrace();
         }
 
@@ -518,49 +521,52 @@ public class HelloController {
 
     /**
      * 顯示出用戶選擇的天氣圖片  -- 圖片url
+     * <p>
+     * 可能是過時方法 新版v8官網上已有固定地址JPG
      *
-     *  可能是過時方法 新版v8官網上已有固定地址JPG
      * @param i
      * @return
      */
     @Deprecated
     private String weatherPath(int i) {
         LocalDateTime localDateTime = LocalDateTime.now(TimeZone.getTimeZone("Asia/Taipei").toZoneId());
-        String path ;
-        switch (i){
-            case 1 :
+        String path;
+        switch (i) {
+            case 1:
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH");
 
                 LocalDateTime case1Date = localDateTime.minusMinutes(40); //獲取40分鐘前的時間
-                String date = dtf.format(case1Date)+"00";
+                String date = dtf.format(case1Date) + "00";
 
-                path = "https://www.cwb.gov.tw/Data/temperature/"+date+".GTP8.jpg";
+                path = "https://www.cwb.gov.tw/Data/temperature/" + date + ".GTP8.jpg";
                 return path;
-            case 2 :
+            case 2:
                 LocalDateTime case2Date = localDateTime.minusMinutes(30); //獲取30分鐘前的時間
                 DateTimeFormatter dtf2 = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH");
                 String date2 = dtf2.format(case2Date);
                 //https://www.cwb.gov.tw/Data/rainfall/2019-06-25_1730.QZJ8.jpg
                 int min = localDateTime.getMinute();
-                if (min>30){
+                if (min > 30) {
                     // 00
-                    path = "https://www.cwb.gov.tw/Data/rainfall/"+date2+"00.QZJ8.jpg";
-                }else {
+                    path = "https://www.cwb.gov.tw/Data/rainfall/" + date2 + "00.QZJ8.jpg";
+                } else {
                     // 30
-                    path = "https://www.cwb.gov.tw/Data/rainfall/"+date2+"30.QZJ8.jpg";
+                    path = "https://www.cwb.gov.tw/Data/rainfall/" + date2 + "30.QZJ8.jpg";
                 }
                 return path;
             default:
                 return "/static/buttons/ERROR.png";
         }
     }
+
     /**
      * 發送圖片
+     *
      * @param replyToken
      * @param path
      * @throws IOException
      */
-    private void showImg(String replyToken,String path)throws IOException {
+    private void showImg(String replyToken, String path) throws IOException {
         okhttp3.Response response = timerUilts.clientHttp(path);
         DownloadedContent jpg = saveContent("jpg", response.body());
         this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
@@ -568,38 +574,41 @@ public class HelloController {
 
     /**
      * 發送 西施imageMap
+     *
      * @param replyToken
      * @param sex
      */
     private void showSexImage(String replyToken, String[] sex) {
-        int ImageWidth = 1040 ;
-        int ImageHeight = 1040 ;
+        int ImageWidth = 1040;
+        int ImageHeight = 1040;
         okhttp3.Response response = timerUilts.clientHttp(sex[0]);
-        DownloadedContent jpg = saveContent("PNG", response.body(),ImageWidth,ImageHeight);
+        DownloadedContent jpg = saveContent("PNG", response.body(), ImageWidth, ImageHeight);
         this.reply(replyToken,
                 new ImagemapMessage(
-                        jpg.getUri()+"#",
+                        jpg.getUri() + "#",
                         "Sorry, I don't support the Imagemap function in your platform. :(",
                         new ImagemapBaseSize(ImageHeight, ImageWidth),
                         Arrays.asList(
                                 new URIImagemapAction(
-                                        "https://www.dcard.tw/f/sex/p/"+sex[1],
+                                        "https://www.dcard.tw/f/sex/p/" + sex[1],
                                         new ImagemapArea(0, 0, ImageWidth, ImageHeight)
                                 )
                         )
 
-        ));
+                ));
     }
+
     /**
      * 發送圖片 - AV 服務
+     *
      * @param replyToken
      * @param avSearch
      */
-    private void showImg4AV(String replyToken, ArrayList<ArrayList<String>> avSearch){
+    private void showImg4AV(String replyToken, ArrayList<ArrayList<String>> avSearch) {
         ArrayList<String> firstItem = avSearch.get(0);
         String firstImg = firstItem.get(1);
-        List<Message>totol = new ArrayList<>();
-        if (firstImg.length()!=0){
+        List<Message> totol = new ArrayList<>();
+        if (firstImg.length() != 0) {
             okhttp3.Response response = timerUilts.clientHttp(firstImg);
             DownloadedContent jpg = saveContent("jpg", response.body());
             // 默認的第一張圖片
@@ -610,13 +619,14 @@ public class HelloController {
         totol.add(new TextMessage("其他的結果 :"));
         for (int i = 1; i < avSearch.size(); i++) {
             // 其他結果
-            totol.add(new TextMessage(avSearch.get(i).get(0)+"\n"));
+            totol.add(new TextMessage(avSearch.get(i).get(0) + "\n"));
         }
-        this.reply(replyToken,totol);
+        this.reply(replyToken, totol);
     }
 
     /**
-     *  發送google
+     * 發送google
+     *
      * @param replyToken
      * @param strings
      */
@@ -638,15 +648,15 @@ public class HelloController {
                 )
         );
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
-        String imgPath = strings[0] ;
-        if ("null".equals(imgPath)){
+        String imgPath = strings[0];
+        if ("null".equals(imgPath)) {
             // 沒有圖片
             this.reply(replyToken, templateMessage);
             return;
         }
         okhttp3.Response response = timerUilts.clientHttp(imgPath);
         DownloadedContent jpg = saveContent("jpg", response.body());
-        log.info("\n\nimgpath : "+imgPath+" *** jpg : "+jpg.uri+" *** "+jpg.path);
+        log.info("\n\nimgpath : " + imgPath + " *** jpg : " + jpg.uri + " *** " + jpg.path);
         this.reply(replyToken, Arrays.asList(
                 new ImageMessage(imgPath, jpg.getUri()),
                 templateMessage
@@ -655,15 +665,16 @@ public class HelloController {
 
     /**
      * 貼圖事件
+     *
      * @param event
      */
     @EventMapping
-    public void handleStickerMessageEvent(MessageEvent<StickerMessageContent>  event) {
+    public void handleStickerMessageEvent(MessageEvent<StickerMessageContent> event) {
         log.info("Got sticker event: {}", event);
         handleSticker(event.getReplyToken(), event.getMessage());
     }
+
     /**
-     *
      * @param event
      */
     @EventMapping
@@ -680,6 +691,7 @@ public class HelloController {
 
     /**
      * 圖片事件
+     *
      * @param event
      */
     @EventMapping
@@ -690,6 +702,7 @@ public class HelloController {
 
     /**
      * 語音事件
+     *
      * @param event
      */
     @EventMapping
@@ -700,6 +713,7 @@ public class HelloController {
 
     /**
      * 影片事件
+     *
      * @param event
      */
     @EventMapping
@@ -753,113 +767,114 @@ public class HelloController {
     }
 
     /**
-     *  聊天機器人 入口方法
-     *      ------------------------
-     *      新增服務方法應從此入口判斷語意
-     *      調用實現類方法 除判斷語意邏輯外
-     *      不應有服務實現邏輯
+     * 聊天機器人 入口方法
+     * ------------------------
+     * 新增服務方法應從此入口判斷語意
+     * 調用實現類方法 除判斷語意邏輯外
+     * 不應有服務實現邏輯
+     *
      * @param replyToken
      * @param event
      * @param content
      * @throws IOException
      */
 
-    private void abyssLineBot(String replyToken, Event event, TextMessageContent content) throws IOException{
+    private void abyssLineBot(String replyToken, Event event, TextMessageContent content) throws IOException {
         String text = content.getText().trim(); // 傳進來的文字
         // 判斷指令
-        if (text.contains("安安-天氣")||text.contains("!天氣")||text.contains("！天氣")) {
+        if (text.contains("安安-天氣") || text.contains("!天氣") || text.contains("！天氣")) {
             // 台灣城市 start
             Map<String, String> cityToId = timerUilts.getTempCity4Id();
             String city = null;
             for (String key : cityToId.keySet()) {
-                if (text.contains(key)){
+                if (text.contains(key)) {
                     city = cityToId.get(key);
                 }
             }
             // 台灣城市 end
             // 找台灣城市
-            if (city != null){
-                service.doCityTemp(replyToken,event,content,city);
+            if (city != null) {
+                service.doCityTemp(replyToken, event, content, city);
                 return;
             }
             // 找不到城市就輸出
             //改成模板 按模版 選擇想要觀看的東西
-            service.doWeather(replyToken,event,content);
-        } else if(text.matches("(台中|豐原|彰化|大甲|新社|苑裡)(吃什麼)[-|_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
-            try{
-                String [] strings = service.doGoogleMapSearch(replyToken,event,content);
-                if (strings == null){
-                    this.replyText(replyToken,"出錯拉～");
+            service.doWeather(replyToken, event, content);
+        } else if (text.matches("(台中|豐原|彰化|大甲|新社|苑裡)(吃什麼)[-|_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")) {
+            try {
+                String[] strings = service.doGoogleMapSearch(replyToken, event, content);
+                if (strings == null) {
+                    this.replyText(replyToken, "出錯拉～");
                     return;
                 }
-                showGoogleSearch(replyToken,strings);
-            } catch (NullPointerException e){
-                this.replyText(replyToken,"沒找到你說的關鍵字 在試一次吧");
+                showGoogleSearch(replyToken, strings);
+            } catch (NullPointerException e) {
+                this.replyText(replyToken, "沒找到你說的關鍵字 在試一次吧");
                 e.printStackTrace();
             }
-        } else if(text.contains("push")){
+        } else if (text.contains("push")) {
             /** 推送消息 */
             String userId = event.getSource().getUserId();
-            String[]strings = text.split("-");
-            if (text.contains("pushAll")){
-                service.doPushMessage4All(new TextMessage(strings[1]),event);
+            String[] strings = text.split("-");
+            if (text.contains("pushAll")) {
+                service.doPushMessage4All(new TextMessage(strings[1]), event);
                 return;
             }
             String type = strings[1];
             String message = strings[2];
-            service.doPushMessage2Type(new TextMessage(message),event,type);
-        } else if (text.contains("全球天氣")){
+            service.doPushMessage2Type(new TextMessage(message), event, type);
+        } else if (text.contains("全球天氣")) {
             /** 世界天氣api */
-            service.doWorldTemp(replyToken,event,content);
-        } else if (text.matches("[$][0-9]{1,20}[\\s]?(Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)?[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")){
+            service.doWorldTemp(replyToken, event, content);
+        } else if (text.matches("[$][0-9]{1,20}[\\s]?(Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)?[\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")) {
             /** 用戶模板記帳輸入 */
-            service.doAccounting4User(replyToken,event,content);
-        } else if (text.contains("!記帳") || text.contains("！記帳")){
-            service.doAccountingOperating(replyToken,event,content);
-        } else if(text.equals("$$")){
+            service.doAccounting4User(replyToken, event, content);
+        } else if (text.contains("!記帳") || text.contains("！記帳")) {
+            service.doAccountingOperating(replyToken, event, content);
+        } else if (text.equals("$$")) {
             /** 顯示當前月記帳圖表 */
-            JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken,event);
-            showAccountingImage(jFreeChart,replyToken);
-        } else if (text.startsWith("!del") || text.startsWith("！del")){
+            JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken, event);
+            showAccountingImage(jFreeChart, replyToken);
+        } else if (text.startsWith("!del") || text.startsWith("！del")) {
             /** 記帳模塊 刪除操作 */
-            service.doAccountingDelete(replyToken,event,content);
-        } else if (text.startsWith("!update") || text.startsWith("！update")){
+            service.doAccountingDelete(replyToken, event, content);
+        } else if (text.startsWith("!update") || text.startsWith("！update")) {
             /** 記帳模塊 更改操作 */
-            service.doAccountingUpdate(replyToken,event,content);
-        } else if (text.contains("--service")){
-            handleTextContent(replyToken,event,content);
-        } else if (text.contains("!油價")||text.contains("！油價")) {
+            service.doAccountingUpdate(replyToken, event, content);
+        } else if (text.contains("--service")) {
+            handleTextContent(replyToken, event, content);
+        } else if (text.contains("!油價") || text.contains("！油價")) {
             /** 找油價 */
-            service.doOliPrice(replyToken,event,content);
-        } else if (text.matches("[0-9]{1,10}[-|\\s]?.{1,3}等於多少.{1,3}")){
+            service.doOliPrice(replyToken, event, content);
+        } else if (text.matches("[0-9]{1,10}[-|\\s]?.{1,3}等於多少.{1,3}")) {
             /** 匯率 ****-{錢幣}等於多少{錢幣}? */
-            service.doCurrency(replyToken,event,content);
-        } else if (text.contains("!星座")||text.contains("！星座")) {
-            service.doConstellation(replyToken,event,content);
-        } else if (text.contains("抽")||text.contains("！抽")){
+            service.doCurrency(replyToken, event, content);
+        } else if (text.contains("!星座") || text.contains("！星座")) {
+            service.doConstellation(replyToken, event, content);
+        } else if (text.contains("抽") || text.contains("！抽")) {
             /** 抽卡 */
-            if (text.contains("西施") || text.contains("sex")|| text.contains("西斯")){
-                String[] sex = service.doSex(event,content);
-                showSexImage(replyToken,sex);
-            }else {
-                String beautyPath = service.doBeauty(event,content);
-                showImg(replyToken,beautyPath);
+            if (text.contains("西施") || text.contains("sex") || text.contains("西斯")) {
+                String[] sex = service.doSex(event, content);
+                showSexImage(replyToken, sex);
+            } else {
+                String beautyPath = service.doBeauty(event, content);
+                showImg(replyToken, beautyPath);
             }
-        } else if(text.contains("!av")||text.contains("！av")){
+        } else if (text.contains("!av") || text.contains("！av")) {
             /** 搜尋av */
-            ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken,event,content);
-            if (avSearch!=null){
-                showImg4AV(replyToken ,avSearch);
+            ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken, event, content);
+            if (avSearch != null) {
+                showImg4AV(replyToken, avSearch);
             }
-        } else if(text.contains("發財")||text.contains("發大財")||text.contains("韓國瑜")){
+        } else if (text.contains("發財") || text.contains("發大財") || text.contains("韓國瑜")) {
             /** 發大財 */
-            doMakeRich(replyToken,event,content);
-        } else if (text.matches("[!|！]?[0-9]{8}") || text.contains("發票")){
+            doMakeRich(replyToken, event, content);
+        } else if (text.matches("[!|！]?[0-9]{8}") || text.contains("發票")) {
             /** 發票兌獎 */
-            if (text.contains("發票")){
-                service.doInvoice(replyToken,event,content);
-            }else {
-                service.doInvoice4Check(replyToken,event,content);
+            if (text.contains("發票")) {
+                service.doInvoice(replyToken, event, content);
+            } else {
+                service.doInvoice4Check(replyToken, event, content);
             }
 //        } else {
 //            messagePush.add(text);  //消息存入
@@ -868,62 +883,67 @@ public class HelloController {
     }
 
     /**
-     *  發財抽圖
+     * 發財抽圖
+     *
      * @param replyToken
      * @param event
      * @param content
      * @throws IOException
      */
-    private void doMakeRich(String replyToken, Event event, TextMessageContent content) throws IOException{
+    private void doMakeRich(String replyToken, Event event, TextMessageContent content) throws IOException {
         Random random = new Random();
         int index = random.nextInt(14);
-        String path = "/static/makeRich/"+index+".jpg";
+        String path = "/static/makeRich/" + index + ".jpg";
         String imageUrl = createUri(path);
-        showImg(replyToken,imageUrl);
+        showImg(replyToken, imageUrl);
     }
 
     /**
      * 消息推送 - 重推 說話
+     *
      * @param replyToken
      */
     private void flowPush(String replyToken) {
         // pushMessage
-        Map<String,Integer>map = new HashMap<>();
+        Map<String, Integer> map = new HashMap<>();
         for (String str : messagePush) {
-            if (map.containsKey(str)){
-                map.put(str,map.get(str)+1);
-            }else {
-                map.put(str,1);
+            if (map.containsKey(str)) {
+                map.put(str, map.get(str) + 1);
+            } else {
+                map.put(str, 1);
             }
         }
-        map.keySet().forEach((key)->{
-            if (map.get(key) > PUSH_AMOUNT){
+        map.keySet().forEach((key) -> {
+            if (map.get(key) > PUSH_AMOUNT) {
                 // 推送消息
-                this.replyText(replyToken,key);
+                this.replyText(replyToken, key);
                 messagePush.clear();
             }
         });
-        if (messagePush.size() > 10){
+        if (messagePush.size() > 10) {
             messagePush.clear();
         }
     }
-    private void showAccountingImage(JFreeChart jFreeChart,String replyToken){
+
+    private void showAccountingImage(JFreeChart jFreeChart, String replyToken) {
         DownloadedContent jpg = saveContent("jpeg", jFreeChart);
         this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
     }
 
     private void handleTextContent(String replyToken, Event event, TextMessageContent content) throws IOException {
         String text = content.getText();
-        text = "6" ;
+        text = "6";
         String helpText = "你可以輸入消息以查看結果:\n(0)help,\n(1)profile,\n(2)bye,\n(3)confirm,\n(4)buttons,\n(5)carousel,\n(6)imagemap.";
 
         log.info("Got text message from {}: {}", replyToken, text);
         switch (text) {
-            case "readme": case "0": {
+            case "readme":
+            case "0": {
                 this.replyText(replyToken, helpText);
                 break;
             }
-            case "profile": case "1": {
+            case "profile":
+            case "1": {
                 String userId = event.getSource().getUserId();
                 if (userId != null) {
                     UserProfileResponse userProfile = getUserProfile(userId); //獲得用戶資訊
@@ -944,7 +964,8 @@ public class HelloController {
                 }
                 break;
             }
-            case "bye": case "2": {
+            case "bye":
+            case "2": {
                 Source source = event.getSource();
                 if (source instanceof GroupSource) {
                     ConfirmTemplate confirmTemplate = new ConfirmTemplate(
@@ -973,7 +994,8 @@ public class HelloController {
                 }
                 break;
             }
-            case "confirm": case "3": {
+            case "confirm":
+            case "3": {
                 ConfirmTemplate confirmTemplate = new ConfirmTemplate(
                         "Do you love Taiwan?",
                         new MessageAction("Yes", "Yes, I love Taiwan!"),
@@ -986,7 +1008,8 @@ public class HelloController {
                 this.reply(replyToken, templateMessage);
                 break;
             }
-            case "buttons": case "4": {
+            case "buttons":
+            case "4": {
                 String imageUrl = createUri("/static/buttons/goodsmile.jpg");
                 ButtonsTemplate buttonsTemplate = new ButtonsTemplate(
                         imageUrl,
@@ -994,21 +1017,22 @@ public class HelloController {
                         "Hello, my button",
                         Arrays.asList(
                                 new URIAction("Go to line.me",
-                                              "https://line.me"),   // 網址
+                                        "https://line.me"),   // 網址
                                 new PostbackAction("Say hello 1",       // 點按鈕發送後台一段文字
-                                                    "Hello 你好!"),
+                                        "Hello 你好!"),
                                 new PostbackAction("Say hello 2",
-                                                   "你好!!",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
-                                                   "Hello 你好!!"),       // 用戶輸出     -- 前台可見
+                                        "你好!!",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                        "Hello 你好!!"),       // 用戶輸出     -- 前台可見
                                 new MessageAction("Say message",
-                                                  "Rice=米")         // 用戶輸出  -- 前台可見
+                                        "Rice=米")         // 用戶輸出  -- 前台可見
                         )
                 );
                 TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Button function in your platform. :(", buttonsTemplate);
                 this.reply(replyToken, templateMessage);
                 break;
             }
-            case "carousel": case "5" : {
+            case "carousel":
+            case "5": {
                 String imageUrl1 = createUri("/static/buttons/figure1.jpg");
                 String imageUrl2 = createUri("/static/buttons/figure2.jpg");
                 String imageUrl3 = createUri("/static/buttons/figure3.jpg");
@@ -1053,7 +1077,8 @@ public class HelloController {
                 this.reply(replyToken, templateMessage);
                 break;
             }
-            case "imagemap": case "6": {
+            case "imagemap":
+            case "6": {
                 this.reply(replyToken, Arrays.asList(
                         new TextMessage("Please press any text in the picture to see what will happen."),
                         new ImagemapMessage(
@@ -1107,8 +1132,8 @@ public class HelloController {
         String uri;
 
         public DownloadedContent(Path tempFile, String uri) {
-            path = tempFile ;
-            this.uri = uri ;
+            path = tempFile;
+            this.uri = uri;
 
         }
 
