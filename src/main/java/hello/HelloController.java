@@ -161,7 +161,7 @@ public class HelloController {
                     scale = newHeight / (double)h ;
                 }
                 log.info("\n\n ************************** - >>>> " +scale +"\n"+w+"\n"+h);
-                Thumbnails.of(responseBody.byteStream()).scale(scale).toOutputStream(outputStream);
+                Thumbnails.of(responseBody.byteStream()).scale(scale).outputFormat(ext).toOutputStream(outputStream);
                 image = ImageIO.read(Files.newInputStream(tempFile.path));
                 w = image.getWidth(null);
                 h = image.getHeight(null);
