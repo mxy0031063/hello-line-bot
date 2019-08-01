@@ -155,10 +155,10 @@ public class HelloController {
                 double scale ;
                 if ( w > h){
                     // 寬大
-                    scale = newWidth / w ;
+                    scale = newWidth / (double)w ;
                 }else {
                     // 高大
-                    scale = newHeight / h ;
+                    scale = newHeight / (double)h ;
                 }
                 log.info("\n\n ************************** - >>>> " +scale +"\n"+w+"\n"+h);
                 image = Thumbnails.of(responseBody.byteStream()).scale(scale).asBufferedImage();
