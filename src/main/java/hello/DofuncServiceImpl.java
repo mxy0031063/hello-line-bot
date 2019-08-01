@@ -369,6 +369,30 @@ public class DofuncServiceImpl implements DofuncService {
             // 判斷抽哪區的卡
 
             if (!jedis.exists("pump") || (nowTime - beautyTime) > 1000 * 60 * 120) { // 超時2小時
+                // 如果存在 則先回傳url在加載
+                if (jedis.exists("pump")){
+                    int pumpLength = jedis.llen("pump").intValue();
+                    index = random.nextInt(pumpLength);
+                    url = jedis.lindex("pump", index);
+
+                    log.info("\n\n抽卡集合元素 : " + jedis.llen("pump") +
+                            "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime) / 1000 / 60 + "分前\n"
+                    );
+                    new Thread(){
+                        @Override
+                        public void run() {
+                            super.run();
+                            try{
+                                jedis.ltrim("pump", 1, 0);
+                                beautyInit();
+                                itubaInit();
+                            }catch (IOException e){
+                                e.printStackTrace();
+                            }
+                        }
+                    }.start();
+                    return url;
+                }
                 jedis.ltrim("pump", 1, 0);
                 beautyInit();
                 itubaInit();
@@ -407,7 +431,7 @@ public class DofuncServiceImpl implements DofuncService {
             if (jedis.exists("sexTime")) {
                 sexTime = Long.parseLong(jedis.get("sexTime"));
             }
-            if (!jedis.exists("sex") || (nowTime - sexTime) > 1000 * 3) { // 超時1小時
+            if (!jedis.exists("sex") || (nowTime - sexTime) > 1000 * 60 * 60 ) { // 超時1小時
                 // 如果是超時但是集合存在 先返回地址 然後在加載
                 if (jedis.exists("sex")) {
                     int sexLength = jedis.llen("sex").intValue();
@@ -415,6 +439,7 @@ public class DofuncServiceImpl implements DofuncService {
                     url = jedis.lindex("sex", index);
                     log.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
                             "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
+                    //新開一個線程處理加載
                     new Thread() {
                         @Override
                         public void run() {

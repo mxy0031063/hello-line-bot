@@ -33,6 +33,7 @@ import hello.utils.JedisFactory;
 import hello.utils.SQLSessionFactory;
 import lombok.NonNull;
 import lombok.Value;
+import net.coobird.thumbnailator.Thumbnails;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
@@ -148,6 +149,21 @@ public class HelloController {
             Image image = ImageIO.read(responseBody.byteStream());
             int w = image.getWidth(null);
             int h = image.getHeight(null);
+
+            // 如果圖片太大 則必須縮小
+            if ( w > newWidth || h > newHeight) {
+                double scale ;
+                if ( w > h){
+                    // 寬大
+                    scale = newWidth / w ;
+                }else {
+                    // 高大
+                    scale = newHeight / h ;
+                }
+                image = Thumbnails.of(responseBody.byteStream()).scale(scale).asBufferedImage();
+                w = image.getWidth(null);
+                h = image.getHeight(null);
+            }
             // 創建圖片流
             BufferedImage tag = new BufferedImage(newWidth,newHeight,BufferedImage.TYPE_INT_RGB);
             // 創建畫筆
