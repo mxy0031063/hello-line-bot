@@ -160,7 +160,7 @@ public class HelloController {
                     // 高大
                     scale = newHeight / h ;
                 }
-                log.info("\n\n ************************** - >>>> " +scale);
+                log.info("\n\n ************************** - >>>> " +scale +"\n"+w+"\n"+h);
                 image = Thumbnails.of(responseBody.byteStream()).scale(scale).asBufferedImage();
                 w = image.getWidth(null);
                 h = image.getHeight(null);
