@@ -983,6 +983,7 @@ public class DofuncServiceImpl implements DofuncService {
                     if (money == null) {  // 沒錢就給0
                         money = 0;
                     }
+                    log.info("\n\n 順序 : "+money + " - " + type + " - " + key);
                     defaultCategoryDataset.addValue(money, type, key);
                 }
             }
