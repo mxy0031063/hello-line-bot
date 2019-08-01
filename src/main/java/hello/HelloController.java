@@ -161,9 +161,9 @@ public class HelloController {
                     scale = newHeight / (double) h;
                 }
                 log.info("\n\n ************************** - >>>> " + scale + "\n" + w + "\n" + h);
-                tag = Thumbnails.of(responseBody.byteStream()).scale(scale).asBufferedImage();
-                w = tag.getWidth();
-                h = tag.getHeight();
+                w = (int)(w * scale);
+                h = (int)(h * scale) ;
+                image = image.getScaledInstance(w ,h ,0);
             }
 
             // 創建畫筆
