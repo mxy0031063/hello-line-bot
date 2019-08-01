@@ -33,7 +33,6 @@ import hello.utils.JedisFactory;
 import hello.utils.SQLSessionFactory;
 import lombok.NonNull;
 import lombok.Value;
-import net.coobird.thumbnailator.Thumbnails;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
@@ -148,7 +147,7 @@ public class HelloController {
             Image image = ImageIO.read(responseBody.byteStream());
             int w = image.getWidth(null);
             int h = image.getHeight(null);
-            // 創建圖片流
+            // 創建新大小的空白圖片
             BufferedImage tag = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
             // 如果圖片太大 則必須縮小
             if (w > newWidth || h > newHeight) {
@@ -160,12 +159,11 @@ public class HelloController {
                     // 高大
                     scale = newHeight / (double) h;
                 }
-                log.info("\n\n ************************** - >>>> " + scale + "\n" + w + "\n" + h);
+                log.info("\n\n 縮小圖片 ->> 縮小比率 " + scale + "\n原寬 -> " + w + "\n原高 -> " + h);
                 w = (int)(w * scale);
                 h = (int)(h * scale) ;
                 image = image.getScaledInstance(w ,h ,0);
             }
-
             // 創建畫筆
             Graphics2D graphics2D = tag.createGraphics();
             // 畫圖
