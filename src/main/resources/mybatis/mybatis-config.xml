@@ -10,9 +10,9 @@
             <!--数据库连接池-->
             <dataSource type="POOLED">
                 <property name="driver" value="org.postgresql.Driver"/>
-                <property name="url" value="jdbc:postgresql://ec2-50-19-222-129.compute-1.amazonaws.com:5432/d5r278mjtisjsf"/>
-                <property name="username" value="ayxmmyhxsgohnw"/>
-                <property name="password" value="b1f87d4a984f959c78282e492583a159630e9ac9b3c8cfab063c20f64317d0a8"/>
+                <property name="url" value="jdbc:postgresql://ec2-54-243-49-82.compute-1.amazonaws.com:5432/d8ebsarq3a1aso"/>
+                <property name="username" value="ppffuulkcnvelr"/>
+                <property name="password" value="fdff2d71f7abaeb910ee96292d9a67319e214bf2031463a23ae8fa02edfb87e2"/>
             </dataSource>
         </environment>
     </environments>
