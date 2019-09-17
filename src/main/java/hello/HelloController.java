@@ -864,6 +864,7 @@ public class HelloController {
             if (ObjectUtils.isEmpty(avSearch)) {
                 log.info("AV Search return Object is Empty !");
                 this.replyText(replyToken,"抱歉 ! 沒有找到你說的關鍵字");
+                return;
             }
             showImg4AV(replyToken, avSearch);
         } else if (text.contains("發財") || text.contains("發大財") || text.contains("韓國瑜")) {
