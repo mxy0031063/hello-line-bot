@@ -7,7 +7,6 @@ import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.model.PushMessage;
 import com.linecorp.bot.model.ReplyMessage;
 import com.linecorp.bot.model.action.PostbackAction;
-import com.linecorp.bot.model.action.URIAction;
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.message.TextMessageContent;
 import com.linecorp.bot.model.message.Message;
@@ -18,14 +17,11 @@ import com.linecorp.bot.model.message.template.CarouselColumn;
 import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
 import hello.utils.AccountingUtils;
-
-import hello.utils.JDBCUtil;
 import hello.utils.JedisFactory;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
-
 import org.jfree.chart.labels.StandardCategoryItemLabelGenerator;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.CategoryPlot;
@@ -34,9 +30,7 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.chart.title.LegendTitle;
 import org.jfree.chart.title.TextTitle;
-
 import org.jfree.data.category.DefaultCategoryDataset;
-
 import org.jfree.data.general.DefaultPieDataset;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -47,7 +41,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import retrofit2.Response;
 
 import java.awt.*;
@@ -55,10 +48,13 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.time.*;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
@@ -517,6 +513,7 @@ public class DofuncServiceImpl implements DofuncService {
     public ArrayList doAVsearch(String replyToken, Event event, TextMessageContent content) throws IOException {
         // 存儲 返回的搜尋結果
         ArrayList<ArrayList<String>> lists = new ArrayList<>();
+        log.info("\n\nSearch AV Service Function\n");
 
         String text = content.getText();
         String searchText = text.substring(text.indexOf("!av") + 4);
@@ -542,6 +539,7 @@ public class DofuncServiceImpl implements DofuncService {
 
         }
         int listSize = lists.size();
+        log.info("\n\n listSize : " + listSize);
         ArrayList<ArrayList<String>> returnList = new ArrayList<>();
         // 元素小於三個直接給
         if (listSize <= 3) {

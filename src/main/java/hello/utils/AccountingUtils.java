@@ -1,15 +1,9 @@
 package hello.utils;
 
-import com.linecorp.bot.model.event.Event;
-
-import java.awt.*;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 

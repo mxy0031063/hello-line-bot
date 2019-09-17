@@ -861,9 +861,11 @@ public class HelloController {
         } else if (text.contains("!av") || text.contains("！av")) {
             /** 搜尋av */
             ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken, event, content);
-            if (avSearch != null) {
-                showImg4AV(replyToken, avSearch);
+            if (ObjectUtils.isEmpty(avSearch)) {
+                log.info("AV Search return Object is Empty !");
+                this.replyText(replyToken,"抱歉 ! 沒有找到你說的關鍵字");
             }
+            showImg4AV(replyToken, avSearch);
         } else if (text.contains("發財") || text.contains("發大財") || text.contains("韓國瑜")) {
             /** 發大財 */
             doMakeRich(replyToken, event, content);
