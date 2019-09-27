@@ -390,6 +390,7 @@ public class HelloController {
             }
             case "doShowAccountingMoneyDate": {
                 JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken, event);
+                if (null == jFreeChart)return;
                 showAccountingImage(jFreeChart, replyToken);
                 break;
             }
@@ -819,6 +820,7 @@ public class HelloController {
         } else if (text.equals("$$")) {
             /** 顯示當前月記帳圖表 */
             JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken, event);
+            if (null == jFreeChart) return;
             showAccountingImage(jFreeChart, replyToken);
         } else if (text.startsWith("!del") || text.startsWith("！del")) {
             /** 記帳模塊 刪除操作 */
