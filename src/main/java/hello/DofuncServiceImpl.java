@@ -869,14 +869,13 @@ public class DofuncServiceImpl implements DofuncService {
                 this.replyText(replyToken, "你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
                 return null;
             }
-            if (null == resultSet) {
+            Map<String, Map<String, Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
+            if (dateMap.isEmpty()) {
                 this.replyText(replyToken, "這個月還沒有記錄喔");
                 return null;
             }
-            Map<String, Map<String, Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
             Map<String, Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
             DefaultPieDataset dataset = new DefaultPieDataset();
-            log.info("\n\n ** nowDate4Accounting : "+nowDate4Accounting+"\nresultSet"+resultSet+"\ndateMap"+dateMap+"\n\n");
             for (String key : nowDate4Accounting.keySet()) {
                 dataset.setValue(key, nowDate4Accounting.get(key));
             }
