@@ -1,28 +1,32 @@
 package hello.utils;
 
-import java.io.InputStream;
+import org.apache.tomcat.jdbc.pool.DataSource;
+import org.apache.tomcat.jdbc.pool.PoolProperties;
+
+import java.io.IOException;
 import java.sql.*;
 import java.util.Properties;
 
 public class JDBCUtil {
-    private static String url;
-    private static String user;
-    private static String password;
-
+    private static DataSource dataSource = new DataSource();
     static {
-        // 使用properties加载属性文件
+        PoolProperties poolProperties = new PoolProperties();
         Properties prop = new Properties();
         try {
-            InputStream is = JDBCUtil.class.getClassLoader().getResourceAsStream("jdbc.properties");
-            prop.load(is);
-            // 注册驱动（获取属性文件中的数据）
-            String driverClassName = prop.getProperty("driverClassName");
-            Class.forName(driverClassName);
-            // 获取属性文件中的url,username,password
-            url = prop.getProperty("url");
-            user = prop.getProperty("user");
-            password = prop.getProperty("password");
-        } catch (Exception e) {
+            prop.load(JDBCUtil.class.getClassLoader().getResourceAsStream("jdbc.properties"));
+            poolProperties.setDriverClassName(prop.getProperty("driverClassName"));
+            poolProperties.setUrl(prop.getProperty("url"));
+            poolProperties.setUsername(prop.getProperty("user"));
+            poolProperties.setPassword(prop.getProperty("password"));
+            poolProperties.setInitialSize(Integer.parseInt(prop.getProperty("initialSize")));
+            poolProperties.setMaxActive(Integer.parseInt(prop.getProperty("maxActive")));
+            poolProperties.setMaxIdle(Integer.parseInt(prop.getProperty("maxIdle")));
+            poolProperties.setMinIdle(Integer.parseInt(prop.getProperty("minIdle")));
+            poolProperties.setMaxWait(Integer.parseInt(prop.getProperty("maxWait")));
+            poolProperties.setRemoveAbandoned(Boolean.parseBoolean(prop.getProperty("removeAbandoned")));
+            poolProperties.setRemoveAbandonedTimeout(Integer.parseInt(prop.getProperty("removeAbandonedTimeout")));
+            dataSource.setPoolProperties(poolProperties);
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -31,7 +35,7 @@ public class JDBCUtil {
     public static Connection getConnection() {
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection(url, user, password);
+            conn = dataSource.getConnection();
         } catch (SQLException e) {
             e.printStackTrace();
         }

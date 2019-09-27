@@ -1,9 +1,5 @@
-package hello;
+package hello.utils;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.JSONPObject;
-import hello.utils.JedisFactory;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.springframework.boot.ApplicationArguments;
@@ -14,13 +10,12 @@ import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static hello.DofuncService.DCARD_SEX_NEW_PATH;
 import static hello.DofuncService.DCCARD_SEX_PATH;
-import static hello.DofuncServiceImpl.beautyInit;
-import static hello.DofuncServiceImpl.dccardSexInit;
-import static hello.DofuncServiceImpl.itubaInit;
+import static hello.DofuncServiceImpl.*;
 
 @Component
 @Order(value = 1)
