@@ -876,7 +876,7 @@ public class DofuncServiceImpl implements DofuncService {
             Map<String, Map<String, Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
             Map<String, Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
             DefaultPieDataset dataset = new DefaultPieDataset();
-            log.info("\n\n ** nowDate4Accounting : "+nowDate4Accounting);
+            log.info("\n\n ** nowDate4Accounting : "+nowDate4Accounting+"\nresultSet"+resultSet+"\ndateMap"+dateMap+"\n\n");
             for (String key : nowDate4Accounting.keySet()) {
                 dataset.setValue(key, nowDate4Accounting.get(key));
             }
