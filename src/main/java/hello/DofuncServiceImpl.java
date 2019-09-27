@@ -860,20 +860,20 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
-        try (ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName)) {
+        //             当前月的资料
+        LocalDate localDate = LocalDate.now();
+        String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+
+        try (ResultSet resultSet = AccountingUtils.selectAccounting4Month(tableName,nowDate)) {
             if (!AccountingUtils.checkTableExits(tableName)) {
                 this.replyText(replyToken, "你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
                 return null;
             }
             if (null == resultSet) {
-                this.replyText(replyToken, "出錯拉~");
+                this.replyText(replyToken, "這個月還沒有記錄喔");
                 return null;
             }
             Map<String, Map<String, Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
-
-//             当前月的资料
-            LocalDate localDate = LocalDate.now();
-            String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
             Map<String, Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
             DefaultPieDataset dataset = new DefaultPieDataset();
             for (String key : nowDate4Accounting.keySet()) {
