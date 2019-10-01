@@ -2,7 +2,6 @@ package hello;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.model.PushMessage;
@@ -1448,16 +1447,8 @@ public class DofuncServiceImpl implements DofuncService {
         log.info("DcardList finction INIT ...");
 //        okhttp3.Response response = timerUilts.clientHttp(path);
 //        String returnText = response.body().string();
-        String returnText = jsoupClient(path).text();
-        log.info("Json Test : "+path);
-        JSONArray page = null ;
-        try{
-            page = JSONArray.parseArray(returnText);
-        }catch (JSONException exception){
-            returnText = returnText.substring(0,returnText.lastIndexOf("id")-3);
-            returnText += "]";
-            page = JSONArray.parseArray(returnText);
-        }
+        String returnText = jsoupClient4Sex(path);
+        JSONArray page = JSONArray.parseArray(returnText);
         String pageId = null;
         for (int i = 0; i < page.size(); i++) {
             JSONObject item = page.getJSONObject(i);
@@ -1608,6 +1599,22 @@ public class DofuncServiceImpl implements DofuncService {
                 .followRedirects(b)
                 .execute();
         return response.parse();
+    }
+
+    /**
+     * 解決json返回無jsoupClient4Sex法獲取全部數據 設置 maxBodySize = 0
+     * 返回類型改成全部內容
+     */
+    private static String jsoupClient4Sex(String path)throws IOException{
+        Connection.Response response = Jsoup.connect(path)
+                .ignoreContentType(true)
+                .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
+                .referrer("http://www.google.com")
+                .timeout(15000)
+                .maxBodySize(0)
+                .followRedirects(true)
+                .execute();
+        return response.body();
     }
 
     /**
