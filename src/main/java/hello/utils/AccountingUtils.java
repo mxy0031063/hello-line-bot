@@ -4,8 +4,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AccountingUtils {
     /**
@@ -97,7 +97,7 @@ public class AccountingUtils {
      * @throws SQLException 拋出sql異常
      */
     public static Map<String, Map<String, Integer>> resultSet2Map(ResultSet resultSet) throws SQLException {
-        Map<String, Map<String, Integer>> dateMap = new HashMap<>(); // 各月份里面有类型,钱 size = 月份数量
+        Map<String, Map<String, Integer>> dateMap = new ConcurrentHashMap<>(); // 各月份里面有类型,钱 size = 月份数量
         while (resultSet.next()) {
             // 每条数据
             String date = resultSet.getString("insert_time");
@@ -125,7 +125,7 @@ public class AccountingUtils {
                 }
             } else {
                 // 月份不存在 新增
-                Map<String, Integer> newType = new HashMap<>();
+                Map<String, Integer> newType = new ConcurrentHashMap<>();
                 newType.put(type, money);
                 dateMap.put(date, newType);
             }
