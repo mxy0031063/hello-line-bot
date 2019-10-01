@@ -1448,7 +1448,7 @@ public class DofuncServiceImpl implements DofuncService {
 //        okhttp3.Response response = timerUilts.clientHttp(path);
 //        String returnText = response.body().string();
         String returnText = jsoupClient(path).text();
-        log.info("Json Test : "+returnText);
+        log.info("Json Test : "+path);
         JSONArray page = JSONArray.parseArray(returnText);
         String pageId = null;
         for (int i = 0; i < page.size(); i++) {
@@ -1582,7 +1582,7 @@ public class DofuncServiceImpl implements DofuncService {
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
                 .referrer("http://www.google.com")
-                .timeout(10000)
+                .timeout(12000)
                 .followRedirects(true)
                 .execute();
         return response.parse();
