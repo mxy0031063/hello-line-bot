@@ -2,6 +2,7 @@ package hello;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.model.PushMessage;
@@ -1449,7 +1450,14 @@ public class DofuncServiceImpl implements DofuncService {
 //        String returnText = response.body().string();
         String returnText = jsoupClient(path).text();
         log.info("Json Test : "+path);
-        JSONArray page = JSONArray.parseArray(returnText);
+        JSONArray page = null ;
+        try{
+            page = JSONArray.parseArray(returnText);
+        }catch (JSONException exception){
+            returnText = returnText.substring(0,returnText.lastIndexOf("id")-3);
+            returnText += "]";
+            page = JSONArray.parseArray(returnText);
+        }
         String pageId = null;
         for (int i = 0; i < page.size(); i++) {
             JSONObject item = page.getJSONObject(i);
