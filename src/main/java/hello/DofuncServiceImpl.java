@@ -1448,6 +1448,7 @@ public class DofuncServiceImpl implements DofuncService {
 //        okhttp3.Response response = timerUilts.clientHttp(path);
 //        String returnText = response.body().string();
         String returnText = jsoupClient(path).text();
+        log.info("Json Test : "+returnText);
         JSONArray page = JSONArray.parseArray(returnText);
         String pageId = null;
         for (int i = 0; i < page.size(); i++) {
