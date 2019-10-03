@@ -1386,7 +1386,7 @@ public class DofuncServiceImpl implements DofuncService {
             String userRatingTotal = result.getString("user_ratings_total"); // 評論總數
             String name = result.getString("name"); // 名子
             String placeId = result.getString("place_id"); // 商店IP
-            String vicinity = result.getString("vicinity"); // 地址
+            //String vicinity = result.getString("vicinity"); // 地址
             String priceLevel = null;// 價位
             String price = result.getString("price_level");
             if (price != null) {
@@ -1435,7 +1435,7 @@ public class DofuncServiceImpl implements DofuncService {
             String item = imgPath
                     + ("%") + (name)
                     + ("%") + (rating == null ? "" : ("Google 評分 :") + (rating)) + (userRatingTotal == null ? "\n" : (" 有 :") + (userRatingTotal) + (" 則評論\n"))
-                    + (isOpening) + ("   ") + ((priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n")) + (vicinity)
+                    + (isOpening) + ("   ") + ((priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n")) //+ (vicinity)
                     + ("%") + ("https://www.google.com/maps/search/?api=1&query=") + (name.replaceAll("\\s+","")) ;//+("&query_place_id=") + (placeId);
             // 存起來
 
