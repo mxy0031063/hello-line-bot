@@ -1294,7 +1294,7 @@ public class DofuncServiceImpl implements DofuncService {
             log.info("推齊功能的列表長度 : "+llen);
             if ( llen > 10 ){
                 // 刪除第一個元素
-                String remove = jedis.lpop(id);
+                String remove = jedis.rpop(id);
                 log.info("remove text : "+remove);
             }
         } catch (URISyntaxException e) {
