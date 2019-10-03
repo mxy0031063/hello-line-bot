@@ -615,11 +615,19 @@ public class HelloController {
      * @param strings
      */
     private void showGoogleSearch(String replyToken, String[] strings) {
-        String imageUrl = createUri("/static/buttons/googleSearchFood.jpg");
+
+        String imgPath = strings[0];
+        if ("null".equals(imgPath)) {
+            // 沒有圖片時的顯示
+            imgPath = createUri("/static/buttons/googleSearchFood.jpg") ;
+        }
+
+        DownloadedContent jpg = saveContent("PNG",timerUilts.clientHttp(imgPath).body(),600,600);
+
         CarouselTemplate carouselTemplate = new CarouselTemplate(
                 Collections.singletonList(
                         new CarouselColumn(
-                                imageUrl,
+                                jpg.getUri()+"#",
                                 strings[1],
                                 strings[2],
                                 Arrays.asList(
@@ -632,19 +640,8 @@ public class HelloController {
                 )
         );
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Carousel function in your platform. :(", carouselTemplate);
-        String imgPath = strings[0];
-        if ("null".equals(imgPath)) {
-            // 沒有圖片
-            this.reply(replyToken, templateMessage);
-            return;
-        }
-        okhttp3.Response response = timerUilts.clientHttp(imgPath);
-        DownloadedContent jpg = saveContent("jpg", response.body());
-        log.info("\n\nimgpath : " + imgPath + " *** jpg : " + jpg.uri + " *** " + jpg.path);
-        this.reply(replyToken, Arrays.asList(
-                new ImageMessage(imgPath, jpg.getUri()),
-                templateMessage
-        ));
+
+        this.reply(replyToken, templateMessage);
     }
 
     /**
