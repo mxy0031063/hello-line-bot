@@ -621,8 +621,8 @@ public class HelloController {
             // 沒有圖片時的顯示
             imgPath = createUri("/static/buttons/googleSearchFood.jpg") ;
         }
-
-        DownloadedContent jpg = saveContent("PNG",timerUilts.clientHttp(imgPath).body(),600,600);
+        okhttp3.Response response = timerUilts.clientHttp(imgPath);
+        DownloadedContent jpg = saveContent("PNG",response.body(),600,600);
 
         CarouselTemplate carouselTemplate = new CarouselTemplate(
                 Collections.singletonList(
