@@ -1292,7 +1292,7 @@ public class DofuncServiceImpl implements DofuncService {
             // 如果集合長度大於10
             long llen = jedis.llen(id);
             log.info("推齊功能的列表長度 : "+llen);
-            if ( llen > 10 ){
+            if ( llen > 9 ){
                 // 刪除第一個元素
                 String remove = jedis.rpop(id);
                 log.info("remove text : "+remove);
