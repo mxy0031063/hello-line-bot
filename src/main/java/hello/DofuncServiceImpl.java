@@ -1436,7 +1436,7 @@ public class DofuncServiceImpl implements DofuncService {
                     + ("%") + (name)
                     + ("%") + (rating == null ? "" : ("Google 評分 :") + (rating)) + (userRatingTotal == null ? "\n" : (" 有 :") + (userRatingTotal) + (" 則評論\n"))
                     + (isOpening) + ("   ") + ((priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n")) + (vicinity)
-                    + ("%") + ("https://www.google.com/maps/search/?api=1&query=") + (name) + ("&query_place_id=") + (placeId);
+                    + ("%") + ("https://www.google.com/maps/search/?api=1&query=") + (name.trim()) + ("&query_place_id=") + (placeId);
             // 存起來
 
             jedis.lpush(redisKey, item);
