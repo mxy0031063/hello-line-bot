@@ -7,7 +7,6 @@ import org.jfree.chart.JFreeChart;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 @Service
@@ -149,6 +148,10 @@ public interface DofuncService {
      * 處理google map api 搜尋
      */
     String[] doGoogleMapSearch(String replyToken, Event event ,TextMessageContent content)throws IOException;
+    /**
+     * 處理推齊說話
+     */
+    void doFollowTalk(String replyToken, Event event, TextMessageContent content);
 
 
 

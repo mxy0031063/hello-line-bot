@@ -9,6 +9,9 @@ import com.linecorp.bot.model.ReplyMessage;
 import com.linecorp.bot.model.action.PostbackAction;
 import com.linecorp.bot.model.event.Event;
 import com.linecorp.bot.model.event.message.TextMessageContent;
+import com.linecorp.bot.model.event.source.GroupSource;
+import com.linecorp.bot.model.event.source.RoomSource;
+import com.linecorp.bot.model.event.source.Source;
 import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TemplateMessage;
 import com.linecorp.bot.model.message.TextMessage;
@@ -29,7 +32,6 @@ import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.LineAndShapeRenderer;
-import org.jfree.chart.title.LegendTitle;
 import org.jfree.chart.title.TextTitle;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
@@ -59,6 +61,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -79,9 +82,9 @@ public class DofuncServiceImpl implements DofuncService {
 
 //    private static List<String> dccardSexList = new ArrayList<>();
 
-    private static Map<String, String> weatherMap = new HashMap();
+    private static Map<String, String> weatherMap = new ConcurrentHashMap();
 
-    private static Map<String, Integer> prize = new HashMap<>();
+    private static Map<String, Integer> prize = new ConcurrentHashMap<>();
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DofuncServiceImpl.class);
 
@@ -656,37 +659,32 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 處理發票兌獎
      *
-     * @param replyToken
-     * @param event
-     * @param content
-     * @throws IOException
      */
     @Override
     public void doInvoice4Check(String replyToken, Event event, TextMessageContent content) throws IOException {
+        // 初始化發票號碼集合
         if (prize.size() == 0) {
             inItPrize();
         }
         String number = content.getText();
         String str = number.replaceAll("[!|！| ]", "");
-        List<Integer> list = new ArrayList<>();
-        prize.keySet().forEach((key) -> {
-            if (str.endsWith(key)) {
-                list.add(prize.get(key));
-            }
-        });
-        if (list.size() == 0) {
-            this.replyText(replyToken, "很遺憾 沒有中獎");
-        } else {
-            Integer now;
-            Integer old = 0;
-            for (Integer money : list) {
-                now = money;
-                if (now > old) {
-                    old = now;
+        Integer money = 0 ;
+        // 匹配中獎號碼
+        for (String key : prize.keySet()) {
+            if (str.endsWith(key)){
+                // 取得中獎金額
+                int value = prize.get(key);
+                // 最大金額比較
+                if (value > money){
+                    money = value ;
                 }
             }
+        }
+        if (money == 0) {
+            this.replyText(replyToken, "很遺憾 沒有中獎");
+        } else {
             String outText;
-            switch (old) {
+            switch (money) {
                 case 200: {
                     outText = "恭喜你 中了 二百元";
                     break;
@@ -817,9 +815,6 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 處理記帳功能數據庫邏輯
      *
-     * @param replyToken
-     * @param data
-     * @throws IOException
      */
     @Override
     public void doDataBase4Accounting(String replyToken, Event event, String data) throws IOException {
@@ -853,14 +848,11 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 　接入指令 $$ 顯示當前月圖表
      *
-     * @param replyToken
-     * @param event
-     * @throws IOException
-     */
+     * */
     @Override
     public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
-        //             当前月的资料
+        //   当前月的资料
         LocalDate localDate = LocalDate.now();
         String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
 
@@ -881,7 +873,7 @@ public class DofuncServiceImpl implements DofuncService {
             }
             JFreeChart chart = ChartFactory.createPieChart3D("Accounting Text", dataset, true, false, false);
             chart.setTitle(new TextTitle("Accounting Text", new Font("宋体", Font.ITALIC, 22)));
-            LegendTitle legend = chart.getLegend(0);
+//            LegendTitle legend = chart.getLegend(0);
             chart.setBackgroundPaint(Color.white);
             //設定圖的部分
             PiePlot plot = (PiePlot) chart.getPlot();
@@ -894,6 +886,9 @@ public class DofuncServiceImpl implements DofuncService {
             // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
             plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
             return chart;
+            /*
+            下方為輸出文本訊息
+             */
 //            StringBuilder sb = new StringBuilder();
 //            sb.append(" -----  記帳本  ----- \n\n");
 //            // 全部数据
@@ -922,17 +917,14 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public void doAccountingOperating(String replyToken, Event event, TextMessageContent content) throws IOException {
         String tableName = getTableName(event);
-        try {
-            if (!AccountingUtils.checkTableExits(tableName)) {
-                this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
-                return;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+
+        if (!AccountingUtils.checkTableExits(tableName)) {
+            this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
+            return;
         }
         String imgUrl2 = createUri("/static/AccountingImage/AccountingImage2.jpg");
         CarouselTemplate carouselTemplate = new CarouselTemplate(
-                Arrays.asList(
+                Collections.singletonList(
                         new CarouselColumn(
                                 imgUrl2,
                                 " 發 財 記 帳 本 ",
@@ -965,13 +957,9 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public void doShowAccountingMonth4Detailed(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
-        try {
-            if (!AccountingUtils.checkTableExits(tableName)) {
-                this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
-                return;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (!AccountingUtils.checkTableExits(tableName)) {
+            this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
+            return;
         }
         LocalDate localDate = LocalDate.now();
         String time = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
@@ -1008,16 +996,11 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public JFreeChart doShowAllAccountByUser(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
-        try {
-            if (!AccountingUtils.checkTableExits(tableName)) {
-                this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
-                return null;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (!AccountingUtils.checkTableExits(tableName)) {
+            this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
+            return null;
         }
         // 拿到數據
-
         try (ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName)) {
             Map<String, Map<String, Integer>> dateMap = new TreeMap<>(String::compareTo);
             dateMap.putAll(AccountingUtils.resultSet2Map(resultSet));
@@ -1267,6 +1250,56 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     /**
+     *  處理推齊
+     */
+    @Override
+    public void doFollowTalk(String replyToken, Event event, TextMessageContent content) {
+        log.info("推齊功能觸發");
+        /*
+        step 1,
+        判斷群組 存入jedis
+        step 2,
+        依據群組判斷重複說過的話
+        step 3,
+        輸出
+        step 4,
+        對集合去重與數量控制
+         */
+        // 只有在群組或房間才有推齊的意義
+        String text = content.getText();
+        try(Jedis jedis = JedisFactory.getJedis()){
+            String id = null ;
+            Source source = event.getSource();
+            // 獲得群組ID 把說的話存起來
+            if (source instanceof GroupSource){
+                id = ((GroupSource) source).getGroupId();
+                jedis.lpush(id,text);
+            } else if (source instanceof RoomSource){
+                id = ((RoomSource) source).getRoomId();
+                jedis.lpush(id,text);
+            }else {
+                return;
+            }
+            // 獲得群組的對話紀錄
+            List<String> messageList = jedis.lrange(id,0,10);
+            // 判斷集合內重複元素數量
+            if ( Collections.frequency(messageList,text) > 2 ) {
+                // 大於 2 個 推送
+                replyText(replyToken,text);
+                // 刪除重複項
+                jedis.lrem(id,0,text);
+            }
+            // 如果集合長度大於10
+            if (jedis.llen(id) > 10 ){
+                // 刪除第一個元素
+                jedis.lpop(id);
+            }
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * 得到googleMap 的查詢path
      *
      * @param replyToken 程式錯誤直接返回
@@ -1425,9 +1458,12 @@ public class DofuncServiceImpl implements DofuncService {
         Integer fourthDesc = 4000;
         Integer fifthDesc = 1000;
         Integer sixthDesc = 200;
+        //  特別獎與特獎
         prize.put(elements.get(0).text(), specialDesc);
         prize.put(elements.get(1).text(), extraDesc);
+        //  拿到 頭獎號碼數組
         String[] firstNum = elements.get(2).text().split("、");
+        //  循環此三組號碼與末位號碼匹配之號碼
         for (String number : firstNum) {
             prize.put(number, firstDesc);
             prize.put(number.substring(1), secondDesc);
@@ -1436,6 +1472,7 @@ public class DofuncServiceImpl implements DofuncService {
             prize.put(number.substring(4), fifthDesc);
             prize.put(number.substring(5), sixthDesc);
         }
+        //  增開2組六獎
         String[] pulsNum = elements.get(3).text().split("、");
         for (String puls : pulsNum) {
             prize.put(puls, sixthDesc);

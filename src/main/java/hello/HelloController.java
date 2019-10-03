@@ -82,8 +82,6 @@ public class HelloController {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HelloController.class);
 
-    private static List<String> messagePush = new ArrayList<>();
-
     private static final int PUSH_AMOUNT = 2;
 
     /*
@@ -348,7 +346,7 @@ public class HelloController {
             String id = ((RoomSource) source).getRoomId();
             AccountingUtils.joinAction(type, id, date);
             log.info("\n\njoin Room ID : {}", id);
-            this.replyText(replyToken, " 拉我進這什麼房間 ");
+            this.replyText(replyToken, " 拉我進這什麼房間");
         } else {
             this.replyText(replyToken, "我加入了沙小 : ");
         }
@@ -619,7 +617,7 @@ public class HelloController {
     private void showGoogleSearch(String replyToken, String[] strings) {
         String imageUrl = createUri("/static/buttons/googleSearchFood.jpg");
         CarouselTemplate carouselTemplate = new CarouselTemplate(
-                Arrays.asList(
+                Collections.singletonList(
                         new CarouselColumn(
                                 imageUrl,
                                 strings[1],
@@ -866,9 +864,8 @@ public class HelloController {
             } else {
                 service.doInvoice4Check(replyToken, event, content);
             }
-//        } else {
-//            messagePush.add(text);  //消息存入
-//            flowPush(replyToken);
+        } else {
+            service.doFollowTalk(replyToken,event,content);
         }
     }
 
@@ -888,32 +885,6 @@ public class HelloController {
         showImg(replyToken, imageUrl);
     }
 
-    /**
-     * 消息推送 - 重推 說話
-     *
-     * @param replyToken
-     */
-    private void flowPush(String replyToken) {
-        // pushMessage
-        Map<String, Integer> map = new HashMap<>();
-        for (String str : messagePush) {
-            if (map.containsKey(str)) {
-                map.put(str, map.get(str) + 1);
-            } else {
-                map.put(str, 1);
-            }
-        }
-        map.keySet().forEach((key) -> {
-            if (map.get(key) > PUSH_AMOUNT) {
-                // 推送消息
-                this.replyText(replyToken, key);
-                messagePush.clear();
-            }
-        });
-        if (messagePush.size() > 10) {
-            messagePush.clear();
-        }
-    }
 
     private void showAccountingImage(JFreeChart jFreeChart, String replyToken) {
         DownloadedContent jpg = saveContent("jpeg", jFreeChart);

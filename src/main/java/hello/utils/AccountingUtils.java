@@ -16,7 +16,6 @@ public class AccountingUtils {
     public static int insertDatabase(String tableName, String moneyType, String money, String remarks, String date) {
         java.sql.Connection conn = null;
         Statement stat = null;
-        ResultSet rs = null;
         try {
             boolean tableExits = checkTableExits(tableName);
             conn = JDBCUtil.getConnection();
@@ -39,7 +38,7 @@ public class AccountingUtils {
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            JDBCUtil.close(conn, stat, rs);
+            JDBCUtil.close(conn, stat);
         }
         return 0;
     }
@@ -237,6 +236,12 @@ public class AccountingUtils {
         return null;
     }
 
+    /**
+     *  用戶加入事件-持久層
+     * @param type  加入的類型
+     * @param id    加入的類型ID
+     * @param date  加入時間
+     */
     public static void joinAction(String type , String id , String date){
         java.sql.Connection conn = null;
         Statement stat = null;
@@ -261,12 +266,21 @@ public class AccountingUtils {
      * @return true = 存在 false = 不存在
      * @throws SQLException 連接異常
      */
-    public static boolean checkTableExits(String tableName) throws SQLException {
+    public static boolean checkTableExits(String tableName){
+        boolean tableStatus = false;
         java.sql.Connection conn = null;
-        conn = JDBCUtil.getConnection();
-        DatabaseMetaData mata = conn.getMetaData();
-        String[] tableType = {"TABLE"};
-        ResultSet rs = mata.getTables(null, null, tableName, tableType);
-        return rs.next();
+        ResultSet rs = null;
+        try{
+            conn = JDBCUtil.getConnection();
+            DatabaseMetaData mata = conn.getMetaData();
+            String[] tableType = {"TABLE"};
+            rs = mata.getTables(null, null, tableName, tableType);
+            tableStatus = rs.next();
+        }catch (SQLException e ){
+            e.printStackTrace();
+        }finally {
+            JDBCUtil.close(conn,null,rs);
+        }
+        return tableStatus;
     }
 }
