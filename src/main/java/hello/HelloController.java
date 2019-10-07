@@ -39,6 +39,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -116,6 +117,10 @@ public class HelloController {
     @Autowired
     private DofuncServiceImpl service;
 
+    @Autowired
+    @Qualifier("postgresql")
+    private PostgresqlDAO postgresqlDAO ;
+
 
     private static String createUri(String path) {
         return ServletUriComponentsBuilder.fromCurrentContextPath()
@@ -124,7 +129,7 @@ public class HelloController {
 
     }
 
-    private static DownloadedContent saveContent(String ext, ResponseBody responseBody, int newWidth, int newHeight) {
+    private DownloadedContent saveContent(String ext, ResponseBody responseBody, int newWidth, int newHeight) {
         log.info("Got content-type: {}", responseBody.contentType());
         DownloadedContent tempFile = createTempFile(ext);
         try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
@@ -145,9 +150,9 @@ public class HelloController {
                     scale = newHeight / (double) h;
                 }
                 log.info("\n\n 縮小圖片 ->> 縮小比率 " + scale + "\n原寬 -> " + w + "\n原高 -> " + h);
-                w = (int)(w * scale);
-                h = (int)(h * scale) ;
-                image = image.getScaledInstance(w ,h ,0);
+                w = (int) (w * scale);
+                h = (int) (h * scale);
+                image = image.getScaledInstance(w, h, 0);
             }
             // 創建畫筆
             Graphics2D graphics2D = tag.createGraphics();
@@ -311,7 +316,7 @@ public class HelloController {
         String date = dtf.format(zonedDateTime);
         String id = event.getSource().getUserId();
         String type = "user";
-        AccountingUtils.joinAction(type, id, date);
+        postgresqlDAO.joinAction(type, id, date);
         log.info("\n\nGot follow event: {}", event);
         String replyToken = event.getReplyToken();
         try {
@@ -338,13 +343,13 @@ public class HelloController {
         if (source instanceof GroupSource) {
             String type = "group";
             String id = ((GroupSource) source).getGroupId();
-            AccountingUtils.joinAction(type, id, date);
+            postgresqlDAO.joinAction(type, id, date);
             log.info("\n\njoin Group ID : {}", id);
             this.replyText(replyToken, "大家安安");
         } else if (source instanceof RoomSource) {
             String type = "room";
             String id = ((RoomSource) source).getRoomId();
-            AccountingUtils.joinAction(type, id, date);
+            postgresqlDAO.joinAction(type, id, date);
             log.info("\n\njoin Room ID : {}", id);
             this.replyText(replyToken, " 拉我進這什麼房間");
         } else {
@@ -388,7 +393,9 @@ public class HelloController {
             }
             case "doShowAccountingMoneyDate": {
                 JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken, event);
-                if (null == jFreeChart)return;
+                if (null == jFreeChart) {
+                    return;
+                }
                 showAccountingImage(jFreeChart, replyToken);
                 break;
             }
@@ -414,28 +421,17 @@ public class HelloController {
                 showImg(replyToken, WEATHER_PATH_RADAR);
                 break;
             }
-            case "今日運勢－水瓶座": {
-            }
-            case "今日運勢－天秤座": {
-            }
-            case "今日運勢－雙子座": {
-            }
-            case "今日運勢－金牛座": {
-            }
-            case "今日運勢－處女座": {
-            }
-            case "今日運勢－摩羯座": {
-            }
-            case "今日運勢－獅子座": {
-            }
-            case "今日運勢－牡羊座": {
-            }
-            case "今日運勢－射手座": {
-            }
-            case "今日運勢－天蠍座": {
-            }
-            case "今日運勢－雙魚座": {
-            }
+            case "今日運勢－水瓶座":
+            case "今日運勢－天秤座":
+            case "今日運勢－雙子座":
+            case "今日運勢－金牛座":
+            case "今日運勢－處女座":
+            case "今日運勢－摩羯座":
+            case "今日運勢－獅子座":
+            case "今日運勢－牡羊座":
+            case "今日運勢－射手座":
+            case "今日運勢－天蠍座":
+            case "今日運勢－雙魚座":
             case "今日運勢－巨蟹座": {
                 showConStellation(replyToken, data);
                 break;
@@ -619,16 +615,16 @@ public class HelloController {
         String imgPath = strings[0];
         if ("null".equals(imgPath)) {
             // 沒有圖片時的顯示
-            imgPath = createUri("/static/buttons/googleSearchFood.jpg") ;
+            imgPath = createUri("/static/buttons/googleSearchFood.jpg");
         }
-        log.info("imgPath : "+imgPath);
+        log.info("imgPath : " + imgPath);
         okhttp3.Response response = timerUilts.clientHttp(imgPath);
-        DownloadedContent jpg = saveContent("PNG",response.body(),600,600);
+        DownloadedContent jpg = saveContent("PNG", response.body(), 600, 600);
 
         CarouselTemplate carouselTemplate = new CarouselTemplate(
                 Collections.singletonList(
                         new CarouselColumn(
-                                jpg.getUri()+"#",
+                                jpg.getUri() + "#",
                                 strings[1],
                                 strings[2],
                                 Arrays.asList(
@@ -783,17 +779,11 @@ public class HelloController {
             //改成模板 按模版 選擇想要觀看的東西
             service.doWeather(replyToken, event, content);
         } else if (text.matches("(台中|豐原|彰化|大甲|新社|苑裡)(吃什麼)[-|_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")) {
-            try {
-                String[] strings = service.doGoogleMapSearch(replyToken, event, content);
-                if (strings == null) {
-                    this.replyText(replyToken, "出錯拉～");
-                    return;
-                }
-                showGoogleSearch(replyToken, strings);
-            } catch (NullPointerException e) {
-                this.replyText(replyToken, "沒找到你說的關鍵字 在試一次吧");
-                e.printStackTrace();
+            String[] strings = service.doGoogleMapSearch(replyToken, event, content);
+            if (strings == null) {
+                return;
             }
+            showGoogleSearch(replyToken, strings);
         } else if (text.contains("push")) {
             /** 推送消息 */
             String userId = event.getSource().getUserId();
@@ -813,10 +803,12 @@ public class HelloController {
             service.doAccounting4User(replyToken, event, content);
         } else if (text.contains("!記帳") || text.contains("！記帳")) {
             service.doAccountingOperating(replyToken, event, content);
-        } else if (text.equals("$$")) {
+        } else if ("$$".equals(text)) {
             /** 顯示當前月記帳圖表 */
             JFreeChart jFreeChart = service.doShowAccountingMoneyDate(replyToken, event);
-            if (null == jFreeChart) return;
+            if (null == jFreeChart) {
+                return;
+            }
             showAccountingImage(jFreeChart, replyToken);
         } else if (text.startsWith("!del") || text.startsWith("！del")) {
             /** 記帳模塊 刪除操作 */
@@ -848,7 +840,7 @@ public class HelloController {
             ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken, event, content);
             if (ObjectUtils.isEmpty(avSearch)) {
                 log.info("AV Search return Object is Empty !");
-                this.replyText(replyToken,"抱歉 ! 沒有找到你說的關鍵字");
+                this.replyText(replyToken, "抱歉 ! 沒有找到你說的關鍵字");
                 return;
             }
             showImg4AV(replyToken, avSearch);
@@ -863,17 +855,12 @@ public class HelloController {
                 service.doInvoice4Check(replyToken, event, content);
             }
         } else {
-            service.doFollowTalk(replyToken,event,content);
+            service.doFollowTalk(replyToken, event, content);
         }
     }
 
     /**
      * 發財抽圖
-     *
-     * @param replyToken
-     * @param event
-     * @param content
-     * @throws IOException
      */
     private void doMakeRich(String replyToken, Event event, TextMessageContent content) throws IOException {
         Random random = new Random();

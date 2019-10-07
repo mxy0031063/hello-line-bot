@@ -19,8 +19,8 @@ import com.linecorp.bot.model.message.template.ButtonsTemplate;
 import com.linecorp.bot.model.message.template.CarouselColumn;
 import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
-import hello.utils.AccountingUtils;
 import hello.utils.JedisFactory;
+import hello.utils.PostgresqlDAO;
 import hello.utils.TimerUilts;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import redis.clients.jedis.Jedis;
 import retrofit2.Response;
@@ -82,11 +84,15 @@ public class DofuncServiceImpl implements DofuncService {
 
 //    private static List<String> dccardSexList = new ArrayList<>();
 
-    private static Map<String, String> weatherMap = new ConcurrentHashMap();
+    private static ConcurrentHashMap weatherMap = new ConcurrentHashMap(10);
 
     private static Map<String, Integer> prize = new ConcurrentHashMap<>();
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DofuncServiceImpl.class);
+
+    @Autowired
+    @Qualifier("postgresql")
+    private PostgresqlDAO postgresqlDAO ;
 
     @Override
     public void doWeather(String replyToken, Event event, TextMessageContent content) {
@@ -336,7 +342,7 @@ public class DofuncServiceImpl implements DofuncService {
         this.reply(replyToken, templateMessage);
     }
 
-    private static int doCount;
+
 
     /**
      * 處理 表特抽卡
@@ -488,7 +494,9 @@ public class DofuncServiceImpl implements DofuncService {
         urlLiat.add("https://m.ituba.cc/tag/802_1.html");
         urlLiat.add("https://m.ituba.cc/tag/802_2.html");
         try (Jedis jedis = JedisFactory.getJedis()) {
-            if (jedis.llen("pump") > 1000) return;
+            if (jedis.llen("pump") > 1000) {
+                return;
+            }
             for (String str : urlLiat) {
                 Document document = jsoupClient(str);
                 Elements elements = document.select(".libox img");
@@ -508,10 +516,6 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 處理AV搜尋 - 並默認隨機返回一個搜尋結果
      *
-     * @param replyToken
-     * @param event
-     * @param content
-     * @throws IOException
      */
     @Override
     public ArrayList doAVsearch(String replyToken, Event event, TextMessageContent content) throws IOException {
@@ -603,7 +607,7 @@ public class DofuncServiceImpl implements DofuncService {
         }
         String text = content.getText();
         String userInput = text.substring(text.indexOf("全球天氣") + 5);
-        String cId = weatherMap.get(userInput);
+        String cId = (String) weatherMap.get(userInput);
         log.info("doWorldTemp **  CID = " + cId + " ** userInput : " + userInput + "** weatherMap : " + weatherMap.size());
         if (cId == null) {
             this.replyText(replyToken, "找不到你說的城市");
@@ -629,11 +633,6 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 處理顯示發票邏輯
-     *
-     * @param replyToken
-     * @param event
-     * @param content
-     * @throws IOException
      */
     @Override
     public void doInvoice(String replyToken, Event event, TextMessageContent content) throws IOException {
@@ -739,13 +738,14 @@ public class DofuncServiceImpl implements DofuncService {
             // 完整語法
             String[] strings = text.split("[_|\\s]");
             String money = strings[0].replaceAll("[$]", "");
-            String type = strings[1].toLowerCase();     // 默認寫入小寫
+            // 默認寫入小寫
+            String type = strings[1].toLowerCase();
             String remarks = strings[2];
             String tableName = getTableName(event);
             ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String date = dtf.format(zonedDateTime);
-            int insertRow = AccountingUtils.insertDatabase(tableName, type, money, remarks, date);
+            int insertRow = postgresqlDAO.insertDatabase(tableName, type, money, remarks, date);
             if (insertRow == 0) {
                 this.replyText(replyToken, "出錯拉~");
                 log.info("\n TYPE : " + type + " MONEY : " + money + " REMARKS : " + remarks + "\n");
@@ -837,7 +837,7 @@ public class DofuncServiceImpl implements DofuncService {
         ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String date = dtf.format(zonedDateTime);
-        int insertRow = AccountingUtils.insertDatabase(oldtableName, moneyType, money, remorks, date);
+        int insertRow = postgresqlDAO.insertDatabase(oldtableName, moneyType, money, remorks, date);
         if (insertRow == 0) {
             this.replyText(replyToken, "出錯拉~");
             return;
@@ -856,12 +856,12 @@ public class DofuncServiceImpl implements DofuncService {
         LocalDate localDate = LocalDate.now();
         String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
 
-        try (ResultSet resultSet = AccountingUtils.selectAccounting4Month(tableName,nowDate)) {
-            if (!AccountingUtils.checkTableExits(tableName)) {
+        try (ResultSet resultSet = postgresqlDAO.selectAccounting4Month(tableName,nowDate)) {
+            if (!postgresqlDAO.checkTableExits(tableName)) {
                 this.replyText(replyToken, "你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
                 return null;
             }
-            Map<String, Map<String, Integer>> dateMap = AccountingUtils.resultSet2Map(resultSet);
+            Map<String, Map<String, Integer>> dateMap = postgresqlDAO.resultSet2Map(resultSet);
             if (dateMap.isEmpty()) {
                 this.replyText(replyToken, "這個月還沒有記錄喔");
                 return null;
@@ -909,16 +909,13 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 用戶顯示操作模板
      *
-     * @param replyToken
-     * @param event
-     * @param content
-     * @throws IOException
+
      */
     @Override
     public void doAccountingOperating(String replyToken, Event event, TextMessageContent content) throws IOException {
         String tableName = getTableName(event);
 
-        if (!AccountingUtils.checkTableExits(tableName)) {
+        if (!postgresqlDAO.checkTableExits(tableName)) {
             this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
             return;
         }
@@ -950,20 +947,17 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 顯示記帳的詳細記錄 用於用戶知道Id 輸出做 刪除 & 更改 動作
      *
-     * @param replyToken
-     * @param event
-     * @throws IOException
      */
     @Override
     public void doShowAccountingMonth4Detailed(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
-        if (!AccountingUtils.checkTableExits(tableName)) {
+        if (!postgresqlDAO.checkTableExits(tableName)) {
             this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
             return;
         }
         LocalDate localDate = LocalDate.now();
         String time = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
-        try (ResultSet resultSet = AccountingUtils.selectAccounting4Month(tableName, time)) {
+        try (ResultSet resultSet = postgresqlDAO.selectAccounting4Month(tableName, time)) {
             if (null == resultSet) {
                 this.replyText(replyToken, "出錯拉~");
                 return;
@@ -988,22 +982,18 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 顯示全部記錄圖表
      *
-     * @param replyToken
-     * @param event
-     * @return
-     * @throws IOException
      */
     @Override
     public JFreeChart doShowAllAccountByUser(String replyToken, Event event) throws IOException {
         String tableName = getTableName(event);
-        if (!AccountingUtils.checkTableExits(tableName)) {
+        if (!postgresqlDAO.checkTableExits(tableName)) {
             this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
             return null;
         }
         // 拿到數據
-        try (ResultSet resultSet = AccountingUtils.selectAccountingUser(tableName)) {
+        try (ResultSet resultSet = postgresqlDAO.selectAccountingUser(tableName)) {
             Map<String, Map<String, Integer>> dateMap = new TreeMap<>(String::compareTo);
-            dateMap.putAll(AccountingUtils.resultSet2Map(resultSet));
+            dateMap.putAll(postgresqlDAO.resultSet2Map(resultSet));
             String[] rowKey = {"Food", "Clothing", "Housing", "Transportation", "Play", "Other"}; //6
             DefaultCategoryDataset defaultCategoryDataset = new DefaultCategoryDataset();
 
@@ -1050,10 +1040,6 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 記帳刪除操作
      *
-     * @param replyToken
-     * @param event
-     * @param content
-     * @throws IOException
      */
     @Override
     public void doAccountingDelete(String replyToken, Event event, TextMessageContent content) throws IOException {
@@ -1067,7 +1053,7 @@ public class DofuncServiceImpl implements DofuncService {
         String[] strings = text.split("[_|\\s]");
         String id = strings[1];
         // util
-        int delCount = AccountingUtils.delByRowId(tableName, id);
+        int delCount = postgresqlDAO.delByRowId(tableName, id);
         if (delCount == 0) {
             log.info("\n\n ERROR \ndoAccountingDelete : " + text + "\n");
             this.replyText(replyToken, "刪除出錯拉~");
@@ -1099,7 +1085,7 @@ public class DofuncServiceImpl implements DofuncService {
         String type = strings[3].toLowerCase(); // 寫入時默認類型小寫
         String remarks = strings[4];
         // util
-        int updateConut = AccountingUtils.updateByRowId(tableName, rowId, money, type, remarks);
+        int updateConut = postgresqlDAO.updateByRowId(tableName, rowId, money, type, remarks);
         if (updateConut == 0) {
             log.info("\n\n ERROR \ndoAccountingUpdate : " + text + "\n");
             this.replyText(replyToken, "更新出錯拉");
@@ -1111,11 +1097,10 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 處理群發消息 全部 獲得結果集
      *
-     * @param message
      */
     @Override
     public void doPushMessage4All(Message message, Event event) {
-        try (ResultSet resultSet = AccountingUtils.selectIdInfo()) {
+        try (ResultSet resultSet = postgresqlDAO.selectIdInfo()) {
             pushMessage(resultSet, message, event);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1163,11 +1148,10 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 處理群發消息 依分類 獲得結果
      *
-     * @param message
      */
     @Override
     public void doPushMessage2Type(Message message, Event event, String... args) {
-        try (ResultSet resultSet = AccountingUtils.selectIdInfo(args)) {
+        try (ResultSet resultSet = postgresqlDAO.selectIdInfo(args)) {
             pushMessage(resultSet, message, event);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1180,7 +1164,6 @@ public class DofuncServiceImpl implements DofuncService {
      * @param replyToken 回覆令牌
      * @param event      事件元
      * @param content    文字事件
-     * @throws IOException
      */
     @Override
     public String[] doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) throws IOException {
@@ -1216,7 +1199,11 @@ public class DofuncServiceImpl implements DofuncService {
             log.info("\n\n listLength : " + listLength + " listSize : " + listSize + " checkTime : " + checkTime + "\n");
             if (listLength == 0 || listLength < listSize || checkTime) {  // 沒有元素 或者 元素數量不足 或 時間超過1小時
                 // 類型 城市 關鍵字 拿要找的路徑
-                String path = getPath4GoogleMap(replyToken, type, city, keyword);
+                String path = getPath4GoogleMap(type, city, keyword);
+                if (ObjectUtils.isEmpty(path)){
+                    this.replyText(replyToken, "還未增加你說的地點 ~~~~");
+                    return null;
+                }
                 Document document = jsoupClient(path);
                 String retrunText = document.text();
                 JSONObject jsonObject = JSONObject.parseObject(retrunText);
@@ -1304,15 +1291,14 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 得到googleMap 的查詢path
-     *
-     * @param replyToken 程式錯誤直接返回
      * @param type       查詢種類
      * @param city       查詢城市
      * @param keyword    關鍵字
      * @return 路徑
      */
-    private String getPath4GoogleMap(String replyToken, String type, String city, String keyword) {
-        String radius = "5000"; // 查找範圍 <M>　默認
+    private String getPath4GoogleMap(String type, String city, String keyword) {
+        // 查找範圍 <M>　默認
+        String radius = "5000";
         String localtion = null;
         int latitude = 0;
         int longitude = 0;
@@ -1368,7 +1354,6 @@ public class DofuncServiceImpl implements DofuncService {
                 break;
             }
             default: {
-                this.replyText(replyToken, "還未增加你說的地點 ~~~~");
                 return null;
             }
         }
@@ -1385,7 +1370,7 @@ public class DofuncServiceImpl implements DofuncService {
             String rating = result.getString("rating"); // 評分
             String userRatingTotal = result.getString("user_ratings_total"); // 評論總數
             String name = result.getString("name"); // 名子
-            String placeId = result.getString("place_id"); // 商店IP
+//            String placeId = result.getString("place_id"); // 商店IP
             //String vicinity = result.getString("vicinity"); // 地址
             String priceLevel = null;// 價位
             String price = result.getString("price_level");
@@ -1431,7 +1416,7 @@ public class DofuncServiceImpl implements DofuncService {
                 imgPath = ("https://maps.googleapis.com/maps/api/place/photo?key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&maxwidth=1040&photoreference=") + (photoToken);
             }
             // 模板賦值
-
+            // 有一些屬性無法添加 因模板的字符限制60個 超過不收
             String item = imgPath
                     + ("%") + (name)
                     + ("%") + (rating == null ? "" : ("Google 評分 :") + (rating)) + (userRatingTotal == null ? "\n" : (" 有 :") + (userRatingTotal) + (" 則評論\n"))
@@ -1498,7 +1483,7 @@ public class DofuncServiceImpl implements DofuncService {
                 continue;
             }
             String gender = item.getString("gender");
-            if (gender.equals("F")) {
+            if ("F".equals(gender)) {
                 for (int j = 0; j < media.size(); j++) {
                     String url = media.getJSONObject(j).getString("url");
                     jedis.lpush("sex", url + "%" + itemId);
@@ -1533,6 +1518,9 @@ public class DofuncServiceImpl implements DofuncService {
         for (Element element : lastPageArray) {
             lastPage = element.getElementsByClass("btn").get(1);
         }
+        if (ObjectUtils.isEmpty(lastPage)){
+            throw new NullPointerException("lastPage 未被賦值");
+        }
         String lastPageUrl = lastPage.absUrl("href"); //獲得路徑
         String lastPageIndex = lastPageUrl.substring(lastPageUrl.indexOf("index") + 5, lastPageUrl.indexOf(".html"));
         //  獲得當前頁碼
@@ -1548,9 +1536,11 @@ public class DofuncServiceImpl implements DofuncService {
         // 往網頁發送 獲取消息 並把抓下來的image url 存入
         pageIndexArray.forEach((pageIndex) -> {
             String url = "https://www.ptt.cc/bbs/Beauty/index" + pageIndex + ".html";
-            Document pageDoc = null;
+            Document pageDoc;
             try (Jedis jedis = JedisFactory.getJedis()) {
-                if (jedis.llen("pump") > 1500) return;
+                if (jedis.llen("pump") > 1500) {
+                    return;
+                }
                 // 獲得表特版頁面
                 pageDoc = jsoupClient(url, cookies);
                 // 獲得標題組

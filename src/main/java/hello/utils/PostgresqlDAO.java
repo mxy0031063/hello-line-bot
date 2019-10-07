@@ -1,5 +1,7 @@
 package hello.utils;
 
+import org.springframework.stereotype.Repository;
+
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -7,13 +9,14 @@ import java.sql.Statement;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class AccountingUtils {
+@Repository("postgresql")
+public class PostgresqlDAO {
     /**
      * 用户新增数据操作
      *
      * @return 新增行數
      */
-    public static int insertDatabase(String tableName, String moneyType, String money, String remarks, String date) {
+    public int insertDatabase(String tableName, String moneyType, String money, String remarks, String date) {
         java.sql.Connection conn = null;
         Statement stat = null;
         try {
@@ -49,7 +52,7 @@ public class AccountingUtils {
      * @param tablename 表名
      * @return 查詢集
      */
-    public static ResultSet selectAccountingUser(String tablename) {
+    public ResultSet selectAccountingUser(String tablename) {
         java.sql.Connection conn = null;
         Statement stat = null;
         ResultSet resultSet = null;
@@ -72,7 +75,7 @@ public class AccountingUtils {
      * @param date      時間
      * @return 結果集
      */
-    public static ResultSet selectAccounting4Month(String tablename, String date) {
+    public ResultSet selectAccounting4Month(String tablename, String date) {
         java.sql.Connection conn = null;
         Statement stat = null;
         ResultSet resultSet = null;
@@ -95,8 +98,9 @@ public class AccountingUtils {
      * @return 轉換完成的MAP
      * @throws SQLException 拋出sql異常
      */
-    public static Map<String, Map<String, Integer>> resultSet2Map(ResultSet resultSet) throws SQLException {
-        Map<String, Map<String, Integer>> dateMap = new ConcurrentHashMap<>(); // 各月份里面有类型,钱 size = 月份数量
+    public Map<String, Map<String, Integer>> resultSet2Map(ResultSet resultSet) throws SQLException {
+        // 各月份里面有类型,钱 size = 月份数量
+        Map<String, Map<String, Integer>> dateMap = new ConcurrentHashMap<>(10);
         while (resultSet.next()) {
             // 每条数据
             String date = resultSet.getString("insert_time");
@@ -139,7 +143,7 @@ public class AccountingUtils {
      * @param rowId     表ID
      * @return 更新行數
      */
-    public static int delByRowId(String tableName, String rowId) {
+    public int delByRowId(String tableName, String rowId) {
         java.sql.Connection conn = null;
         Statement stat = null;
         ResultSet resultSet = null;
@@ -166,7 +170,7 @@ public class AccountingUtils {
      * @param remarks   更改的備註
      * @return 更新行數
      */
-    public static int updateByRowId(String tableName, String rowId, String money, String type, String remarks) {
+    public int updateByRowId(String tableName, String rowId, String money, String type, String remarks) {
         java.sql.Connection conn = null;
         Statement stat = null;
         ResultSet resultSet = null;
@@ -188,7 +192,7 @@ public class AccountingUtils {
      *
      * @return ID
      */
-    public static ResultSet selectIdInfo() {
+    public ResultSet selectIdInfo() {
         java.sql.Connection conn = null;
         Statement stat = null;
         ResultSet resultSet = null;
@@ -211,7 +215,7 @@ public class AccountingUtils {
      * @param args TYPE OR DATE
      * @return ID
      */
-    public static ResultSet selectIdInfo(String... args) {
+    public ResultSet selectIdInfo(String... args) {
         java.sql.Connection conn = null;
         Statement stat = null;
         ResultSet resultSet = null;
@@ -242,7 +246,7 @@ public class AccountingUtils {
      * @param id    加入的類型ID
      * @param date  加入時間
      */
-    public static void joinAction(String type , String id , String date){
+    public void joinAction(String type , String id , String date){
         java.sql.Connection conn = null;
         Statement stat = null;
         try {
@@ -266,7 +270,7 @@ public class AccountingUtils {
      * @return true = 存在 false = 不存在
      * @throws SQLException 連接異常
      */
-    public static boolean checkTableExits(String tableName){
+    public boolean checkTableExits(String tableName){
         boolean tableStatus = false;
         java.sql.Connection conn = null;
         ResultSet rs = null;
