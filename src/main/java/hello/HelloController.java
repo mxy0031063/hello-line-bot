@@ -108,18 +108,21 @@ public class HelloController {
     private static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
 
 
-    @Autowired
-    private TimerUilts timerUilts;
+    private final TimerUilts timerUilts;
+
+    private final LineMessagingService lineMessagingService;
+
+    private final DofuncServiceImpl service;
+
+    private final PostgresqlDAO postgresqlDAO ;
 
     @Autowired
-    private LineMessagingService lineMessagingService;
-
-    @Autowired
-    private DofuncServiceImpl service;
-
-    @Autowired
-    @Qualifier("postgresql")
-    private PostgresqlDAO postgresqlDAO ;
+    public HelloController(TimerUilts timerUilts, LineMessagingService lineMessagingService, DofuncServiceImpl service, @Qualifier("postgresql") PostgresqlDAO postgresqlDAO) {
+        this.timerUilts = timerUilts;
+        this.lineMessagingService = lineMessagingService;
+        this.service = service;
+        this.postgresqlDAO = postgresqlDAO;
+    }
 
 
     private static String createUri(String path) {
@@ -290,8 +293,6 @@ public class HelloController {
      * 文字事件
      * 此事件為關鍵 - 由此事件得到的事件元去調用入口方法
      *
-     * @param event
-     * @throws IOException
      */
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) throws IOException {
@@ -504,8 +505,6 @@ public class HelloController {
      * <p>
      * 可能是過時方法 新版v8官網上已有固定地址JPG
      *
-     * @param i
-     * @return
      */
     @Deprecated
     private String weatherPath(int i) {
@@ -542,9 +541,6 @@ public class HelloController {
     /**
      * 發送圖片
      *
-     * @param replyToken
-     * @param path
-     * @throws IOException
      */
     private void showImg(String replyToken, String path) throws IOException {
         okhttp3.Response response = timerUilts.clientHttp(path);
@@ -555,8 +551,7 @@ public class HelloController {
     /**
      * 發送 西施imageMap
      *
-     * @param replyToken
-     * @param sex
+     * @param sex String 數組 0 = 圖片地址 ，1 = 文章ID
      */
     private void showSexImage(String replyToken, String[] sex) {
         int ImageWidth = 1040;
@@ -581,8 +576,7 @@ public class HelloController {
     /**
      * 發送圖片 - AV 服務
      *
-     * @param replyToken
-     * @param avSearch
+     * @param avSearch 最多三個的String Array　每個array 都有圖片連接跟影片url
      */
     private void showImg4AV(String replyToken, ArrayList<ArrayList<String>> avSearch) {
         ArrayList<String> firstItem = avSearch.get(0);
@@ -607,8 +601,7 @@ public class HelloController {
     /**
      * 發送google
      *
-     * @param replyToken
-     * @param strings
+     * @param strings String 數組 0 = 圖片uri ，1 = 名子 ，2 = 評分等 ，3 = googleMap 連接
      */
     private void showGoogleSearch(String replyToken, String[] strings) {
 
@@ -837,7 +830,7 @@ public class HelloController {
             }
         } else if (text.contains("!av") || text.contains("！av")) {
             /** 搜尋av */
-            ArrayList<ArrayList<String>> avSearch = service.doAVsearch(replyToken, event, content);
+            ArrayList<ArrayList<String>> avSearch = service.doAvSeach(replyToken, event, content);
             if (ObjectUtils.isEmpty(avSearch)) {
                 log.info("AV Search return Object is Empty !");
                 this.replyText(replyToken, "抱歉 ! 沒有找到你說的關鍵字");

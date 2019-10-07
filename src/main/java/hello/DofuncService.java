@@ -87,7 +87,7 @@ public interface DofuncService {
     /**
      * 處理AV搜尋
      */
-    ArrayList doAVsearch(String replyToken, Event event, TextMessageContent content)throws IOException;
+    ArrayList doAvSeach(String replyToken, Event event, TextMessageContent content)throws IOException;
     /**
      * 處理城市天氣
      */

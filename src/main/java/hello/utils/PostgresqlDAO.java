@@ -9,6 +9,9 @@ import java.sql.Statement;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * @author Administrator
+ */
 @Repository("postgresql")
 public class PostgresqlDAO {
     /**
@@ -128,7 +131,7 @@ public class PostgresqlDAO {
                 }
             } else {
                 // 月份不存在 新增
-                Map<String, Integer> newType = new ConcurrentHashMap<>();
+                Map<String, Integer> newType = new ConcurrentHashMap<>(10);
                 newType.put(type, money);
                 dateMap.put(date, newType);
             }

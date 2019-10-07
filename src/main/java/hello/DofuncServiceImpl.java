@@ -21,6 +21,7 @@ import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
 import hello.utils.JedisFactory;
 import hello.utils.PostgresqlDAO;
+import hello.utils.ThreadPool;
 import hello.utils.TimerUilts;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -64,15 +65,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Service
 public class DofuncServiceImpl implements DofuncService {
 
-    @Autowired
-    private LineMessagingService lineMessagingService;
-    @Autowired
-    private TimerUilts timerUilts;
+    private final LineMessagingService lineMessagingService;
+    private final TimerUilts timerUilts;
 
 //    private static List<String> grilImgUrlList = new ArrayList<>();
 
@@ -88,11 +88,17 @@ public class DofuncServiceImpl implements DofuncService {
 
     private static Map<String, Integer> prize = new ConcurrentHashMap<>();
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DofuncServiceImpl.class);
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DofuncServiceImpl.class);
+
+    private final PostgresqlDAO postgresqlDAO ;
+
 
     @Autowired
-    @Qualifier("postgresql")
-    private PostgresqlDAO postgresqlDAO ;
+    public DofuncServiceImpl(@Qualifier("postgresql") PostgresqlDAO postgresqlDAO, LineMessagingService lineMessagingService, TimerUilts timerUilts) {
+        this.postgresqlDAO = postgresqlDAO;
+        this.lineMessagingService = lineMessagingService;
+        this.timerUilts = timerUilts;
+    }
 
     @Override
     public void doWeather(String replyToken, Event event, TextMessageContent content) {
@@ -119,7 +125,7 @@ public class DofuncServiceImpl implements DofuncService {
         );
         TemplateMessage templateMessage = new TemplateMessage("Sorry, I don't support the Button function in your platform. :(", buttonsTemplate);
         this.reply(replyToken, templateMessage);
-        /** ----------------------------------------------------------- */
+        /* ----------------------------------------------------------- */
     }
 
     @Override
@@ -136,7 +142,7 @@ public class DofuncServiceImpl implements DofuncService {
             if (jedis.exists("oli") || (nowTime - oliTime) < 1000 * 60 * 60 * 6) { //超時6小時
                 // 緩存有資料
                 this.replyText(replyToken, jedis.get("oli"));
-                log.info("\n油價api 執行 ** 資料存活時間 : " + (nowTime - oliTime) / 1000 / 60 / 60 + " 分鐘");
+                LOG.info("\n油價api 執行 ** 資料存活時間 : " + (nowTime - oliTime) / 1000 / 60 / 60 + " 分鐘");
                 return;
             }
 
@@ -145,7 +151,7 @@ public class DofuncServiceImpl implements DofuncService {
             StringBuilder outText = new StringBuilder();
 
 
-            /** 現在的油價 */
+            /* 現在的油價 */
             outText.append("本日油價 : \n");
             List<String> oilName = new ArrayList<>();
             oilName.add("92無鉛汽油");
@@ -160,7 +166,7 @@ public class DofuncServiceImpl implements DofuncService {
                 String oilPrice = returnText.substring(index + 10, index + 14);
                 outText.append(oilName.get(i - 1)).append(" -> ").append(oilPrice).append("\n");
             }
-            /** 公布的油價 漲或跌 */
+            /* 公布的油價 漲或跌 */
             int upDownIndex = returnText.indexOf("class=\\\"sys\\\"") + 19;
             int upDownEndIndex = upDownIndex + 2;
             String upOrDown = returnText.substring(
@@ -172,7 +178,7 @@ public class DofuncServiceImpl implements DofuncService {
                     upDownPriceIndex, upDownPriceEndIndex
             );
 
-            /** 實施日期 */
+            /* 實施日期 */
             int priceUpdateDateIndex = returnText.indexOf("PriceUpdate") + 14;
             int endIndex = priceUpdateDateIndex + 5;
             String oilPriceUpdate = returnText.substring(
@@ -228,8 +234,8 @@ public class DofuncServiceImpl implements DofuncService {
             this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
             return;
         }
-        BigDecimal moneyCurrTo = null;
-        if (!currFromExrate.equals("USD")) {
+        BigDecimal moneyCurrTo ;
+        if (!"USD".equals(currFromExrate)) {
             // 來源幣種不是美金 要轉換
             // Map格式 USDXXX 獲得匯率
             String exrateFrom = currExrateMap.get("USD" + currFromExrate);
@@ -248,7 +254,7 @@ public class DofuncServiceImpl implements DofuncService {
         }
         if (currToExrate.equals(currFromExrate)) {
             this.replyText(replyToken, "are u joke me ?");
-        } else if (currToExrate.equals("USD")) {
+        } else if ("USD".equals(currToExrate)) {
             // 是美金 直接輸出
             this.replyText(replyToken, "約等於 " + moneyCurrTo.toString() + " 元");
         } else {
@@ -347,20 +353,16 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 處理 表特抽卡
      *
-     * @param event
-     * @param content
-     * @throws IOException
      */
     @Override
     public String doBeauty(Event event, TextMessageContent content) throws IOException {
-        /**
+        /*
          *　抽卡超時　：
          *          西施版超時設定　１　小時
          *          表特版超時設定　２　小時
          */
         try (Jedis jedis = JedisFactory.getJedis()) {
 
-            String text = content.getText();
             Random random = new Random();
             int index;
             String url;
@@ -381,22 +383,20 @@ public class DofuncServiceImpl implements DofuncService {
                     index = random.nextInt(pumpLength);
                     url = jedis.lindex("pump", index);
 
-                    log.info("\n\n抽卡集合元素 : " + jedis.llen("pump") +
+                    LOG.info("\n\n抽卡集合元素 : " + jedis.llen("pump") +
                             "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime) / 1000 / 60 + "分前\n"
                     );
-                    new Thread(){
-                        @Override
-                        public void run() {
-                            super.run();
-                            try{
-                                jedis.ltrim("pump", 1, 0);
-                                beautyInit();
-                                itubaInit();
-                            }catch (IOException e){
-                                e.printStackTrace();
-                            }
+                    ExecutorService thread = ThreadPool.getCustomThreadPoolExecutor();
+                    thread.submit(()->{
+                        LOG.info(Thread.currentThread().getName()+" is doing"+Thread.currentThread().getId());
+                        try{
+                            jedis.ltrim("pump", 1, 0);
+                            beautyInit();
+                            itubaInit();
+                        }catch (IOException e){
+                            e.printStackTrace();
                         }
-                    }.start();
+                    });
                     return url;
                 }
                 jedis.ltrim("pump", 1, 0);
@@ -407,7 +407,7 @@ public class DofuncServiceImpl implements DofuncService {
             index = random.nextInt(pumpLength);
             url = jedis.lindex("pump", index);
 
-            log.info("\n\n抽卡集合元素 : " + jedis.llen("pump") +
+            LOG.info("\n\n抽卡集合元素 : " + jedis.llen("pump") +
                     "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime) / 1000 / 60 + "分前\n"
             );
             return url;
@@ -420,10 +420,6 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 7/27 更改抽卡為兩個分開的方法 因我要把西施版的圖片做成imageMap的形式
      *
-     * @param event
-     * @param content
-     * @return
-     * @throws IOException
      */
     @Override
     public String[] doSex(Event event, TextMessageContent content) throws IOException {
@@ -443,22 +439,20 @@ public class DofuncServiceImpl implements DofuncService {
                     int sexLength = jedis.llen("sex").intValue();
                     index = random.nextInt(sexLength);
                     url = jedis.lindex("sex", index);
-                    log.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
+                    LOG.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
                             "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
                     //新開一個線程處理加載
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            super.run();
-                            try {
-                                jedis.ltrim("sex", 1, 0); // 清空
-                                dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
-                                dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                    ExecutorService thread = ThreadPool.getCustomThreadPoolExecutor();
+                    thread.submit(()->{
+                        try {
+                            LOG.info(Thread.currentThread().getName()+" is doing"+Thread.currentThread().getId());
+                            jedis.ltrim("sex", 1, 0); // 清空
+                            dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
+                            dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                    }.start();
+                    });
                     return url.split("%");
                 }
                 jedis.ltrim("sex", 1, 0); // 清空
@@ -468,7 +462,7 @@ public class DofuncServiceImpl implements DofuncService {
             int sexLength = jedis.llen("sex").intValue();
             index = random.nextInt(sexLength);
             url = jedis.lindex("sex", index);
-            log.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
+            LOG.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
                     "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
             // imageURL 在前 ID 在後
             return url.split("%");
@@ -518,10 +512,10 @@ public class DofuncServiceImpl implements DofuncService {
      *
      */
     @Override
-    public ArrayList doAVsearch(String replyToken, Event event, TextMessageContent content) throws IOException {
+    public ArrayList doAvSeach(String replyToken, Event event, TextMessageContent content) throws IOException {
         // 存儲 返回的搜尋結果
         ArrayList<ArrayList<String>> lists = new ArrayList<>();
-        log.info("\n\nSearch AV Service Function\n");
+        LOG.info("\n\nSearch AV Service Function\n");
 
         String text = content.getText();
         String searchText = text.substring(text.indexOf("!av") + 4);
@@ -547,26 +541,24 @@ public class DofuncServiceImpl implements DofuncService {
 
         }
         int listSize = lists.size();
-        log.info("\n\n listSize : " + listSize);
+        LOG.info("\n\n listSize : " + listSize);
         ArrayList<ArrayList<String>> returnList = new ArrayList<>();
         // 元素小於三個直接給
         if (listSize <= 3) {
             return lists;
         }
         int[] index = timerUilts.getRandomArrayByValue(3, listSize);
-        for (int i = 0; i < index.length; i++) {
-            returnList.add(lists.get(index[i]));
+        for (int i : index) {
+            returnList.add(lists.get(i));
         }
+//        for (int i = 0; i < index.length; i++) {
+//            returnList.add(lists.get(index[i]));
+//        }
         return returnList;
     }
 
     /**
      * 處理 城市天氣  目前做一天的
-     *
-     * @param replyToken
-     * @param event
-     * @param content
-     * @throws IOException
      */
     @Override
     public void doCityTemp(String replyToken, Event event, TextMessageContent content, String city) throws IOException {
@@ -608,7 +600,7 @@ public class DofuncServiceImpl implements DofuncService {
         String text = content.getText();
         String userInput = text.substring(text.indexOf("全球天氣") + 5);
         String cId = (String) weatherMap.get(userInput);
-        log.info("doWorldTemp **  CID = " + cId + " ** userInput : " + userInput + "** weatherMap : " + weatherMap.size());
+        LOG.info("doWorldTemp **  CID = " + cId + " ** userInput : " + userInput + "** weatherMap : " + weatherMap.size());
         if (cId == null) {
             this.replyText(replyToken, "找不到你說的城市");
             return;
@@ -628,7 +620,6 @@ public class DofuncServiceImpl implements DofuncService {
                     .append("       天氣描述 ：").append(json.getString("weather")).append("\n\n");
         }
         this.replyText(replyToken, stringBuilder.toString());
-        return;
     }
 
     /**
@@ -740,21 +731,28 @@ public class DofuncServiceImpl implements DofuncService {
             String money = strings[0].replaceAll("[$]", "");
             // 默認寫入小寫
             String type = strings[1].toLowerCase();
-            String remarks = strings[2];
-            String tableName = getTableName(event);
             ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String date = dtf.format(zonedDateTime);
-            int insertRow = postgresqlDAO.insertDatabase(tableName, type, money, remarks, date);
+            String tableName = getTableName(event);
+            int insertRow ;
+
+            if (strings.length < 3 ) {
+                insertRow = postgresqlDAO.insertDatabase(tableName,type,money,"沒有輸入備註",date);
+            }else {
+                String remarks = strings[2];
+                insertRow = postgresqlDAO.insertDatabase(tableName, type, money, remarks, date);
+            }
+
             if (insertRow == 0) {
                 this.replyText(replyToken, "出錯拉~");
-                log.info("\n TYPE : " + type + " MONEY : " + money + " REMARKS : " + remarks + "\n");
+                LOG.info("\n TYPE : " + type + " MONEY : " + money + "\n");
                 return;
             }
             this.replyText(replyToken, "已為你新增 \n" + type + " \n金額 ：" + money);
             return;
         }
-        log.info("\n doAccounting4User :{ text - " + text + " } \n");
+        LOG.info("\n doAccounting4User :{ text - " + text + " } \n");
         // 獲得用戶輸入的類型 錢 備註
         String[] strings = text.split(" ");
         String remorks = null;
@@ -873,7 +871,6 @@ public class DofuncServiceImpl implements DofuncService {
             }
             JFreeChart chart = ChartFactory.createPieChart3D("Accounting Text", dataset, true, false, false);
             chart.setTitle(new TextTitle("Accounting Text", new Font("宋体", Font.ITALIC, 22)));
-//            LegendTitle legend = chart.getLegend(0);
             chart.setBackgroundPaint(Color.white);
             //設定圖的部分
             PiePlot plot = (PiePlot) chart.getPlot();
@@ -1004,7 +1001,7 @@ public class DofuncServiceImpl implements DofuncService {
                     if (money == null) {  // 沒錢就給0
                         money = 0;
                     }
-                    log.info("\n\n 順序 : " + money + " - " + type + " - " + key);
+                    LOG.info("\n\n 順序 : " + money + " - " + type + " - " + key);
                     defaultCategoryDataset.addValue(money, type, key);
                 }
             }
@@ -1055,7 +1052,7 @@ public class DofuncServiceImpl implements DofuncService {
         // util
         int delCount = postgresqlDAO.delByRowId(tableName, id);
         if (delCount == 0) {
-            log.info("\n\n ERROR \ndoAccountingDelete : " + text + "\n");
+            LOG.info("\n\n ERROR \ndoAccountingDelete : " + text + "\n");
             this.replyText(replyToken, "刪除出錯拉~");
             return;
         }
@@ -1064,11 +1061,6 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 記帳更改操作
-     *
-     * @param replyToken
-     * @param event
-     * @param content
-     * @throws IOException
      */
     @Override
     public void doAccountingUpdate(String replyToken, Event event, TextMessageContent content) throws IOException {
@@ -1087,7 +1079,7 @@ public class DofuncServiceImpl implements DofuncService {
         // util
         int updateConut = postgresqlDAO.updateByRowId(tableName, rowId, money, type, remarks);
         if (updateConut == 0) {
-            log.info("\n\n ERROR \ndoAccountingUpdate : " + text + "\n");
+            LOG.info("\n\n ERROR \ndoAccountingUpdate : " + text + "\n");
             this.replyText(replyToken, "更新出錯拉");
             return;
         }
@@ -1117,13 +1109,12 @@ public class DofuncServiceImpl implements DofuncService {
     private void pushMessage(ResultSet resultSet, Message message, Event event) throws SQLException {
         if (resultSet == null) {
             PushMessage pushMessage = new PushMessage(event.getSource().getUserId(), new TextMessage("ERROR : result = null"));
-            Response<BotApiResponse> apiResponse =
-                    null;
+            Response<BotApiResponse> apiResponse;
             try {
                 apiResponse = lineMessagingService
                         .pushMessage(pushMessage)
                         .execute();
-                log.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
+                LOG.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -1132,13 +1123,12 @@ public class DofuncServiceImpl implements DofuncService {
         while (resultSet.next()) {
             String id = resultSet.getString("id");
             PushMessage pushMessage = new PushMessage(id, message);
-            Response<BotApiResponse> apiResponse =
-                    null;
+            Response<BotApiResponse> apiResponse;
             try {
                 apiResponse = lineMessagingService
                         .pushMessage(pushMessage)
                         .execute();
-                log.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
+                LOG.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -1196,7 +1186,7 @@ public class DofuncServiceImpl implements DofuncService {
                 checkTime = true;
             }
             int listLength = jedis.llen(redisKey).intValue(); //集合元素不可能超過21億 所以類型強制轉換 long -> int
-            log.info("\n\n listLength : " + listLength + " listSize : " + listSize + " checkTime : " + checkTime + "\n");
+            LOG.info("\n\n listLength : " + listLength + " listSize : " + listSize + " checkTime : " + checkTime + "\n");
             if (listLength == 0 || listLength < listSize || checkTime) {  // 沒有元素 或者 元素數量不足 或 時間超過1小時
                 // 類型 城市 關鍵字 拿要找的路徑
                 String path = getPath4GoogleMap(type, city, keyword);
@@ -1241,7 +1231,7 @@ public class DofuncServiceImpl implements DofuncService {
      */
     @Override
     public void doFollowTalk(String replyToken, Event event, TextMessageContent content) {
-        log.info("推齊功能觸發");
+        LOG.info("推齊功能觸發");
         /*
         step 1,
         判斷群組 存入jedis
@@ -1255,7 +1245,7 @@ public class DofuncServiceImpl implements DofuncService {
         // 只有在群組或房間才有推齊的意義
         String text = content.getText();
         try(Jedis jedis = JedisFactory.getJedis()){
-            String id = null ;
+            String id ;
             Source source = event.getSource();
             // 獲得群組ID 把說的話存起來
             if (source instanceof GroupSource){
@@ -1278,11 +1268,11 @@ public class DofuncServiceImpl implements DofuncService {
             }
             // 如果集合長度大於10
             long llen = jedis.llen(id);
-            log.info("推齊功能的列表長度 : "+llen);
+            LOG.info("推齊功能的列表長度 : "+llen);
             if ( llen > 9 ){
                 // 刪除第一個元素
                 String remove = jedis.rpop(id);
-                log.info("remove text : "+remove);
+                LOG.info("remove text : "+remove);
             }
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -1299,9 +1289,9 @@ public class DofuncServiceImpl implements DofuncService {
     private String getPath4GoogleMap(String type, String city, String keyword) {
         // 查找範圍 <M>　默認
         String radius = "5000";
-        String localtion = null;
-        int latitude = 0;
-        int longitude = 0;
+        String localtion ;
+        int latitude ;
+        int longitude ;
         Random random = new Random();
         // 經緯度賦值
         switch (city) {
@@ -1409,7 +1399,7 @@ public class DofuncServiceImpl implements DofuncService {
                 isOpening = "休息中";
             }
             JSONArray array = result.getJSONArray("photos");
-            String photoToken = "";
+            String photoToken ;
             String imgPath = "null";
             if (array != null) {
                 photoToken = array.getJSONObject(0).getString("photo_reference"); // 找圖片的ID
@@ -1469,7 +1459,7 @@ public class DofuncServiceImpl implements DofuncService {
 
     public static void dccardSexInit(String path, int count, Jedis jedis) throws IOException {
         jedis.set("sexTime", String.valueOf(System.currentTimeMillis()));    // 西施版加載時間
-        log.info("DcardList finction INIT ...");
+        LOG.info("DcardList finction INIT ...");
 //        okhttp3.Response response = timerUilts.clientHttp(path);
 //        String returnText = response.body().string();
         String returnText = jsoupClient4Sex(path);
@@ -1509,8 +1499,8 @@ public class DofuncServiceImpl implements DofuncService {
 
 
     public static void beautyInit() throws IOException {
-        log.info("beautyList Function INIT ... ");
-        Map<String, String> cookies = new HashMap<>();
+        LOG.info("beautyList Function INIT ... ");
+        Map<String, String> cookies = new HashMap<>(10);
         cookies.put("over18", "1");
         Document doc = jsoupClient(PTT_BEAUTY_URL, cookies);
         Elements lastPageArray = doc.getElementsByClass("btn-group-paging");
@@ -1588,7 +1578,7 @@ public class DofuncServiceImpl implements DofuncService {
             if (city.startsWith("\"")) {
                 city = city.replaceAll("\"", "");
                 String[] strings = city.split(";");
-                if (!(strings.length < 2)) {
+                if (strings.length >=3) {
                     if (strings[0].contains(",")) {
                         strings[0] = strings[0].substring(0, strings[0].indexOf(","));
                     } else if (strings[0].contains(" - ")) {
@@ -1679,7 +1669,7 @@ public class DofuncServiceImpl implements DofuncService {
             Response<BotApiResponse> apiResponse = lineMessagingService
                     .replyMessage(new ReplyMessage(replyToken, messages))
                     .execute();
-            log.info("Sent messages: {} {}", apiResponse.message(), apiResponse.code());
+            LOG.info("Sent messages: {} {}", apiResponse.message(), apiResponse.code());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
