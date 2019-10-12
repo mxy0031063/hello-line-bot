@@ -1,5 +1,6 @@
 package hello.utils;
 
+import lombok.Cleanup;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.springframework.boot.ApplicationArguments;
@@ -9,7 +10,6 @@ import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -104,25 +104,19 @@ public class TimerUilts implements ApplicationRunner {
             tempCity4Id.put("媽祖", "09007");
         /* tempCity4Id end */
         });
-        thread.submit(()->{
+        thread.submit(() -> {
             System.out.println(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
-            try (Jedis jedis = JedisFactory.getJedis()) {
-                jedis.flushAll(); // 項目重啟資料更新
-                jedis.set("pumpcount", "0");
-                dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
-                dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
-            } catch (IOException | URISyntaxException e) {
-                e.printStackTrace();
-            }
+            @Cleanup Jedis jedis = JedisFactory.getJedis();
+            jedis.flushAll(); // 項目重啟資料更新
+            jedis.set("pumpcount", "0");
+            dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
+            dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
+
         });
-        thread.submit(()->{
+        thread.submit(() -> {
             System.out.println(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
-            try {
-                beautyInit();
-                itubaInit();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            beautyInit();
+            itubaInit();
         });
     }
 

@@ -57,7 +57,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -86,24 +85,24 @@ public class HelloController {
     private static final int PUSH_AMOUNT = 2;
 
     /**
-    全台天氣圖
+     * 全台天氣圖
      */
     private static final String WEATHER_PATH_RADAR = "https://www.cwb.gov.tw/Data/radar/CV2_3600.png";
     /**
-    天氣圖 UVI 地址
+     * 天氣圖 UVI 地址
      */
     private static final String WEATHER_PATH_UVI = "https://www.cwb.gov.tw/Data/UVI/UVI_forPreview.png";
     /**
-    全台溫度圖
+     * 全台溫度圖
      */
     private static final String WEATHER_PATH_TEMP = "https://www.cwb.gov.tw/Data/temperature/temp_forPreview.jpg";
     /**
-    全台雨量圖
+     * 全台雨量圖
      */
     private static final String WEATHER_PATH_RAIN = "https://www.cwb.gov.tw/Data/rainfall/QZJ_forPreview.jpg";
     /**
-    星座 API 地址
-    Return JSON
+     * 星座 API 地址
+     * Return JSON
      */
     private static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
 
@@ -114,7 +113,7 @@ public class HelloController {
 
     private final DofuncServiceImpl service;
 
-    private final PostgresqlDAO postgresqlDAO ;
+    private final PostgresqlDAO postgresqlDAO;
 
     @Autowired
     public HelloController(TimerUilts timerUilts, LineMessagingService lineMessagingService, DofuncServiceImpl service, @Qualifier("postgresql") PostgresqlDAO postgresqlDAO) {
@@ -220,22 +219,12 @@ public class HelloController {
 
     @RequestMapping("/abyss")
     public String webTest() {
-        Jedis jedis = null;
-        try {
-            jedis = JedisFactory.getJedis();
-            int pumpLength = jedis.llen("pump").intValue();
-            Random random = new Random();
-            String output = jedis.lindex("pump", random.nextInt(pumpLength));
-            LOG.info("\n\n ===================================\n" + output + "\n" + random.nextInt(pumpLength));
-            return output;
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        } finally {
-            if (jedis != null) {
-                jedis.close();
-            }
-        }
-        return "ERROR";
+        @Cleanup Jedis jedis = JedisFactory.getJedis();
+        int pumpLength = jedis.llen("pump").intValue();
+        Random random = new Random();
+        String output = jedis.lindex("pump", random.nextInt(pumpLength));
+        LOG.info("\n\n ===================================\n" + output + "\n" + random.nextInt(pumpLength));
+        return output;
     }
 
     @RequestMapping("/line")
@@ -293,7 +282,6 @@ public class HelloController {
     /**
      * 文字事件
      * 此事件為關鍵 - 由此事件得到的事件元去調用入口方法
-     *
      */
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) throws IOException {
@@ -445,58 +433,54 @@ public class HelloController {
 
     /**
      * 顯示出 用戶 postBack 之後獲得的星座
-     *
      */
     private void showConStellation(String replyToken, String data) throws IOException {
 
-        try (Jedis jedis = JedisFactory.getJedis()) {
-
-            // 獲取時間
-            long nowTime = System.currentTimeMillis();
-            long constellationTime = 0;
-            if (jedis.exists("constellationTime")) {
-                constellationTime = Long.parseLong(jedis.get("constellationTime"));
-            }
-            // 判斷存在 與 不超時
-            // 超時2小時
-            if (jedis.exists(data) && (nowTime - constellationTime) < 1000 * 60 * 60 * 2) {
-                this.replyText(replyToken, jedis.get(data));
-                return;
-            }
-            // 不存在則更新
-            okhttp3.Response response = timerUilts.clientHttp(CONSTELLATION_PATH);
-            String returnText = response.body().string();
-            //返回的星座列表
-            JSONArray pageReturn = JSONArray.parseArray(returnText);
-            if (!"OK".equals(response.message()) || pageReturn.size() == 0) {
-                this.replyText(replyToken, "很抱歉 ! 資料出問題了");
-                return;
-            }
-            for (int i = 0; i < pageReturn.size(); i++) {
-                JSONObject jsonObject = pageReturn.getJSONObject(i);
-                String key = jsonObject.getString("name");
-                String value =
-                        "今日短評 : " + jsonObject.getString("TODAY_WORD") + "\n" +
-                                "幸運數字 : " + jsonObject.getString("LUCKY_NUMERAL") + "\n" +
-                                "幸運色 : " + jsonObject.getString("LUCKY_COLOR") + "\n" +
-                                "小確幸時間 : " + jsonObject.getString("LUCKY_TIME") + "\n" +
-                                "開運方位 : " + jsonObject.getString("LUCKY_DIRECTION") + "\n" +
-                                "幸運星座 : " + jsonObject.getString("LUCKY_ASTRO") + "\n\n" +
-                                "整體運勢 : " + jsonObject.getString("STAR_ENTIRETY") + "\n" +
-                                jsonObject.getString("DESC_ENTIRETY") + "\n\n" +
-                                "愛情運勢 : " + jsonObject.getString("STAR_LOVE") + "\n" +
-                                jsonObject.getString("DESC_LOVE") + "\n\n" +
-                                "事業運勢 : " + jsonObject.getString("STAR_WORK") +
-                                "\n" + jsonObject.getString("DESC_WORK") + "\n\n" +
-                                "財運運勢 : " + jsonObject.getString("STAR_MONEY") +
-                                "\n" + jsonObject.getString("DESC_MONEY");
-                jedis.set(key, value);
-            }
-            jedis.set("constellationTime", String.valueOf(System.currentTimeMillis()));
-            this.replyText(replyToken, jedis.get(data));
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+        @Cleanup Jedis jedis = JedisFactory.getJedis();
+        // 獲取時間
+        long nowTime = System.currentTimeMillis();
+        long constellationTime = 0;
+        if (jedis.exists("constellationTime")) {
+            constellationTime = Long.parseLong(jedis.get("constellationTime"));
         }
+        // 判斷存在 與 不超時
+        // 超時2小時
+        if (jedis.exists(data) && (nowTime - constellationTime) < 1000 * 60 * 60 * 2) {
+            this.replyText(replyToken, jedis.get(data));
+            return;
+        }
+        // 不存在則更新
+        okhttp3.Response response = timerUilts.clientHttp(CONSTELLATION_PATH);
+        String returnText = response.body().string();
+        //返回的星座列表
+        JSONArray pageReturn = JSONArray.parseArray(returnText);
+        if (!"OK".equals(response.message()) || pageReturn.size() == 0) {
+            this.replyText(replyToken, "很抱歉 ! 資料出問題了");
+            return;
+        }
+        for (int i = 0; i < pageReturn.size(); i++) {
+            JSONObject jsonObject = pageReturn.getJSONObject(i);
+            String key = jsonObject.getString("name");
+            String value =
+                    "今日短評 : " + jsonObject.getString("TODAY_WORD") + "\n" +
+                            "幸運數字 : " + jsonObject.getString("LUCKY_NUMERAL") + "\n" +
+                            "幸運色 : " + jsonObject.getString("LUCKY_COLOR") + "\n" +
+                            "小確幸時間 : " + jsonObject.getString("LUCKY_TIME") + "\n" +
+                            "開運方位 : " + jsonObject.getString("LUCKY_DIRECTION") + "\n" +
+                            "幸運星座 : " + jsonObject.getString("LUCKY_ASTRO") + "\n\n" +
+                            "整體運勢 : " + jsonObject.getString("STAR_ENTIRETY") + "\n" +
+                            jsonObject.getString("DESC_ENTIRETY") + "\n\n" +
+                            "愛情運勢 : " + jsonObject.getString("STAR_LOVE") + "\n" +
+                            jsonObject.getString("DESC_LOVE") + "\n\n" +
+                            "事業運勢 : " + jsonObject.getString("STAR_WORK") +
+                            "\n" + jsonObject.getString("DESC_WORK") + "\n\n" +
+                            "財運運勢 : " + jsonObject.getString("STAR_MONEY") +
+                            "\n" + jsonObject.getString("DESC_MONEY");
+            jedis.set(key, value);
+        }
+        jedis.set("constellationTime", String.valueOf(System.currentTimeMillis()));
+        this.replyText(replyToken, jedis.get(data));
+
 
     }
 
@@ -504,7 +488,6 @@ public class HelloController {
      * 顯示出用戶選擇的天氣圖片  -- 圖片url
      * <p>
      * 可能是過時方法 新版v8官網上已有固定地址JPG
-     *
      */
     @Deprecated
     private String weatherPath(int i) {
@@ -541,7 +524,6 @@ public class HelloController {
 
     /**
      * 發送圖片
-     *
      */
     private void showImg(String replyToken, String path) throws IOException {
         okhttp3.Response response = timerUilts.clientHttp(path);

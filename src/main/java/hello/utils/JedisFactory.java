@@ -1,5 +1,6 @@
 package hello.utils;
 
+import lombok.SneakyThrows;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -31,8 +32,8 @@ public class JedisFactory {
             e.printStackTrace();
         }
     }
-
-    public static Jedis getJedis() throws URISyntaxException{
+    @SneakyThrows(URISyntaxException.class)
+    public static Jedis getJedis(){
         if (jedisPool == null){
             initPool();
         }

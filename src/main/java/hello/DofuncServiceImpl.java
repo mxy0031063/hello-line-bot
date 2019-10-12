@@ -55,7 +55,6 @@ import java.awt.*;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
-import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -131,7 +130,7 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     @Override
-    @SneakyThrows({IOException.class, URISyntaxException.class})
+    @SneakyThrows({IOException.class})
     public void doOliPrice(String replyToken, Event event, TextMessageContent content) {
 
         @Cleanup Jedis jedis = JedisFactory.getJedis();
@@ -358,7 +357,7 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理 表特抽卡
      */
     @Override
-    @SneakyThrows(URISyntaxException.class)
+
     public String doBeauty(Event event, TextMessageContent content) {
         /*
          *　抽卡超時　：
@@ -419,7 +418,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 7/27 更改抽卡為兩個分開的方法 因我要把西施版的圖片做成imageMap的形式
      */
     @Override
-    @SneakyThrows({URISyntaxException.class})
     public String[] doSex(Event event, TextMessageContent content) {
 
         @Cleanup Jedis jedis = JedisFactory.getJedis();
@@ -466,7 +464,6 @@ public class DofuncServiceImpl implements DofuncService {
 
     }
 
-    @SneakyThrows({URISyntaxException.class})
     public static void itubaInit() {
 //        String IMG_GRIL_PATH = "https://m.ituba.cc/meinvtupian/p";
 //        int[] index = timerUilts.getRandomArrayByValue(2,500);
@@ -1147,7 +1144,7 @@ public class DofuncServiceImpl implements DofuncService {
      * @param content    文字事件
      */
     @Override
-    @SneakyThrows(URISyntaxException.class)
+
     public String[] doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) {
         String text = content.getText();
         text = text.replaceAll("[-|_|\\s]", "");
@@ -1239,39 +1236,37 @@ public class DofuncServiceImpl implements DofuncService {
          */
         // 只有在群組或房間才有推齊的意義
         String text = content.getText();
-        try (Jedis jedis = JedisFactory.getJedis()) {
-            String id;
-            Source source = event.getSource();
-            // 獲得群組ID 把說的話存起來
-            if (source instanceof GroupSource) {
-                id = ((GroupSource) source).getGroupId();
-                jedis.lpush(id, text);
-            } else if (source instanceof RoomSource) {
-                id = ((RoomSource) source).getRoomId();
-                jedis.lpush(id, text);
-            } else {
-                return;
-            }
-            // 獲得群組的對話紀錄
-            List<String> messageList = jedis.lrange(id, 0, 10);
-            // 判斷集合內重複元素數量
-            if (Collections.frequency(messageList, text) > 2) {
-                // 大於 2 個 推送
-                replyText(replyToken, text);
-                // 刪除重複項
-                jedis.lrem(id, 0, text);
-            }
-            // 如果集合長度大於10
-            long llen = jedis.llen(id);
-            LOG.info("推齊功能的列表長度 : " + llen);
-            if (llen > 9) {
-                // 刪除第一個元素
-                String remove = jedis.rpop(id);
-                LOG.info("remove text : " + remove);
-            }
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+        @Cleanup Jedis jedis = JedisFactory.getJedis() ;
+        String id;
+        Source source = event.getSource();
+        // 獲得群組ID 把說的話存起來
+        if (source instanceof GroupSource) {
+            id = ((GroupSource) source).getGroupId();
+            jedis.lpush(id, text);
+        } else if (source instanceof RoomSource) {
+            id = ((RoomSource) source).getRoomId();
+            jedis.lpush(id, text);
+        } else {
+            return;
         }
+        // 獲得群組的對話紀錄
+        List<String> messageList = jedis.lrange(id, 0, 10);
+        // 判斷集合內重複元素數量
+        if (Collections.frequency(messageList, text) > 2) {
+            // 大於 2 個 推送
+            replyText(replyToken, text);
+            // 刪除重複項
+            jedis.lrem(id, 0, text);
+        }
+        // 如果集合長度大於10
+        long llen = jedis.llen(id);
+        LOG.info("推齊功能的列表長度 : " + llen);
+        if (llen > 9) {
+            // 刪除第一個元素
+            String remove = jedis.rpop(id);
+            LOG.info("remove text : " + remove);
+        }
+
     }
 
     /**
@@ -1493,7 +1488,7 @@ public class DofuncServiceImpl implements DofuncService {
         dccardSexInit(nextPath, count, jedis);
     }
 
-    @SneakyThrows(URISyntaxException.class)
+
     public static void beautyInit() {
         LOG.info("beautyList Function INIT ... ");
         Map<String, String> cookies = new HashMap<>(10);
@@ -1520,10 +1515,10 @@ public class DofuncServiceImpl implements DofuncService {
             pageIndexArray.add(nowPageIndex - i);
         }
         // 往網頁發送 獲取消息 並把抓下來的image url 存入
+
         pageIndexArray.forEach((pageIndex) -> {
             String url = "https://www.ptt.cc/bbs/Beauty/index" + pageIndex + ".html";
             Document pageDoc;
-
             @Cleanup Jedis jedis = JedisFactory.getJedis();
             if (jedis.llen("pump") > 1500) {
                 return;
