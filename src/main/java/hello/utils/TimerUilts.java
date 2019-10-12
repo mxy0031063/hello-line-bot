@@ -1,6 +1,9 @@
 package hello.utils;
 
+import hello.status.SexStatus;
 import lombok.Cleanup;
+import lombok.NonNull;
+import lombok.val;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.springframework.boot.ApplicationArguments;
@@ -16,7 +19,9 @@ import java.util.concurrent.ExecutorService;
 
 import static hello.DofuncService.DCARD_SEX_NEW_PATH;
 import static hello.DofuncService.DCCARD_SEX_PATH;
-import static hello.DofuncServiceImpl.*;
+import static hello.DofuncServiceImpl.beautyInit;
+import static hello.DofuncServiceImpl.dccardSexInit;
+import static hello.DofuncServiceImpl.itubaInit;
 
 @Component
 @Order(value = 1)
@@ -107,11 +112,25 @@ public class TimerUilts implements ApplicationRunner {
         thread.submit(() -> {
             System.out.println(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
             @Cleanup Jedis jedis = JedisFactory.getJedis();
-            jedis.flushAll(); // 項目重啟資料更新
-            jedis.set("pumpcount", "0");
-            dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
-            dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
-
+            switch (checkSexStatus(jedis)) {
+                case SEX_STATUS_SUCCESS: {
+                    break;
+                }
+                case SEX_STATUS_ISNOTEXISTS: {
+                }
+                case SEX_STATUS_TIMEOUT: {
+                    // 項目重啟資料更新
+                    jedis.flushAll();
+                    jedis.set("pumpcount", "0");
+                    dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
+                    dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+            return null ;
         });
         thread.submit(() -> {
             System.out.println(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
@@ -120,6 +139,43 @@ public class TimerUilts implements ApplicationRunner {
         });
     }
 
+    /**
+     * 判斷Sex 緩存狀態
+     *
+     * @param jedis jedis對象
+     * @return 三種狀態
+     */
+    public SexStatus checkSexStatus(@NonNull Jedis jedis) {
+        /*
+         有三種狀態
+         1. 沒有元素
+            直接加載
+         2. 有元素超時
+            返回一組後加載
+         3. 有元素不超時
+            直接返回
+         */
+        val status = jedis.exists("sex");
+        if (!status) {
+            // 確認不存在 直接加載
+            return SexStatus.SEX_STATUS_ISNOTEXISTS;
+        }
+        /*
+        ------------------------
+         */
+        val nowTime = System.currentTimeMillis();
+        // 拿西施加載時間
+        long sexTime = 0L;
+        if (jedis.exists("sexTime")) {
+            sexTime = Long.parseLong(jedis.get("sexTime"));
+        }
+        if ((nowTime - sexTime) > 1000 * 60 * 60) {
+            // 存在 超時
+            return SexStatus.SEX_STATUS_TIMEOUT;
+        }
+        // 存在 且 沒超時
+        return SexStatus.SEX_STATUS_SUCCESS;
+    }
 
     public Map<String, String> getKeyTextChanage() {
         return keyTextChanage;

@@ -11,51 +11,51 @@ import java.util.ArrayList;
 
 @Service
 public interface DofuncService {
-    /*
+    /**
    油價 api
     */
     String OIL_PRICE_PATH = "https://www.cpc.com.tw/GetOilPriceJson.aspx?type=TodayOilPriceString" ;
 
-    /*
+    /**
    匯率 api 地址
    Return JSON
     */
     String EXRATE_PATH = "https://tw.rter.info/capi.php" ;
 
-    /*
+    /**
     狄卡api 網址 熱門
      */
     String DCCARD_SEX_PATH = "https://www.dcard.tw/_api/forums/sex/posts?popular=true";
-    /*
+    /**
     狄卡 api 最新
      */
     String DCARD_SEX_NEW_PATH = "https://www.dcard.tw/_api/forums/sex/posts?popular=false";
 
-    /*
+    /**
     表特網址
      */
     String PTT_BEAUTY_URL = "https://www.ptt.cc/bbs/Beauty/index.html";
-    /*
+    /**
     AV搜尋網址
      */
     String AV01_SEARCH_PATH = "https://iw01.top/search/videos?search_query=";
-    /*
+    /**
     尋找城市天氣的 js
      */
     String WEATHER_SEARCH_TODAY_PATH = "https://www.cwb.gov.tw/Data/js/TableData_36hr_County_C.js?";
-    /*
+    /**
     發票地址
      */
     String INVOICE_PATH = "http://invoice.etax.nat.gov.tw/";
-    /*
+    /**
     記帳表統一前綴
      */
     String TABLE_PREFIX = "accounting_";
-    /*
+    /**
     GoogleMap API Prefix
      */
     String GOOGLE_MAP_API_PREFIX = "https://maps.googleapis.com/maps/api/place/";
-    /*
+    /**
     GoogleMap API Redis Food
      */
     String GOOGLE_MAP_API_REDIS_FOOD = "googlemap4food";

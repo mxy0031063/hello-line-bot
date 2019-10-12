@@ -419,49 +419,53 @@ public class DofuncServiceImpl implements DofuncService {
      */
     @Override
     public String[] doSex(Event event, TextMessageContent content) {
-
         @Cleanup Jedis jedis = JedisFactory.getJedis();
-        Random random = new Random();
-        int index;
-        String url;
-        long nowTime = System.currentTimeMillis();
-        // 拿西施加載時間
-        long sexTime = 0;
-        if (jedis.exists("sexTime")) {
-            sexTime = Long.parseLong(jedis.get("sexTime"));
-        }
-        if (!jedis.exists("sex") || (nowTime - sexTime) > 1000 * 60 * 60) { // 超時1小時
-            // 如果是超時但是集合存在 先返回地址 然後在加載
-            if (jedis.exists("sex")) {
-                int sexLength = jedis.llen("sex").intValue();
-                index = random.nextInt(sexLength);
-                url = jedis.lindex("sex", index);
+        String url ;
+        switch (timerUilts.checkSexStatus(jedis)) {
+            case SEX_STATUS_SUCCESS:{
+                // 存在直接返回
+                return getSexUrl(jedis).split("%");
+            }
+            case SEX_STATUS_TIMEOUT:{
+                // 超時 先返回後加載
+                url = getSexUrl(jedis);
+
+                long nowTime = System.currentTimeMillis();
+                // 拿西施加載時間
+                long sexTime = 0;
+                if (jedis.exists("sexTime")) {
+                    sexTime = Long.parseLong(jedis.get("sexTime"));
+                }
                 LOG.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
                         "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
                 //新開一個線程處理加載
                 ExecutorService thread = ThreadPool.getCustomThreadPoolExecutor();
                 thread.submit(() -> {
-
                     LOG.info(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
                     jedis.ltrim("sex", 1, 0); // 清空
                     dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
                     dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
-
                 });
                 return url.split("%");
             }
-            jedis.ltrim("sex", 1, 0); // 清空
-            dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
-            dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
+            case SEX_STATUS_ISNOTEXISTS:{
+                // 不存在 先加載後返回
+                dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
+                dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
+                return getSexUrl(jedis).split("%");
+            }
+            default: {
+                // 不應該發生
+                return null;
+            }
         }
-        int sexLength = jedis.llen("sex").intValue();
-        index = random.nextInt(sexLength);
-        url = jedis.lindex("sex", index);
-        LOG.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
-                "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
-        // imageURL 在前 ID 在後
-        return url.split("%");
+    }
 
+    private String getSexUrl(@NonNull Jedis jedis){
+        int sexLength = jedis.llen("sex").intValue();
+        Random random = new Random();
+        int index = random.nextInt(sexLength);
+        return jedis.lindex("sex", index);
     }
 
     public static void itubaInit() {
@@ -1236,7 +1240,7 @@ public class DofuncServiceImpl implements DofuncService {
          */
         // 只有在群組或房間才有推齊的意義
         String text = content.getText();
-        @Cleanup Jedis jedis = JedisFactory.getJedis() ;
+        @Cleanup Jedis jedis = JedisFactory.getJedis();
         String id;
         Source source = event.getSource();
         // 獲得群組ID 把說的話存起來
@@ -1449,7 +1453,8 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     public static void dccardSexInit(String path, int count, Jedis jedis) {
-        jedis.set("sexTime", String.valueOf(System.currentTimeMillis()));    // 西施版加載時間
+        // 西施版加載時間
+        jedis.set("sexTime", String.valueOf(System.currentTimeMillis()));
         LOG.info("DcardList finction INIT ...");
 //        okhttp3.Response response = timerUilts.clientHttp(path);
 //        String returnText = response.body().string();
