@@ -23,7 +23,9 @@ import hello.utils.JedisFactory;
 import hello.utils.PostgresqlDAO;
 import hello.utils.ThreadPool;
 import hello.utils.TimerUilts;
+import lombok.Cleanup;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -90,7 +92,7 @@ public class DofuncServiceImpl implements DofuncService {
 
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DofuncServiceImpl.class);
 
-    private final PostgresqlDAO postgresqlDAO ;
+    private final PostgresqlDAO postgresqlDAO;
 
 
     @Autowired
@@ -129,84 +131,85 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     @Override
-    public void doOliPrice(String replyToken, Event event, TextMessageContent content) throws IOException {
-        try (Jedis jedis = JedisFactory.getJedis()) {
+    @SneakyThrows({IOException.class, URISyntaxException.class})
+    public void doOliPrice(String replyToken, Event event, TextMessageContent content) {
 
-            long nowTime = System.currentTimeMillis();
-            long oliTime = 0;
-            // 存在給值
-            if (jedis.exists("oliTime")) {
-                oliTime = Long.parseLong(jedis.get("oliTime"));
-            }
-            // 判斷存在 或 時間超時
-            if (jedis.exists("oli") || (nowTime - oliTime) < 1000 * 60 * 60 * 6) { //超時6小時
-                // 緩存有資料
-                this.replyText(replyToken, jedis.get("oli"));
-                LOG.info("\n油價api 執行 ** 資料存活時間 : " + (nowTime - oliTime) / 1000 / 60 / 60 + " 分鐘");
-                return;
-            }
+        @Cleanup Jedis jedis = JedisFactory.getJedis();
+        long nowTime = System.currentTimeMillis();
+        long oliTime = 0;
+        // 存在給值
+        if (jedis.exists("oliTime")) {
+            oliTime = Long.parseLong(jedis.get("oliTime"));
+        }
+        // 判斷存在 或 時間超時
+        //超時6小時
+        if (jedis.exists("oli") || (nowTime - oliTime) < 1000 * 60 * 60 * 6) {
+            // 緩存有資料
+            this.replyText(replyToken, jedis.get("oli"));
+            LOG.info("\n油價api 執行 ** 資料存活時間 : " + (nowTime - oliTime) / 1000 / 60 / 60 + " 分鐘");
+            return;
+        }
 
-            okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH);
-            String returnText = response.body().string();
-            StringBuilder outText = new StringBuilder();
+        okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH);
+        String returnText = response.body().string();
+        StringBuilder outText = new StringBuilder();
 
 
             /* 現在的油價 */
-            outText.append("本日油價 : \n");
-            List<String> oilName = new ArrayList<>();
-            oilName.add("92無鉛汽油");
-            oilName.add("95無鉛汽油");
-            oilName.add("98無鉛汽油");
-            oilName.add("酒精汽油");
-            oilName.add("超級柴油");
-            oilName.add("液化石油氣");
-            for (int i = 1; i <= 6; i++) {
-                String item = "sPrice" + i;
-                int index = returnText.indexOf(item);
-                String oilPrice = returnText.substring(index + 10, index + 14);
-                outText.append(oilName.get(i - 1)).append(" -> ").append(oilPrice).append("\n");
-            }
+        outText.append("本日油價 : \n");
+        List<String> oilName = new ArrayList<>();
+        oilName.add("92無鉛汽油");
+        oilName.add("95無鉛汽油");
+        oilName.add("98無鉛汽油");
+        oilName.add("酒精汽油");
+        oilName.add("超級柴油");
+        oilName.add("液化石油氣");
+        for (int i = 1; i <= 6; i++) {
+            String item = "sPrice" + i;
+            int index = returnText.indexOf(item);
+            String oilPrice = returnText.substring(index + 10, index + 14);
+            outText.append(oilName.get(i - 1)).append(" -> ").append(oilPrice).append("\n");
+        }
             /* 公布的油價 漲或跌 */
-            int upDownIndex = returnText.indexOf("class=\\\"sys\\\"") + 19;
-            int upDownEndIndex = upDownIndex + 2;
-            String upOrDown = returnText.substring(
-                    upDownIndex, upDownEndIndex
-            );
-            int upDownPriceIndex = returnText.indexOf("class=\\\"rate\\") + 33;
-            int upDownPriceEndIndex = upDownPriceIndex + 3;
-            String upDownPrice = returnText.substring(
-                    upDownPriceIndex, upDownPriceEndIndex
-            );
+        int upDownIndex = returnText.indexOf("class=\\\"sys\\\"") + 19;
+        int upDownEndIndex = upDownIndex + 2;
+        String upOrDown = returnText.substring(
+                upDownIndex, upDownEndIndex
+        );
+        int upDownPriceIndex = returnText.indexOf("class=\\\"rate\\") + 33;
+        int upDownPriceEndIndex = upDownPriceIndex + 3;
+        String upDownPrice = returnText.substring(
+                upDownPriceIndex, upDownPriceEndIndex
+        );
 
             /* 實施日期 */
-            int priceUpdateDateIndex = returnText.indexOf("PriceUpdate") + 14;
-            int endIndex = priceUpdateDateIndex + 5;
-            String oilPriceUpdate = returnText.substring(
-                    priceUpdateDateIndex, endIndex
-            );
-            outText.append("\n實施日期  : ").append(oilPriceUpdate).append("\n");
-            outText.append("汽油價格 更動").append(upOrDown).append(" -> ").append(upDownPrice).append(" 元\n");
-            outText.append("以上資料來源  :  中油");
+        int priceUpdateDateIndex = returnText.indexOf("PriceUpdate") + 14;
+        int endIndex = priceUpdateDateIndex + 5;
+        String oilPriceUpdate = returnText.substring(
+                priceUpdateDateIndex, endIndex
+        );
+        outText.append("\n實施日期  : ").append(oilPriceUpdate).append("\n");
+        outText.append("汽油價格 更動").append(upOrDown).append(" -> ").append(upDownPrice).append(" 元\n");
+        outText.append("以上資料來源  :  中油");
 
-            jedis.set("oli", outText.toString());    // 油價訊息存入
-            jedis.set("oliTime", String.valueOf(System.currentTimeMillis()));    // 油價查詢的時間
-            // 直接輸出更快 不從內存查了
-            this.replyText(replyToken, outText.toString());
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
+        jedis.set("oli", outText.toString());    // 油價訊息存入
+        jedis.set("oliTime", String.valueOf(System.currentTimeMillis()));    // 油價查詢的時間
+        // 直接輸出更快 不從內存查了
+        this.replyText(replyToken, outText.toString());
+
     }
 
     @Override
-    public void doCurrency(String replyToken, Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows(IOException.class)
+    public void doCurrency(String replyToken, Event event, TextMessageContent content) {
 
         if (currencyReturnText == null) {
             okhttp3.Response response = timerUilts.clientHttp(EXRATE_PATH);
             currencyReturnText = response.body().string();
         }
         String returnText = currencyReturnText;
-
-        Map<String, String> currExrateMap = new HashMap<>(); //匯率表
+        //匯率表
+        Map<String, String> currExrateMap = new HashMap<>();
         String text = returnText.substring(1, returnText.length() - 1);
         String[] strings = text.split(",");
         for (int i = 0; i < strings.length; i++) {
@@ -229,12 +232,13 @@ public class DofuncServiceImpl implements DofuncService {
         // 獲得目標幣種
         String currTo = textMessage.substring(textMessage.indexOf("等於多少") + 4);
         // 把來源金額轉美金
-        String currFromExrate = timerUilts.getKeyTextChanage().get(currFrom); // 轉為國際代碼
+        // 轉為國際代碼
+        String currFromExrate = timerUilts.getKeyTextChanage().get(currFrom);
         if (currFromExrate == null) {
             this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
             return;
         }
-        BigDecimal moneyCurrTo ;
+        BigDecimal moneyCurrTo;
         if (!"USD".equals(currFromExrate)) {
             // 來源幣種不是美金 要轉換
             // Map格式 USDXXX 獲得匯率
@@ -247,7 +251,8 @@ public class DofuncServiceImpl implements DofuncService {
             moneyCurrTo = moneyCurrFrom;
         }
         // 目標幣種
-        String currToExrate = timerUilts.getKeyTextChanage().get(currTo); // 轉為國際代碼
+        // 轉為國際代碼
+        String currToExrate = timerUilts.getKeyTextChanage().get(currTo);
         if (currToExrate == null) {
             this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
             return;
@@ -349,130 +354,124 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
 
-
     /**
      * 處理 表特抽卡
-     *
      */
     @Override
-    public String doBeauty(Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows({IOException.class, URISyntaxException.class})
+    public String doBeauty(Event event, TextMessageContent content) {
         /*
          *　抽卡超時　：
          *          西施版超時設定　１　小時
          *          表特版超時設定　２　小時
          */
-        try (Jedis jedis = JedisFactory.getJedis()) {
 
-            Random random = new Random();
-            int index;
-            String url;
-            // 拿到現在時間
-            long nowTime = System.currentTimeMillis();
+        @Cleanup Jedis jedis = JedisFactory.getJedis();
+        Random random = new Random();
+        int index;
+        String url;
+        // 拿到現在時間
+        long nowTime = System.currentTimeMillis();
 
-            // 拿到抽卡時間
-            long beautyTime = 0;
-            if (jedis.exists("beautyTime")) {
-                beautyTime = Long.parseLong(jedis.get("beautyTime"));
-            }
-            // 判斷抽哪區的卡
-
-            if (!jedis.exists("pump") || (nowTime - beautyTime) > 1000 * 60 * 120) { // 超時2小時
-                // 如果存在 則先回傳url在加載
-                if (jedis.exists("pump")){
-                    int pumpLength = jedis.llen("pump").intValue();
-                    index = random.nextInt(pumpLength);
-                    url = jedis.lindex("pump", index);
-
-                    LOG.info("\n\n抽卡集合元素 : " + jedis.llen("pump") +
-                            "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime) / 1000 / 60 + "分前\n"
-                    );
-                    ExecutorService thread = ThreadPool.getCustomThreadPoolExecutor();
-                    thread.submit(()->{
-                        LOG.info(Thread.currentThread().getName()+" is doing"+Thread.currentThread().getId());
-                        try{
-                            jedis.ltrim("pump", 1, 0);
-                            beautyInit();
-                            itubaInit();
-                        }catch (IOException e){
-                            e.printStackTrace();
-                        }
-                    });
-                    return url;
-                }
-                jedis.ltrim("pump", 1, 0);
-                beautyInit();
-                itubaInit();
-            }
-            int pumpLength = jedis.llen("pump").intValue();
-            index = random.nextInt(pumpLength);
-            url = jedis.lindex("pump", index);
-
-            LOG.info("\n\n抽卡集合元素 : " + jedis.llen("pump") +
-                    "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime) / 1000 / 60 + "分前\n"
-            );
-            return url;
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+        // 拿到抽卡時間
+        long beautyTime = 0;
+        if (jedis.exists("beautyTime")) {
+            beautyTime = Long.parseLong(jedis.get("beautyTime"));
         }
-        return null;
+        // 判斷抽哪區的卡
+
+        if (!jedis.exists("pump") || (nowTime - beautyTime) > 1000 * 60 * 120) { // 超時2小時
+            // 如果存在 則先回傳url在加載
+            if (jedis.exists("pump")) {
+                int pumpLength = jedis.llen("pump").intValue();
+                index = random.nextInt(pumpLength);
+                url = jedis.lindex("pump", index);
+
+                LOG.info("\n\n抽卡集合元素 : " + jedis.llen("pump") +
+                        "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime) / 1000 / 60 + "分前\n"
+                );
+                ExecutorService thread = ThreadPool.getCustomThreadPoolExecutor();
+                thread.submit(() -> {
+                    LOG.info(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
+                    try {
+                        jedis.ltrim("pump", 1, 0);
+                        beautyInit();
+                        itubaInit();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                return url;
+            }
+            jedis.ltrim("pump", 1, 0);
+            beautyInit();
+            itubaInit();
+        }
+        int pumpLength = jedis.llen("pump").intValue();
+        index = random.nextInt(pumpLength);
+        url = jedis.lindex("pump", index);
+
+        LOG.info("\n\n抽卡集合元素 : " + jedis.llen("pump") +
+                "\n 抽卡集合上次加載時間 : " + (nowTime - beautyTime) / 1000 / 60 + "分前\n"
+        );
+        return url;
     }
 
     /**
      * 7/27 更改抽卡為兩個分開的方法 因我要把西施版的圖片做成imageMap的形式
-     *
      */
     @Override
-    public String[] doSex(Event event, TextMessageContent content) throws IOException {
-        try (Jedis jedis = JedisFactory.getJedis()) {
-            Random random = new Random();
-            int index;
-            String url;
-            long nowTime = System.currentTimeMillis();
-            // 拿西施加載時間
-            long sexTime = 0;
-            if (jedis.exists("sexTime")) {
-                sexTime = Long.parseLong(jedis.get("sexTime"));
-            }
-            if (!jedis.exists("sex") || (nowTime - sexTime) > 1000 * 60 * 60 ) { // 超時1小時
-                // 如果是超時但是集合存在 先返回地址 然後在加載
-                if (jedis.exists("sex")) {
-                    int sexLength = jedis.llen("sex").intValue();
-                    index = random.nextInt(sexLength);
-                    url = jedis.lindex("sex", index);
-                    LOG.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
-                            "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
-                    //新開一個線程處理加載
-                    ExecutorService thread = ThreadPool.getCustomThreadPoolExecutor();
-                    thread.submit(()->{
-                        try {
-                            LOG.info(Thread.currentThread().getName()+" is doing"+Thread.currentThread().getId());
-                            jedis.ltrim("sex", 1, 0); // 清空
-                            dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
-                            dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                    return url.split("%");
-                }
-                jedis.ltrim("sex", 1, 0); // 清空
-                dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
-                dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
-            }
-            int sexLength = jedis.llen("sex").intValue();
-            index = random.nextInt(sexLength);
-            url = jedis.lindex("sex", index);
-            LOG.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
-                    "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
-            // imageURL 在前 ID 在後
-            return url.split("%");
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+    @SneakyThrows({IOException.class, URISyntaxException.class})
+    public String[] doSex(Event event, TextMessageContent content) {
+
+        @Cleanup Jedis jedis = JedisFactory.getJedis();
+        Random random = new Random();
+        int index;
+        String url;
+        long nowTime = System.currentTimeMillis();
+        // 拿西施加載時間
+        long sexTime = 0;
+        if (jedis.exists("sexTime")) {
+            sexTime = Long.parseLong(jedis.get("sexTime"));
         }
-        return null;
+        if (!jedis.exists("sex") || (nowTime - sexTime) > 1000 * 60 * 60) { // 超時1小時
+            // 如果是超時但是集合存在 先返回地址 然後在加載
+            if (jedis.exists("sex")) {
+                int sexLength = jedis.llen("sex").intValue();
+                index = random.nextInt(sexLength);
+                url = jedis.lindex("sex", index);
+                LOG.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
+                        "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
+                //新開一個線程處理加載
+                ExecutorService thread = ThreadPool.getCustomThreadPoolExecutor();
+                thread.submit(() -> {
+                    try {
+                        LOG.info(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
+                        jedis.ltrim("sex", 1, 0); // 清空
+                        dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
+                        dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                return url.split("%");
+            }
+            jedis.ltrim("sex", 1, 0); // 清空
+            dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
+            dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
+        }
+        int sexLength = jedis.llen("sex").intValue();
+        index = random.nextInt(sexLength);
+        url = jedis.lindex("sex", index);
+        LOG.info("\n\n 西施集合元素 : " + jedis.llen("sex") +
+                "\n 西施版上次加載時間 : " + (nowTime - sexTime) / 1000 / 60 + "分前");
+        // imageURL 在前 ID 在後
+        return url.split("%");
+
     }
 
-    public static void itubaInit() throws IOException {
+    @SneakyThrows({IOException.class, URISyntaxException.class})
+    public static void itubaInit() {
 //        String IMG_GRIL_PATH = "https://m.ituba.cc/meinvtupian/p";
 //        int[] index = timerUilts.getRandomArrayByValue(2,500);
         List<String> urlLiat = new ArrayList<>();
@@ -487,32 +486,30 @@ public class DofuncServiceImpl implements DofuncService {
         urlLiat.add("https://m.ituba.cc/tag/739.html");
         urlLiat.add("https://m.ituba.cc/tag/802_1.html");
         urlLiat.add("https://m.ituba.cc/tag/802_2.html");
-        try (Jedis jedis = JedisFactory.getJedis()) {
-            if (jedis.llen("pump") > 1000) {
-                return;
-            }
-            for (String str : urlLiat) {
-                Document document = jsoupClient(str);
-                Elements elements = document.select(".libox img");
-                for (Element element : elements) {
-                    String url = element.absUrl("src");
-                    if (url.length() != 0) {
-                        jedis.lpush("pump", url);
-                    }
+
+        @Cleanup Jedis jedis = JedisFactory.getJedis();
+
+        if (jedis.llen("pump") > 1000) {
+            return;
+        }
+        for (String str : urlLiat) {
+            Document document = jsoupClient(str);
+            Elements elements = document.select(".libox img");
+            for (Element element : elements) {
+                String url = element.absUrl("src");
+                if (url.length() != 0) {
+                    jedis.lpush("pump", url);
                 }
             }
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
         }
-
     }
 
     /**
      * 處理AV搜尋 - 並默認隨機返回一個搜尋結果
-     *
      */
     @Override
-    public ArrayList doAvSeach(String replyToken, Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows(IOException.class)
+    public ArrayList doAvSeach(String replyToken, Event event, TextMessageContent content) {
         // 存儲 返回的搜尋結果
         ArrayList<ArrayList<String>> lists = new ArrayList<>();
         LOG.info("\n\nSearch AV Service Function\n");
@@ -561,7 +558,8 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理 城市天氣  目前做一天的
      */
     @Override
-    public void doCityTemp(String replyToken, Event event, TextMessageContent content, String city) throws IOException {
+    @SneakyThrows(IOException.class)
+    public void doCityTemp(String replyToken, Event event, TextMessageContent content, String city) {
         Document doc = jsoupClient(WEATHER_SEARCH_TODAY_PATH, false);
         String str = doc.body().text();
         String jsonString = str.substring(str.indexOf("{"), str.length() - 1);
@@ -593,7 +591,8 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     @Override
-    public void doWorldTemp(String replyToken, Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows(IOException.class)
+    public void doWorldTemp(String replyToken, Event event, TextMessageContent content) {
         if (weatherMap.size() == 0) {
             inItWorldCityMap();
         }
@@ -626,7 +625,8 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理顯示發票邏輯
      */
     @Override
-    public void doInvoice(String replyToken, Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows(IOException.class)
+    public void doInvoice(String replyToken, Event event, TextMessageContent content) {
         Document document = jsoupClient(INVOICE_PATH);
         Element titleDate = document.select("#area1 h2").get(1);
         String dataTime = titleDate.text();
@@ -648,25 +648,25 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 處理發票兌獎
-     *
      */
     @Override
-    public void doInvoice4Check(String replyToken, Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows(IOException.class)
+    public void doInvoice4Check(String replyToken, Event event, TextMessageContent content) {
         // 初始化發票號碼集合
         if (prize.size() == 0) {
             inItPrize();
         }
         String number = content.getText();
         String str = number.replaceAll("[!|！| ]", "");
-        Integer money = 0 ;
+        Integer money = 0;
         // 匹配中獎號碼
         for (String key : prize.keySet()) {
-            if (str.endsWith(key)){
+            if (str.endsWith(key)) {
                 // 取得中獎金額
                 int value = prize.get(key);
                 // 最大金額比較
-                if (value > money){
-                    money = value ;
+                if (value > money) {
+                    money = value;
                 }
             }
         }
@@ -721,7 +721,8 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理記帳流程 - 模板
      */
     @Override
-    public void doAccounting4User(String replyToken, Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows(IOException.class)
+    public void doAccounting4User(String replyToken, Event event, TextMessageContent content) {
         //獲得用戶ID
         String userId = event.getSource().getUserId();
         String text = content.getText();
@@ -735,11 +736,11 @@ public class DofuncServiceImpl implements DofuncService {
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String date = dtf.format(zonedDateTime);
             String tableName = getTableName(event);
-            int insertRow ;
+            int insertRow;
 
-            if (strings.length < 3 ) {
-                insertRow = postgresqlDAO.insertDatabase(tableName,type,money,"沒有輸入備註",date);
-            }else {
+            if (strings.length < 3) {
+                insertRow = postgresqlDAO.insertDatabase(tableName, type, money, "沒有輸入備註", date);
+            } else {
                 String remarks = strings[2];
                 insertRow = postgresqlDAO.insertDatabase(tableName, type, money, remarks, date);
             }
@@ -764,7 +765,8 @@ public class DofuncServiceImpl implements DofuncService {
         if (remorks == null) {
             remorks = strings[1];
         }
-        String money = strings[0];  // $XX
+        // $XX
+        String money = strings[0];
         money = money.replaceAll("[^0-9]", "");
 
         String imgUrl1 = createUri("/static/AccountingImage/AccountingImage1.jpg");
@@ -778,13 +780,16 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 飲 食 ",
-                                                "$_" + userId + "_" + money + "_" + remorks + "_Food",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Food",
                                                 "吃的拉"),
                                         new PostbackAction(" 衣 褲 ",
-                                                "$_" + userId + "_" + money + "_" + remorks + "_Clothing",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Clothing",
                                                 "穿的拉"),
                                         new PostbackAction(" 住 宿 ",
-                                                "$_" + userId + "_" + money + "_" + remorks + "_Housing",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Housing",
                                                 "住的拉")
                                 )
                         ),
@@ -794,13 +799,14 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 交 通 ",
-                                                "$_" + userId + "_" + money + "_" + remorks + "_Transportation",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                //got postback 輸出   -- 可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Transportation",
                                                 "行的拉"),
                                         new PostbackAction(" 遊 樂 ",
-                                                "$_" + userId + "_" + money + "_" + remorks + "_Play",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Play",
                                                 "玩的拉"),
                                         new PostbackAction(" 不 好 說 ",
-                                                "$_" + userId + "_" + money + "_" + remorks + "_Other",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "$_" + userId + "_" + money + "_" + remorks + "_Other",
                                                 "噓......")
                                 )
                         )
@@ -812,10 +818,10 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 處理記帳功能數據庫邏輯
-     *
      */
     @Override
-    public void doDataBase4Accounting(String replyToken, Event event, String data) throws IOException {
+    @SneakyThrows(IOException.class)
+    public void doDataBase4Accounting(String replyToken, Event event, String data) {
         String[] strings = data.split("_");
         if (strings.length < 2) {
             this.replyText(replyToken, data);
@@ -845,16 +851,16 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 　接入指令 $$ 顯示當前月圖表
-     *
-     * */
+     */
     @Override
-    public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event) throws IOException {
+    @SneakyThrows(IOException.class)
+    public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event) {
         String tableName = getTableName(event);
         //   当前月的资料
         LocalDate localDate = LocalDate.now();
         String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
 
-        try (ResultSet resultSet = postgresqlDAO.selectAccounting4Month(tableName,nowDate)) {
+        try (ResultSet resultSet = postgresqlDAO.selectAccounting4Month(tableName, nowDate)) {
             if (!postgresqlDAO.checkTableExits(tableName)) {
                 this.replyText(replyToken, "你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
                 return null;
@@ -864,7 +870,8 @@ public class DofuncServiceImpl implements DofuncService {
                 this.replyText(replyToken, "這個月還沒有記錄喔");
                 return null;
             }
-            Map<String, Integer> nowDate4Accounting = dateMap.get(nowDate);// 拿到这个月的统计数据
+            // 拿到这个月的统计数据
+            Map<String, Integer> nowDate4Accounting = dateMap.get(nowDate);
             DefaultPieDataset dataset = new DefaultPieDataset();
             for (String key : nowDate4Accounting.keySet()) {
                 dataset.setValue(key, nowDate4Accounting.get(key));
@@ -905,11 +912,10 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 用戶顯示操作模板
-     *
-
      */
     @Override
-    public void doAccountingOperating(String replyToken, Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows(IOException.class)
+    public void doAccountingOperating(String replyToken, Event event, TextMessageContent content) {
         String tableName = getTableName(event);
 
         if (!postgresqlDAO.checkTableExits(tableName)) {
@@ -925,13 +931,14 @@ public class DofuncServiceImpl implements DofuncService {
                                 " ",
                                 Arrays.asList(
                                         new PostbackAction(" 刪除 & 更改 ",
-                                                "doShowAccountingMonth",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "doShowAccountingMonth",
                                                 "刪除 & 更改"),
                                         new PostbackAction(" 這 個 月 ",
-                                                "doShowAccountingMoneyDate",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "doShowAccountingMoneyDate",
                                                 "月 紀 錄"),
                                         new PostbackAction(" 總 紀 錄 ",
-                                                "doShowAllAccountByUser",          //got postback 輸出   -- 可能可以用來做post命令輸入後台
+                                                "doShowAllAccountByUser",
                                                 "總 紀 錄")
                                 )
                         )
@@ -943,10 +950,10 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 顯示記帳的詳細記錄 用於用戶知道Id 輸出做 刪除 & 更改 動作
-     *
      */
     @Override
-    public void doShowAccountingMonth4Detailed(String replyToken, Event event) throws IOException {
+    @SneakyThrows({IOException.class})
+    public void doShowAccountingMonth4Detailed(String replyToken, Event event) {
         String tableName = getTableName(event);
         if (!postgresqlDAO.checkTableExits(tableName)) {
             this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
@@ -978,10 +985,10 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 顯示全部記錄圖表
-     *
      */
     @Override
-    public JFreeChart doShowAllAccountByUser(String replyToken, Event event) throws IOException {
+    @SneakyThrows(IOException.class)
+    public JFreeChart doShowAllAccountByUser(String replyToken, Event event) {
         String tableName = getTableName(event);
         if (!postgresqlDAO.checkTableExits(tableName)) {
             this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
@@ -994,11 +1001,16 @@ public class DofuncServiceImpl implements DofuncService {
             String[] rowKey = {"Food", "Clothing", "Housing", "Transportation", "Play", "Other"}; //6
             DefaultCategoryDataset defaultCategoryDataset = new DefaultCategoryDataset();
 
-            for (String key : dateMap.keySet()) {   // key dateMap中的時間月份
-                Map<String, Integer> typeMap = dateMap.get(key); // 拿到種類 : 錢
-                for (String type : rowKey) {    // type 6個種類的錢
-                    Integer money = typeMap.get(type.toLowerCase());  // 拿到這個月的種類是否有錢 由於默認類型默認寫入小寫 所以get要小寫處理
-                    if (money == null) {  // 沒錢就給0
+            // key dateMap中的時間月份
+            for (String key : dateMap.keySet()) {
+                // 拿到種類 : 錢
+                Map<String, Integer> typeMap = dateMap.get(key);
+                // type 6個種類的錢
+                for (String type : rowKey) {
+                    // 拿到這個月的種類是否有錢 由於默認類型默認寫入小寫 所以get要小寫處理
+                    Integer money = typeMap.get(type.toLowerCase());
+                    // 沒錢就給0
+                    if (money == null) {
                         money = 0;
                     }
                     LOG.info("\n\n 順序 : " + money + " - " + type + " - " + key);
@@ -1022,9 +1034,12 @@ public class DofuncServiceImpl implements DofuncService {
             plot.setForegroundAlpha(0.9f);
             // 其他设置 参考 CategoryPlot类
             LineAndShapeRenderer renderer = (LineAndShapeRenderer) plot.getRenderer();
-            renderer.setBaseShapesVisible(true); // series 点（即数据点）可见
-            renderer.setBaseLinesVisible(true); // series 点（即数据点）间有连线可见
-            renderer.setUseSeriesOffset(true); // 设置偏移量
+            // series 点（即数据点）可见
+            renderer.setBaseShapesVisible(true);
+            // series 点（即数据点）间有连线可见
+            renderer.setBaseLinesVisible(true);
+            // 设置偏移量
+            renderer.setUseSeriesOffset(true);
             renderer.setBaseItemLabelGenerator(new StandardCategoryItemLabelGenerator());
             renderer.setBaseItemLabelsVisible(true);
             return jFreeChart;
@@ -1036,10 +1051,10 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 記帳刪除操作
-     *
      */
     @Override
-    public void doAccountingDelete(String replyToken, Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows(IOException.class)
+    public void doAccountingDelete(String replyToken, Event event, TextMessageContent content) {
         String text = content.getText();
         if (!text.matches("[!|！](del)[_|\\s][0-9]{1,10}")) {
             // 語法不正確
@@ -1063,10 +1078,11 @@ public class DofuncServiceImpl implements DofuncService {
      * 記帳更改操作
      */
     @Override
-    public void doAccountingUpdate(String replyToken, Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows(IOException.class)
+    public void doAccountingUpdate(String replyToken, Event event, TextMessageContent content) {
         String text = content.getText();
         if (!text.matches("[!|！](update)[_|\\s][0-9]{1,10}[_|\\s][$][0-9]{1,10}[_|\\s](Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)[_|\\s][a-zA-Z0-9\\u4e00-\\u9fa5]*")) {
-            // 語法不正確
+            // 語法不正確時進入
             this.replyText(replyToken, "語法錯誤? 範例 ：!update_ID_$200_play_玩的拉");
             return;
         }
@@ -1074,7 +1090,8 @@ public class DofuncServiceImpl implements DofuncService {
         String[] strings = text.split("[_|\\s]");
         String rowId = strings[1];
         String money = strings[2].replaceAll("[$]", "");
-        String type = strings[3].toLowerCase(); // 寫入時默認類型小寫
+        // 寫入時默認類型小寫
+        String type = strings[3].toLowerCase();
         String remarks = strings[4];
         // util
         int updateConut = postgresqlDAO.updateByRowId(tableName, rowId, money, type, remarks);
@@ -1088,7 +1105,6 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 處理群發消息 全部 獲得結果集
-     *
      */
     @Override
     public void doPushMessage4All(Message message, Event event) {
@@ -1104,40 +1120,32 @@ public class DofuncServiceImpl implements DofuncService {
      *
      * @param resultSet 結果ID
      * @param message   要發送的消息
-     * @throws SQLException 操作異常
      */
-    private void pushMessage(ResultSet resultSet, Message message, Event event) throws SQLException {
+    @SneakyThrows({SQLException.class, IOException.class})
+    private void pushMessage(ResultSet resultSet, Message message, Event event) {
         if (resultSet == null) {
             PushMessage pushMessage = new PushMessage(event.getSource().getUserId(), new TextMessage("ERROR : result = null"));
             Response<BotApiResponse> apiResponse;
-            try {
-                apiResponse = lineMessagingService
-                        .pushMessage(pushMessage)
-                        .execute();
-                LOG.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            apiResponse = lineMessagingService
+                    .pushMessage(pushMessage)
+                    .execute();
+            LOG.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
+
             return;
         }
         while (resultSet.next()) {
             String id = resultSet.getString("id");
             PushMessage pushMessage = new PushMessage(id, message);
             Response<BotApiResponse> apiResponse;
-            try {
-                apiResponse = lineMessagingService
-                        .pushMessage(pushMessage)
-                        .execute();
-                LOG.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            apiResponse = lineMessagingService
+                    .pushMessage(pushMessage)
+                    .execute();
+            LOG.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
         }
     }
 
     /**
      * 處理群發消息 依分類 獲得結果
-     *
      */
     @Override
     public void doPushMessage2Type(Message message, Event event, String... args) {
@@ -1156,7 +1164,8 @@ public class DofuncServiceImpl implements DofuncService {
      * @param content    文字事件
      */
     @Override
-    public String[] doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) throws IOException {
+    @SneakyThrows({IOException.class, URISyntaxException.class})
+    public String[] doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) {
         String text = content.getText();
         text = text.replaceAll("[-|_|\\s]", "");
         // 地區識別
@@ -1167,67 +1176,70 @@ public class DofuncServiceImpl implements DofuncService {
         int listSize = 120;
         if (strings.length > 1) {
             keyword = strings[1];
-            redisKey = keyword + redisKey; // 有關鍵字的另外分出來
-            listSize = 30; // 有關鍵字的結果較少
+            // 有關鍵字的另外分出來
+            redisKey = keyword + redisKey;
+            // 有關鍵字的結果較少
+            listSize = 30;
         }
         //  類型先固定寫死 以後要加類型要把redis 的 key做一點更動
         // 數據庫連接 ? 數據沒必要持久因必須具有時效性
         String type = "restaurant";
         // 知道要什麼之後 去jedis拿
-        try (Jedis jedis = JedisFactory.getJedis()) {
-            boolean checkTime = false;
-            long createTime = 0;
-            String oldTime = jedis.get(redisKey + "time");
-            if (oldTime != null) {
-                createTime = Long.parseLong(oldTime);
-            }
-            long nowTime = System.currentTimeMillis();
-            if ((nowTime - createTime) > 1000 * 60 * 60) {  // 數據超時設置
-                checkTime = true;
-            }
-            int listLength = jedis.llen(redisKey).intValue(); //集合元素不可能超過21億 所以類型強制轉換 long -> int
-            LOG.info("\n\n listLength : " + listLength + " listSize : " + listSize + " checkTime : " + checkTime + "\n");
-            if (listLength == 0 || listLength < listSize || checkTime) {  // 沒有元素 或者 元素數量不足 或 時間超過1小時
-                // 類型 城市 關鍵字 拿要找的路徑
-                String path = getPath4GoogleMap(type, city, keyword);
-                if (ObjectUtils.isEmpty(path)){
-                    this.replyText(replyToken, "還未增加你說的地點 ~~~~");
-                    return null;
-                }
-                Document document = jsoupClient(path);
-                String retrunText = document.text();
-                JSONObject jsonObject = JSONObject.parseObject(retrunText);
-                String nextPage = jsonObject.getString("next_page_token");
-                // 加載當前頁
-                redisInit4googleMap(jsonObject, redisKey, jedis);
-                while (nextPage != null) {
-                    // 有下一頁
-                    // 拿到下一頁數據 把nextPage 重新給值
-                    path = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=" + nextPage + "&key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&language=zh-TW";
-                    document = jsoupClient(path);
-                    retrunText = document.text();
-                    jsonObject = JSONObject.parseObject(retrunText);
-                    // 把下一頁存入 redis
-                    redisInit4googleMap(jsonObject, redisKey, jedis);
-                    nextPage = jsonObject.getString("next_page_token");
-                }
-                listLength = jedis.llen(redisKey).intValue(); // jedis操作後 重新獲取長度
-            }
-            // 隨機往jedis 拿元素
-            int listIndex = new Random().nextInt(listLength);
-            String redisText = jedis.lindex(redisKey, listIndex);
 
-            // 拿到元素處理返回
-            //{imgUrl,name,outputText,gotoUrl};
-            return redisText.split("%");
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+        @Cleanup Jedis jedis = JedisFactory.getJedis();
+        boolean checkTime = false;
+        long createTime = 0;
+        String oldTime = jedis.get(redisKey + "time");
+        if (oldTime != null) {
+            createTime = Long.parseLong(oldTime);
         }
-        return null;
+        long nowTime = System.currentTimeMillis();
+        // 數據超時設置
+        if ((nowTime - createTime) > 1000 * 60 * 60) {
+            checkTime = true;
+        }
+        //集合元素不可能超過21億 所以類型強制轉換 long -> int
+        int listLength = jedis.llen(redisKey).intValue();
+        LOG.info("\n\n listLength : " + listLength + " listSize : " + listSize + " checkTime : " + checkTime + "\n");
+        // 沒有元素 或者 元素數量不足 或 時間超過1小時
+        if (listLength == 0 || listLength < listSize || checkTime) {
+            // 類型 城市 關鍵字 拿要找的路徑
+            String path = getPath4GoogleMap(type, city, keyword);
+            if (ObjectUtils.isEmpty(path)) {
+                this.replyText(replyToken, "還未增加你說的地點 ~~~~");
+                return null;
+            }
+            Document document = jsoupClient(path);
+            String retrunText = document.text();
+            JSONObject jsonObject = JSONObject.parseObject(retrunText);
+            String nextPage = jsonObject.getString("next_page_token");
+            // 加載當前頁
+            redisInit4googleMap(jsonObject, redisKey, jedis);
+            while (nextPage != null) {
+                // 有下一頁
+                // 拿到下一頁數據 把nextPage 重新給值
+                path = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=" + nextPage + "&key=AIzaSyDG9PSNAD4oUjITD1Pu9W09R2py3fuDgRU&language=zh-TW";
+                document = jsoupClient(path);
+                retrunText = document.text();
+                jsonObject = JSONObject.parseObject(retrunText);
+                // 把下一頁存入 redis
+                redisInit4googleMap(jsonObject, redisKey, jedis);
+                nextPage = jsonObject.getString("next_page_token");
+            }
+            // jedis操作後 重新獲取長度
+            listLength = jedis.llen(redisKey).intValue();
+        }
+        // 隨機往jedis 拿元素
+        int listIndex = new Random().nextInt(listLength);
+        String redisText = jedis.lindex(redisKey, listIndex);
+
+        // 拿到元素處理返回
+        //{imgUrl,name,outputText,gotoUrl};
+        return redisText.split("%");
     }
 
     /**
-     *  處理推齊
+     * 處理推齊
      */
     @Override
     public void doFollowTalk(String replyToken, Event event, TextMessageContent content) {
@@ -1244,35 +1256,35 @@ public class DofuncServiceImpl implements DofuncService {
          */
         // 只有在群組或房間才有推齊的意義
         String text = content.getText();
-        try(Jedis jedis = JedisFactory.getJedis()){
-            String id ;
+        try (Jedis jedis = JedisFactory.getJedis()) {
+            String id;
             Source source = event.getSource();
             // 獲得群組ID 把說的話存起來
-            if (source instanceof GroupSource){
+            if (source instanceof GroupSource) {
                 id = ((GroupSource) source).getGroupId();
-                jedis.lpush(id,text);
-            } else if (source instanceof RoomSource){
+                jedis.lpush(id, text);
+            } else if (source instanceof RoomSource) {
                 id = ((RoomSource) source).getRoomId();
-                jedis.lpush(id,text);
-            }else {
+                jedis.lpush(id, text);
+            } else {
                 return;
             }
             // 獲得群組的對話紀錄
-            List<String> messageList = jedis.lrange(id,0,10);
+            List<String> messageList = jedis.lrange(id, 0, 10);
             // 判斷集合內重複元素數量
-            if ( Collections.frequency(messageList,text) > 2 ) {
+            if (Collections.frequency(messageList, text) > 2) {
                 // 大於 2 個 推送
-                replyText(replyToken,text);
+                replyText(replyToken, text);
                 // 刪除重複項
-                jedis.lrem(id,0,text);
+                jedis.lrem(id, 0, text);
             }
             // 如果集合長度大於10
             long llen = jedis.llen(id);
-            LOG.info("推齊功能的列表長度 : "+llen);
-            if ( llen > 9 ){
+            LOG.info("推齊功能的列表長度 : " + llen);
+            if (llen > 9) {
                 // 刪除第一個元素
                 String remove = jedis.rpop(id);
-                LOG.info("remove text : "+remove);
+                LOG.info("remove text : " + remove);
             }
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -1281,17 +1293,18 @@ public class DofuncServiceImpl implements DofuncService {
 
     /**
      * 得到googleMap 的查詢path
-     * @param type       查詢種類
-     * @param city       查詢城市
-     * @param keyword    關鍵字
+     *
+     * @param type    查詢種類
+     * @param city    查詢城市
+     * @param keyword 關鍵字
      * @return 路徑
      */
     private String getPath4GoogleMap(String type, String city, String keyword) {
         // 查找範圍 <M>　默認
         String radius = "5000";
-        String localtion ;
-        int latitude ;
-        int longitude ;
+        String localtion;
+        int latitude;
+        int longitude;
         Random random = new Random();
         // 經緯度賦值
         switch (city) {
@@ -1399,7 +1412,7 @@ public class DofuncServiceImpl implements DofuncService {
                 isOpening = "休息中";
             }
             JSONArray array = result.getJSONArray("photos");
-            String photoToken ;
+            String photoToken;
             String imgPath = "null";
             if (array != null) {
                 photoToken = array.getJSONObject(0).getString("photo_reference"); // 找圖片的ID
@@ -1410,8 +1423,8 @@ public class DofuncServiceImpl implements DofuncService {
             String item = imgPath
                     + ("%") + (name)
                     + ("%") + (rating == null ? "" : ("Google 評分 :") + (rating)) + (userRatingTotal == null ? "\n" : (" 有 :") + (userRatingTotal) + (" 則評論\n"))
-                    + (isOpening) + ("   ") + ((priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n")) //+ (vicinity)
-                    + ("%") + ("https://www.google.com/maps/search/?api=1&query=") + (name.replaceAll("\\s+","")) ;//+("&query_place_id=") + (placeId);
+                    + (isOpening) + ("   ") + ((priceLevel == null ? "\n" : "價位 : " + priceLevel + "\n"))
+                    + ("%") + ("https://www.google.com/maps/search/?api=1&query=") + (name.replaceAll("\\s+", ""));
             // 存起來
 
             jedis.lpush(redisKey, item);
@@ -1425,7 +1438,7 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
 
-    private void inItPrize() throws IOException {
+    private void inItPrize(){
         Document document = jsoupClient(INVOICE_PATH);
         Elements elements = document.select(".t18Red");
         Integer specialDesc = 10000000;
@@ -1508,7 +1521,7 @@ public class DofuncServiceImpl implements DofuncService {
         for (Element element : lastPageArray) {
             lastPage = element.getElementsByClass("btn").get(1);
         }
-        if (ObjectUtils.isEmpty(lastPage)){
+        if (ObjectUtils.isEmpty(lastPage)) {
             throw new NullPointerException("lastPage 未被賦值");
         }
         String lastPageUrl = lastPage.absUrl("href"); //獲得路徑
@@ -1578,7 +1591,7 @@ public class DofuncServiceImpl implements DofuncService {
             if (city.startsWith("\"")) {
                 city = city.replaceAll("\"", "");
                 String[] strings = city.split(";");
-                if (strings.length >=3) {
+                if (strings.length >= 3) {
                     if (strings[0].contains(",")) {
                         strings[0] = strings[0].substring(0, strings[0].indexOf(","));
                     } else if (strings[0].contains(" - ")) {
@@ -1596,7 +1609,8 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 單純網路連接
      */
-    private static Document jsoupClient(String path) throws IOException {
+    @SneakyThrows(IOException.class)
+    private static Document jsoupClient(String path) {
         Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
@@ -1625,7 +1639,7 @@ public class DofuncServiceImpl implements DofuncService {
      * 解決json返回無jsoupClient4Sex法獲取全部數據 設置 maxBodySize = 0
      * 返回類型改成全部內容
      */
-    private static String jsoupClient4Sex(String path)throws IOException{
+    private static String jsoupClient4Sex(String path) throws IOException {
         Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")

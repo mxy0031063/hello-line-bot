@@ -170,7 +170,9 @@ public class TimerUilts implements ApplicationRunner {
         return numArray;
     }
 
-    //方法二的辅助方法
+    /**
+     * 方法二的辅助方法
+     */
     public static boolean isExistence(int[] numArray, int lucky) {
         for (int i : numArray) {
             if (i == lucky) {

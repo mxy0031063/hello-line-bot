@@ -29,6 +29,7 @@ import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
 import hello.dao.TestDao;
 import hello.utils.*;
+import lombok.Cleanup;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -81,27 +82,26 @@ import java.util.List;
 @RestController
 public class HelloController {
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HelloController.class);
-
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(HelloController.class);
     private static final int PUSH_AMOUNT = 2;
 
-    /*
+    /**
     全台天氣圖
      */
     private static final String WEATHER_PATH_RADAR = "https://www.cwb.gov.tw/Data/radar/CV2_3600.png";
-    /*
+    /**
     天氣圖 UVI 地址
      */
     private static final String WEATHER_PATH_UVI = "https://www.cwb.gov.tw/Data/UVI/UVI_forPreview.png";
-    /*
+    /**
     全台溫度圖
      */
     private static final String WEATHER_PATH_TEMP = "https://www.cwb.gov.tw/Data/temperature/temp_forPreview.jpg";
-    /*
+    /**
     全台雨量圖
      */
     private static final String WEATHER_PATH_RAIN = "https://www.cwb.gov.tw/Data/rainfall/QZJ_forPreview.jpg";
-    /*
+    /**
     星座 API 地址
     Return JSON
      */
@@ -133,9 +133,10 @@ public class HelloController {
     }
 
     private DownloadedContent saveContent(String ext, ResponseBody responseBody, int newWidth, int newHeight) {
-        log.info("Got content-type: {}", responseBody.contentType());
+        LOG.info("Got content-type: {}", responseBody.contentType());
         DownloadedContent tempFile = createTempFile(ext);
-        try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+        try {
+            @Cleanup OutputStream outputStream = Files.newOutputStream(tempFile.path);
             // 創建圖片對象
             Image image = ImageIO.read(responseBody.byteStream());
             int w = image.getWidth(null);
@@ -152,7 +153,7 @@ public class HelloController {
                     // 高大
                     scale = newHeight / (double) h;
                 }
-                log.info("\n\n 縮小圖片 ->> 縮小比率 " + scale + "\n原寬 -> " + w + "\n原高 -> " + h);
+                LOG.info("\n\n 縮小圖片 ->> 縮小比率 " + scale + "\n原寬 -> " + w + "\n原高 -> " + h);
                 w = (int) (w * scale);
                 h = (int) (h * scale);
                 image = image.getScaledInstance(w, h, 0);
@@ -164,7 +165,7 @@ public class HelloController {
             graphics2D.dispose();
             tag.createGraphics().drawImage(image, (newWidth - w) / 2, (newHeight - h) / 2, null);
             ImageIO.write(tag, ext, outputStream);
-            log.info("Saved {}: {}", ext, tempFile);
+            LOG.info("Saved {}: {}", ext, tempFile);
             return tempFile;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -182,7 +183,7 @@ public class HelloController {
                     600,
                     null
             );
-            log.info("Saved {}: {}", ext, tempFile);
+            LOG.info("Saved {}: {}", ext, tempFile);
             return tempFile;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -190,11 +191,11 @@ public class HelloController {
     }
 
     private static DownloadedContent saveContent(String ext, ResponseBody responseBody) {
-        log.info("Got content-type: {}", responseBody.contentType());
+        LOG.info("Got content-type: {}", responseBody.contentType());
         DownloadedContent tempFile = createTempFile(ext);
         try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
             ByteStreams.copy(responseBody.byteStream(), outputStream);
-            log.info("Saved {}: {}", ext, tempFile);
+            LOG.info("Saved {}: {}", ext, tempFile);
             return tempFile;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -225,7 +226,7 @@ public class HelloController {
             int pumpLength = jedis.llen("pump").intValue();
             Random random = new Random();
             String output = jedis.lindex("pump", random.nextInt(pumpLength));
-            log.info("\n\n ===================================\n" + output + "\n" + random.nextInt(pumpLength));
+            LOG.info("\n\n ===================================\n" + output + "\n" + random.nextInt(pumpLength));
             return output;
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -286,7 +287,7 @@ public class HelloController {
 
     @EventMapping
     public void handleDefaultMessageEvent(Event event) {
-        log.info("Received message(Ignored): {}", event);
+        LOG.info("Received message(Ignored): {}", event);
     }
 
     /**
@@ -296,13 +297,13 @@ public class HelloController {
      */
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) throws IOException {
-        log.info("Got text event: {}", event);
+        LOG.info("Got text event: {}", event);
         abyssLineBot(event.getReplyToken(), event, event.getMessage());
     }
 
     @EventMapping
     public void handleUnfollowEvent(UnfollowEvent event) {
-        log.info("Got unfollow event: {}", event);
+        LOG.info("Got unfollow event: {}", event);
     }
 
     /**
@@ -318,7 +319,7 @@ public class HelloController {
         String id = event.getSource().getUserId();
         String type = "user";
         postgresqlDAO.joinAction(type, id, date);
-        log.info("\n\nGot follow event: {}", event);
+        LOG.info("\n\nGot follow event: {}", event);
         String replyToken = event.getReplyToken();
         try {
             this.replyText(replyToken, "Hello ! " + getUserName(event.getSource().getUserId()));
@@ -335,7 +336,7 @@ public class HelloController {
      */
     @EventMapping
     public void handleJoinEvent(JoinEvent event) {
-        log.info("Got join event: {}", event);
+        LOG.info("Got join event: {}", event);
         String replyToken = event.getReplyToken();
         Source source = event.getSource();
         ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
@@ -345,13 +346,13 @@ public class HelloController {
             String type = "group";
             String id = ((GroupSource) source).getGroupId();
             postgresqlDAO.joinAction(type, id, date);
-            log.info("\n\njoin Group ID : {}", id);
+            LOG.info("\n\njoin Group ID : {}", id);
             this.replyText(replyToken, "大家安安");
         } else if (source instanceof RoomSource) {
             String type = "room";
             String id = ((RoomSource) source).getRoomId();
             postgresqlDAO.joinAction(type, id, date);
-            log.info("\n\njoin Room ID : {}", id);
+            LOG.info("\n\njoin Room ID : {}", id);
             this.replyText(replyToken, " 拉我進這什麼房間");
         } else {
             this.replyText(replyToken, "我加入了沙小 : ");
@@ -367,7 +368,7 @@ public class HelloController {
      */
     @EventMapping
     public void handlePostbackEvent(PostbackEvent event) throws IOException {
-        log.info("Got postBack event: {}", event);
+        LOG.info("Got postBack event: {}", event);
         String replyToken = event.getReplyToken();
         String data = event.getPostbackContent().getData();
         Source source = event.getSource();
@@ -445,9 +446,6 @@ public class HelloController {
     /**
      * 顯示出 用戶 postBack 之後獲得的星座
      *
-     * @param replyToken
-     * @param data
-     * @throws IOException
      */
     private void showConStellation(String replyToken, String data) throws IOException {
 
@@ -460,14 +458,16 @@ public class HelloController {
                 constellationTime = Long.parseLong(jedis.get("constellationTime"));
             }
             // 判斷存在 與 不超時
-            if (jedis.exists(data) && (nowTime - constellationTime) < 1000 * 60 * 60 * 2) {   // 超時2小時
+            // 超時2小時
+            if (jedis.exists(data) && (nowTime - constellationTime) < 1000 * 60 * 60 * 2) {
                 this.replyText(replyToken, jedis.get(data));
                 return;
             }
             // 不存在則更新
             okhttp3.Response response = timerUilts.clientHttp(CONSTELLATION_PATH);
             String returnText = response.body().string();
-            JSONArray pageReturn = JSONArray.parseArray(returnText);//返回的星座列表
+            //返回的星座列表
+            JSONArray pageReturn = JSONArray.parseArray(returnText);
             if (!"OK".equals(response.message()) || pageReturn.size() == 0) {
                 this.replyText(replyToken, "很抱歉 ! 資料出問題了");
                 return;
@@ -513,14 +513,15 @@ public class HelloController {
         switch (i) {
             case 1:
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH");
-
-                LocalDateTime case1Date = localDateTime.minusMinutes(40); //獲取40分鐘前的時間
+                //獲取40分鐘前的時間
+                LocalDateTime case1Date = localDateTime.minusMinutes(40);
                 String date = dtf.format(case1Date) + "00";
 
                 path = "https://www.cwb.gov.tw/Data/temperature/" + date + ".GTP8.jpg";
                 return path;
             case 2:
-                LocalDateTime case2Date = localDateTime.minusMinutes(30); //獲取30分鐘前的時間
+                //獲取30分鐘前的時間
+                LocalDateTime case2Date = localDateTime.minusMinutes(30);
                 DateTimeFormatter dtf2 = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH");
                 String date2 = dtf2.format(case2Date);
                 //https://www.cwb.gov.tw/Data/rainfall/2019-06-25_1730.QZJ8.jpg
@@ -563,7 +564,7 @@ public class HelloController {
                         jpg.getUri() + "#",
                         "Sorry, I don't support the Imagemap function in your platform. :(",
                         new ImagemapBaseSize(ImageHeight, ImageWidth),
-                        Arrays.asList(
+                        Collections.singletonList(
                                 new URIImagemapAction(
                                         "https://www.dcard.tw/f/sex/p/" + sex[1],
                                         new ImagemapArea(0, 0, ImageWidth, ImageHeight)
@@ -610,7 +611,7 @@ public class HelloController {
             // 沒有圖片時的顯示
             imgPath = createUri("/static/buttons/googleSearchFood.jpg");
         }
-        log.info("imgPath : " + imgPath);
+        LOG.info("imgPath : " + imgPath);
         okhttp3.Response response = timerUilts.clientHttp(imgPath);
         DownloadedContent jpg = saveContent("PNG", response.body(), 600, 600);
 
@@ -620,7 +621,7 @@ public class HelloController {
                                 jpg.getUri() + "#",
                                 strings[1],
                                 strings[2],
-                                Arrays.asList(
+                                Collections.singletonList(
                                         new URIAction(
                                                 "去看看",
                                                 strings[3]
@@ -641,7 +642,7 @@ public class HelloController {
      */
     @EventMapping
     public void handleStickerMessageEvent(MessageEvent<StickerMessageContent> event) {
-        log.info("Got sticker event: {}", event);
+        LOG.info("Got sticker event: {}", event);
         handleSticker(event.getReplyToken(), event.getMessage());
     }
 
@@ -650,7 +651,7 @@ public class HelloController {
      */
     @EventMapping
     public void handleLocationMessageEvent(MessageEvent<LocationMessageContent> event) {
-        log.info("Got location event: {}", event);
+        LOG.info("Got location event: {}", event);
         LocationMessageContent locationMessage = event.getMessage();
         reply(event.getReplyToken(), new LocationMessage(
                 locationMessage.getTitle(),
@@ -667,7 +668,7 @@ public class HelloController {
      */
     @EventMapping
     public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) {
-        log.info("Got image event: {}", event);
+        LOG.info("Got image event: {}", event);
 //        replyText(event.getReplyToken(), event.getMessage().toString());
     }
 
@@ -678,7 +679,7 @@ public class HelloController {
      */
     @EventMapping
     public void handleAudioMessageEvent(MessageEvent<AudioMessageContent> event) {
-        log.info("Got audio event: {}", event);
+        LOG.info("Got audio event: {}", event);
 //        replyText(event.getReplyToken(), event.getMessage().toString());
     }
 
@@ -689,7 +690,7 @@ public class HelloController {
      */
     @EventMapping
     public void handleVideoMessageEvent(MessageEvent<VideoMessageContent> event) {
-        log.info("Got video event: {}", event);
+        LOG.info("Got video event: {}", event);
 //        replyText(event.getReplyToken(), event.getMessage().toString());
     }
 
@@ -712,7 +713,7 @@ public class HelloController {
             Response<BotApiResponse> apiResponse = lineMessagingService
                     .replyMessage(new ReplyMessage(replyToken, messages))
                     .execute();
-            log.info("Sent messages: {} {}", apiResponse.message(), apiResponse.code());
+            LOG.info("Sent messages: {} {}", apiResponse.message(), apiResponse.code());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -832,7 +833,7 @@ public class HelloController {
             /** 搜尋av */
             ArrayList<ArrayList<String>> avSearch = service.doAvSeach(replyToken, event, content);
             if (ObjectUtils.isEmpty(avSearch)) {
-                log.info("AV Search return Object is Empty !");
+                LOG.info("AV Search return Object is Empty !");
                 this.replyText(replyToken, "抱歉 ! 沒有找到你說的關鍵字");
                 return;
             }
@@ -874,7 +875,7 @@ public class HelloController {
         text = "6";
         String helpText = "你可以輸入消息以查看結果:\n(0)help,\n(1)profile,\n(2)bye,\n(3)confirm,\n(4)buttons,\n(5)carousel,\n(6)imagemap.";
 
-        log.info("Got text message from {}: {}", replyToken, text);
+        LOG.info("Got text message from {}: {}", replyToken, text);
         switch (text) {
             case "readme":
             case "0": {
@@ -885,7 +886,8 @@ public class HelloController {
             case "1": {
                 String userId = event.getSource().getUserId();
                 if (userId != null) {
-                    UserProfileResponse userProfile = getUserProfile(userId); //獲得用戶資訊
+                    //獲得用戶資訊
+                    UserProfileResponse userProfile = getUserProfile(userId);
                     String pictureUrlURL = userProfile.getPictureUrl() == null ? "(Not Set)" : userProfile.getPictureUrl();
                     String displayName = userProfile.getDisplayName() == null ? "(Not Set)" : userProfile.getDisplayName();
                     String displayStatus = userProfile.getStatusMessage() == null ? "(Not Set)" : userProfile.getStatusMessage();
@@ -894,9 +896,12 @@ public class HelloController {
                     okhttp3.Response response = client.newCall(request).execute();
                     DownloadedContent jpg = saveContent("jpg", response.body());
                     this.reply(replyToken, Arrays.asList(
-                            new ImageMessage(jpg.getUri(), jpg.getUri()),//用戶頭像
-                            new TextMessage("Hi, " + displayName),//用戶名
-                            new TextMessage("Your status is : " + displayStatus)//狀態消息
+                            //用戶頭像
+                            new ImageMessage(jpg.getUri(), jpg.getUri()),
+                            //用戶名
+                            new TextMessage("Hi, " + displayName),
+                            //狀態消息
+                            new TextMessage("Your status is : " + displayStatus)
                     ));
                 } else {
                     this.replyText(replyToken, "Bot can only get a user's profile when 1:1 chat");
@@ -1047,7 +1052,7 @@ public class HelloController {
                 break;
             }
             default:
-                log.info("Returns echo message {}: {}", replyToken, text);
+                LOG.info("Returns echo message {}: {}", replyToken, text);
                 this.reply(
                         replyToken,
                         Arrays.asList(
