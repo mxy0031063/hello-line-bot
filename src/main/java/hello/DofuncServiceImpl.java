@@ -358,7 +358,7 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理 表特抽卡
      */
     @Override
-    @SneakyThrows({IOException.class, URISyntaxException.class})
+    @SneakyThrows(URISyntaxException.class)
     public String doBeauty(Event event, TextMessageContent content) {
         /*
          *　抽卡超時　：
@@ -393,13 +393,11 @@ public class DofuncServiceImpl implements DofuncService {
                 ExecutorService thread = ThreadPool.getCustomThreadPoolExecutor();
                 thread.submit(() -> {
                     LOG.info(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
-                    try {
-                        jedis.ltrim("pump", 1, 0);
-                        beautyInit();
-                        itubaInit();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+
+                    jedis.ltrim("pump", 1, 0);
+                    beautyInit();
+                    itubaInit();
+
                 });
                 return url;
             }
@@ -421,7 +419,7 @@ public class DofuncServiceImpl implements DofuncService {
      * 7/27 更改抽卡為兩個分開的方法 因我要把西施版的圖片做成imageMap的形式
      */
     @Override
-    @SneakyThrows({IOException.class, URISyntaxException.class})
+    @SneakyThrows({URISyntaxException.class})
     public String[] doSex(Event event, TextMessageContent content) {
 
         @Cleanup Jedis jedis = JedisFactory.getJedis();
@@ -445,14 +443,12 @@ public class DofuncServiceImpl implements DofuncService {
                 //新開一個線程處理加載
                 ExecutorService thread = ThreadPool.getCustomThreadPoolExecutor();
                 thread.submit(() -> {
-                    try {
-                        LOG.info(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
-                        jedis.ltrim("sex", 1, 0); // 清空
-                        dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
-                        dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+
+                    LOG.info(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
+                    jedis.ltrim("sex", 1, 0); // 清空
+                    dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
+                    dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
+
                 });
                 return url.split("%");
             }
@@ -470,7 +466,7 @@ public class DofuncServiceImpl implements DofuncService {
 
     }
 
-    @SneakyThrows({IOException.class, URISyntaxException.class})
+    @SneakyThrows({URISyntaxException.class})
     public static void itubaInit() {
 //        String IMG_GRIL_PATH = "https://m.ituba.cc/meinvtupian/p";
 //        int[] index = timerUilts.getRandomArrayByValue(2,500);
@@ -508,7 +504,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理AV搜尋 - 並默認隨機返回一個搜尋結果
      */
     @Override
-    @SneakyThrows(IOException.class)
     public ArrayList doAvSeach(String replyToken, Event event, TextMessageContent content) {
         // 存儲 返回的搜尋結果
         ArrayList<ArrayList<String>> lists = new ArrayList<>();
@@ -558,7 +553,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理 城市天氣  目前做一天的
      */
     @Override
-    @SneakyThrows(IOException.class)
     public void doCityTemp(String replyToken, Event event, TextMessageContent content, String city) {
         Document doc = jsoupClient(WEATHER_SEARCH_TODAY_PATH, false);
         String str = doc.body().text();
@@ -591,7 +585,6 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     @Override
-    @SneakyThrows(IOException.class)
     public void doWorldTemp(String replyToken, Event event, TextMessageContent content) {
         if (weatherMap.size() == 0) {
             inItWorldCityMap();
@@ -625,7 +618,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理顯示發票邏輯
      */
     @Override
-    @SneakyThrows(IOException.class)
     public void doInvoice(String replyToken, Event event, TextMessageContent content) {
         Document document = jsoupClient(INVOICE_PATH);
         Element titleDate = document.select("#area1 h2").get(1);
@@ -650,7 +642,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理發票兌獎
      */
     @Override
-    @SneakyThrows(IOException.class)
     public void doInvoice4Check(String replyToken, Event event, TextMessageContent content) {
         // 初始化發票號碼集合
         if (prize.size() == 0) {
@@ -721,7 +712,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理記帳流程 - 模板
      */
     @Override
-    @SneakyThrows(IOException.class)
     public void doAccounting4User(String replyToken, Event event, TextMessageContent content) {
         //獲得用戶ID
         String userId = event.getSource().getUserId();
@@ -820,7 +810,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 處理記帳功能數據庫邏輯
      */
     @Override
-    @SneakyThrows(IOException.class)
     public void doDataBase4Accounting(String replyToken, Event event, String data) {
         String[] strings = data.split("_");
         if (strings.length < 2) {
@@ -853,7 +842,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 　接入指令 $$ 顯示當前月圖表
      */
     @Override
-    @SneakyThrows(IOException.class)
     public JFreeChart doShowAccountingMoneyDate(String replyToken, Event event) {
         String tableName = getTableName(event);
         //   当前月的资料
@@ -914,7 +902,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 用戶顯示操作模板
      */
     @Override
-    @SneakyThrows(IOException.class)
     public void doAccountingOperating(String replyToken, Event event, TextMessageContent content) {
         String tableName = getTableName(event);
 
@@ -952,7 +939,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 顯示記帳的詳細記錄 用於用戶知道Id 輸出做 刪除 & 更改 動作
      */
     @Override
-    @SneakyThrows({IOException.class})
     public void doShowAccountingMonth4Detailed(String replyToken, Event event) {
         String tableName = getTableName(event);
         if (!postgresqlDAO.checkTableExits(tableName)) {
@@ -987,7 +973,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 顯示全部記錄圖表
      */
     @Override
-    @SneakyThrows(IOException.class)
     public JFreeChart doShowAllAccountByUser(String replyToken, Event event) {
         String tableName = getTableName(event);
         if (!postgresqlDAO.checkTableExits(tableName)) {
@@ -1053,7 +1038,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 記帳刪除操作
      */
     @Override
-    @SneakyThrows(IOException.class)
     public void doAccountingDelete(String replyToken, Event event, TextMessageContent content) {
         String text = content.getText();
         if (!text.matches("[!|！](del)[_|\\s][0-9]{1,10}")) {
@@ -1078,7 +1062,6 @@ public class DofuncServiceImpl implements DofuncService {
      * 記帳更改操作
      */
     @Override
-    @SneakyThrows(IOException.class)
     public void doAccountingUpdate(String replyToken, Event event, TextMessageContent content) {
         String text = content.getText();
         if (!text.matches("[!|！](update)[_|\\s][0-9]{1,10}[_|\\s][$][0-9]{1,10}[_|\\s](Food|food|Clothing|clothing|Housing|housing|Transportation|transportation|Play|play|Other|other)[_|\\s][a-zA-Z0-9\\u4e00-\\u9fa5]*")) {
@@ -1164,7 +1147,7 @@ public class DofuncServiceImpl implements DofuncService {
      * @param content    文字事件
      */
     @Override
-    @SneakyThrows({IOException.class, URISyntaxException.class})
+    @SneakyThrows(URISyntaxException.class)
     public String[] doGoogleMapSearch(String replyToken, Event event, TextMessageContent content) {
         String text = content.getText();
         text = text.replaceAll("[-|_|\\s]", "");
@@ -1438,7 +1421,7 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
 
-    private void inItPrize(){
+    private void inItPrize() {
         Document document = jsoupClient(INVOICE_PATH);
         Elements elements = document.select(".t18Red");
         Integer specialDesc = 10000000;
@@ -1470,7 +1453,7 @@ public class DofuncServiceImpl implements DofuncService {
         }
     }
 
-    public static void dccardSexInit(String path, int count, Jedis jedis) throws IOException {
+    public static void dccardSexInit(String path, int count, Jedis jedis) {
         jedis.set("sexTime", String.valueOf(System.currentTimeMillis()));    // 西施版加載時間
         LOG.info("DcardList finction INIT ...");
 //        okhttp3.Response response = timerUilts.clientHttp(path);
@@ -1510,8 +1493,8 @@ public class DofuncServiceImpl implements DofuncService {
         dccardSexInit(nextPath, count, jedis);
     }
 
-
-    public static void beautyInit() throws IOException {
+    @SneakyThrows(URISyntaxException.class)
+    public static void beautyInit() {
         LOG.info("beautyList Function INIT ... ");
         Map<String, String> cookies = new HashMap<>(10);
         cookies.put("over18", "1");
@@ -1540,47 +1523,46 @@ public class DofuncServiceImpl implements DofuncService {
         pageIndexArray.forEach((pageIndex) -> {
             String url = "https://www.ptt.cc/bbs/Beauty/index" + pageIndex + ".html";
             Document pageDoc;
-            try (Jedis jedis = JedisFactory.getJedis()) {
-                if (jedis.llen("pump") > 1500) {
-                    return;
+
+            @Cleanup Jedis jedis = JedisFactory.getJedis();
+            if (jedis.llen("pump") > 1500) {
+                return;
+            }
+            // 獲得表特版頁面
+            pageDoc = jsoupClient(url, cookies);
+            // 獲得標題組
+            Elements allPageTag = pageDoc.getElementsByClass("r-ent");
+            for (Element pageTag : allPageTag) {
+                // 拿到標題組中的文字與網址
+                Elements titles = pageTag.getElementsByClass("title").get(0).getElementsByTag("a");
+                if (titles.size() == 0) {
+                    continue;
                 }
-                // 獲得表特版頁面
-                pageDoc = jsoupClient(url, cookies);
-                // 獲得標題組
-                Elements allPageTag = pageDoc.getElementsByClass("r-ent");
-                for (Element pageTag : allPageTag) {
-                    // 拿到標題組中的文字與網址
-                    Elements titles = pageTag.getElementsByClass("title").get(0).getElementsByTag("a");
-                    if (titles.size() == 0) {
-                        continue;
-                    }
-                    Element title = titles.get(0);
-                    String titleText = title.text();    // 獲得每個標籤的文字 有 [正妹] ,[公告] ,[神人] ,[帥哥] ,[廣告] ...etc
-                    String titleHref = title.absUrl("href");
-                    if (titleText.contains("[正妹]")) {
-                        Document grilDoc = jsoupClient(titleHref, cookies);
-                        Elements img = grilDoc.getElementById("main-content").getElementsByAttributeValueContaining("href", "https://i.imgur.com/");
-                        for (Element imgTag : img) {
-                            String str = imgTag.attr("href");
-                            // 過濾掉一些奇奇怪怪的圖片
-                            if (!str.contains(".jpg")) {
-                                continue;
-                            }
-                            if (titleText.contains("[正妹]")) {
-                                jedis.lpush("pump", str);
-                                // grilImgUrlList.add(str);
-                            }
+                Element title = titles.get(0);
+                String titleText = title.text();    // 獲得每個標籤的文字 有 [正妹] ,[公告] ,[神人] ,[帥哥] ,[廣告] ...etc
+                String titleHref = title.absUrl("href");
+                if (titleText.contains("[正妹]")) {
+                    Document grilDoc = jsoupClient(titleHref, cookies);
+                    Elements img = grilDoc.getElementById("main-content").getElementsByAttributeValueContaining("href", "https://i.imgur.com/");
+                    for (Element imgTag : img) {
+                        String str = imgTag.attr("href");
+                        // 過濾掉一些奇奇怪怪的圖片
+                        if (!str.contains(".jpg")) {
+                            continue;
+                        }
+                        if (titleText.contains("[正妹]")) {
+                            jedis.lpush("pump", str);
+                            // grilImgUrlList.add(str);
                         }
                     }
                 }
-                jedis.set("beautyTime", String.valueOf(System.currentTimeMillis()));     // 表特加載時間
-            } catch (URISyntaxException | IOException e) {
-                e.printStackTrace();
             }
+            jedis.set("beautyTime", String.valueOf(System.currentTimeMillis()));     // 表特加載時間
+
         });
     }
 
-    private void inItWorldCityMap() throws IOException {
+    private void inItWorldCityMap() {
         String path = "https://worldweather.wmo.int/tc/json/full_city_list.txt";
         Document document = jsoupClient(path);
         String text = document.text();
@@ -1624,7 +1606,8 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * 不處理重定向
      */
-    private static Document jsoupClient(String path, boolean b) throws IOException {
+    @SneakyThrows(IOException.class)
+    private static Document jsoupClient(String path, boolean b) {
         Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
@@ -1639,7 +1622,8 @@ public class DofuncServiceImpl implements DofuncService {
      * 解決json返回無jsoupClient4Sex法獲取全部數據 設置 maxBodySize = 0
      * 返回類型改成全部內容
      */
-    private static String jsoupClient4Sex(String path) throws IOException {
+    @SneakyThrows(IOException.class)
+    private static String jsoupClient4Sex(String path) {
         Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
@@ -1654,7 +1638,8 @@ public class DofuncServiceImpl implements DofuncService {
     /**
      * cok 設定
      */
-    private static Document jsoupClient(String path, Map<String, String> cookies) throws IOException {
+    @SneakyThrows(IOException.class)
+    private static Document jsoupClient(String path, Map<String, String> cookies) {
         Connection.Response response = Jsoup.connect(path)
                 .ignoreContentType(true)
                 .userAgent("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML like Gecko) Chrome/44.0.2403.155 Safari/537.36")
