@@ -44,7 +44,7 @@ public class LineBotApplicationInit implements ApplicationRunner {
         thread.submit(() ->{
             System.out.println(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
             @Cleanup Jedis jedis = JedisFactory.getJedis();
-            @Cleanup SqlSession session = SQLSessionFactory.getSession();
+            SqlSession session = SQLSessionFactory.getSession();
             StaticConfigDAO staticConfigDAO = session.getMapper(StaticConfigDAO.class);
             List<CurrencyKeyMap>currencyKeyMaps =  staticConfigDAO.selectCurrAll();
             LOG.info(currencyKeyMaps.size()+"");
