@@ -20,9 +20,9 @@ import com.linecorp.bot.model.message.template.CarouselColumn;
 import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
 import hello.utils.JedisFactory;
-import hello.utils.PostgresqlDAO;
+import hello.dao.PostgresqlDAO;
 import hello.utils.ThreadPool;
-import hello.utils.TimerUilts;
+import hello.utils.Uilts;
 import lombok.Cleanup;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -73,7 +73,7 @@ import java.util.concurrent.ExecutorService;
 public class DofuncServiceImpl implements DofuncService {
 
     private final LineMessagingService lineMessagingService;
-    private final TimerUilts timerUilts;
+    private final Uilts uilts;
 
 //    private static List<String> grilImgUrlList = new ArrayList<>();
 
@@ -95,10 +95,10 @@ public class DofuncServiceImpl implements DofuncService {
 
 
     @Autowired
-    public DofuncServiceImpl(@Qualifier("postgresql") PostgresqlDAO postgresqlDAO, LineMessagingService lineMessagingService, TimerUilts timerUilts) {
+    public DofuncServiceImpl(@Qualifier("postgresql") PostgresqlDAO postgresqlDAO, LineMessagingService lineMessagingService, Uilts uilts) {
         this.postgresqlDAO = postgresqlDAO;
         this.lineMessagingService = lineMessagingService;
-        this.timerUilts = timerUilts;
+        this.uilts = uilts;
     }
 
     @Override
@@ -149,7 +149,7 @@ public class DofuncServiceImpl implements DofuncService {
             return;
         }
 
-        okhttp3.Response response = timerUilts.clientHttp(OIL_PRICE_PATH);
+        okhttp3.Response response = uilts.clientHttp(OIL_PRICE_PATH);
         String returnText = response.body().string();
         StringBuilder outText = new StringBuilder();
 
@@ -201,9 +201,8 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     @SneakyThrows(IOException.class)
     public void doCurrency(String replyToken, Event event, TextMessageContent content) {
-
         if (currencyReturnText == null) {
-            okhttp3.Response response = timerUilts.clientHttp(EXRATE_PATH);
+            okhttp3.Response response = uilts.clientHttp(EXRATE_PATH);
             currencyReturnText = response.body().string();
         }
         String returnText = currencyReturnText;
@@ -232,7 +231,8 @@ public class DofuncServiceImpl implements DofuncService {
         String currTo = textMessage.substring(textMessage.indexOf("等於多少") + 4);
         // 把來源金額轉美金
         // 轉為國際代碼
-        String currFromExrate = timerUilts.getKeyTextChanage().get(currFrom);
+        @Cleanup Jedis jedis = JedisFactory.getJedis();
+        String currFromExrate = jedis.get(currFrom);
         if (currFromExrate == null) {
             this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
             return;
@@ -251,7 +251,7 @@ public class DofuncServiceImpl implements DofuncService {
         }
         // 目標幣種
         // 轉為國際代碼
-        String currToExrate = timerUilts.getKeyTextChanage().get(currTo);
+        String currToExrate = jedis.get(currTo);
         if (currToExrate == null) {
             this.replyText(replyToken, "沒有找到你說的幣種~~~~~~ ");
             return;
@@ -421,7 +421,7 @@ public class DofuncServiceImpl implements DofuncService {
     public String[] doSex(Event event, TextMessageContent content) {
         @Cleanup Jedis jedis = JedisFactory.getJedis();
         String url ;
-        switch (timerUilts.checkSexStatus(jedis)) {
+        switch (uilts.checkSexStatus(jedis)) {
             case SEX_STATUS_SUCCESS:{
                 // 存在直接返回
                 return getSexUrl(jedis).split("%");
@@ -469,12 +469,9 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     public static void itubaInit() {
-//        String IMG_GRIL_PATH = "https://m.ituba.cc/meinvtupian/p";
-//        int[] index = timerUilts.getRandomArrayByValue(2,500);
+
         List<String> urlLiat = new ArrayList<>();
-//        for (int num : index) {
-//            urlLiat.add(IMG_GRIL_PATH+num+".html");
-//        }
+
         urlLiat.add("https://m.ituba.cc/tag/755_2.html");
         urlLiat.add("https://m.ituba.cc/tag/755_3.html");
         urlLiat.add("https://m.ituba.cc/belle/p2.html");
@@ -540,7 +537,7 @@ public class DofuncServiceImpl implements DofuncService {
         if (listSize <= 3) {
             return lists;
         }
-        int[] index = timerUilts.getRandomArrayByValue(3, listSize);
+        int[] index = uilts.getRandomArrayByValue(3, listSize);
         for (int i : index) {
             returnList.add(lists.get(i));
         }

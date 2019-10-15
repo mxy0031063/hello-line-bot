@@ -21,7 +21,7 @@ public class SQLSessionFactory<T> {
 
     private SQLSessionFactory(){}
 
-    public static SqlSessionFactory getSQLSessionFactory(){
+    public static SqlSessionFactory getsqlsessionfactory(){
         if (sqlSessionFactory == null){
             synchronized (SQLSessionFactory.class){
                 if (sqlSessionFactory == null){
@@ -32,7 +32,7 @@ public class SQLSessionFactory<T> {
         return sqlSessionFactory ;
     }
     public static SqlSession getSession(){
-        return getSQLSessionFactory().openSession();
+        return getsqlsessionfactory().openSession();
     }
 
 }

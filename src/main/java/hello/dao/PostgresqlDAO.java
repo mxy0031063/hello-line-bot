@@ -1,5 +1,6 @@
-package hello.utils;
+package hello.dao;
 
+import hello.utils.JDBCUtil;
 import org.springframework.stereotype.Repository;
 
 import java.sql.DatabaseMetaData;

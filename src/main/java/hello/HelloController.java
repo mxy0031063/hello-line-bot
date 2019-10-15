@@ -27,6 +27,7 @@ import com.linecorp.bot.model.profile.UserProfileResponse;
 import com.linecorp.bot.model.response.BotApiResponse;
 import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
+import hello.dao.PostgresqlDAO;
 import hello.dao.TestDao;
 import hello.utils.*;
 import lombok.Cleanup;
@@ -107,7 +108,7 @@ public class HelloController {
     private static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
 
 
-    private final TimerUilts timerUilts;
+    private final Uilts uilts;
 
     private final LineMessagingService lineMessagingService;
 
@@ -116,8 +117,8 @@ public class HelloController {
     private final PostgresqlDAO postgresqlDAO;
 
     @Autowired
-    public HelloController(TimerUilts timerUilts, LineMessagingService lineMessagingService, DofuncServiceImpl service, @Qualifier("postgresql") PostgresqlDAO postgresqlDAO) {
-        this.timerUilts = timerUilts;
+    public HelloController(Uilts uilts, LineMessagingService lineMessagingService, DofuncServiceImpl service, @Qualifier("postgresql") PostgresqlDAO postgresqlDAO) {
+        this.uilts = uilts;
         this.lineMessagingService = lineMessagingService;
         this.service = service;
         this.postgresqlDAO = postgresqlDAO;
@@ -450,7 +451,7 @@ public class HelloController {
             return;
         }
         // 不存在則更新
-        okhttp3.Response response = timerUilts.clientHttp(CONSTELLATION_PATH);
+        okhttp3.Response response = uilts.clientHttp(CONSTELLATION_PATH);
         String returnText = response.body().string();
         //返回的星座列表
         JSONArray pageReturn = JSONArray.parseArray(returnText);
@@ -526,7 +527,7 @@ public class HelloController {
      * 發送圖片
      */
     private void showImg(String replyToken, String path) throws IOException {
-        okhttp3.Response response = timerUilts.clientHttp(path);
+        okhttp3.Response response = uilts.clientHttp(path);
         DownloadedContent jpg = saveContent("jpg", response.body());
         this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
     }
@@ -539,7 +540,7 @@ public class HelloController {
     private void showSexImage(String replyToken, String[] sex) {
         int ImageWidth = 1040;
         int ImageHeight = 1040;
-        okhttp3.Response response = timerUilts.clientHttp(sex[0]);
+        okhttp3.Response response = uilts.clientHttp(sex[0]);
         DownloadedContent jpg = saveContent("PNG", response.body(), ImageWidth, ImageHeight);
         this.reply(replyToken,
                 new ImagemapMessage(
@@ -566,7 +567,7 @@ public class HelloController {
         String firstImg = firstItem.get(1);
         List<Message> totol = new ArrayList<>();
         if (firstImg.length() != 0) {
-            okhttp3.Response response = timerUilts.clientHttp(firstImg);
+            okhttp3.Response response = uilts.clientHttp(firstImg);
             DownloadedContent jpg = saveContent("jpg", response.body());
             // 默認的第一張圖片
             totol.add(new ImageMessage(jpg.getUri(), jpg.getUri()));
@@ -594,7 +595,7 @@ public class HelloController {
             imgPath = createUri("/static/buttons/googleSearchFood.jpg");
         }
         LOG.info("imgPath : " + imgPath);
-        okhttp3.Response response = timerUilts.clientHttp(imgPath);
+        okhttp3.Response response = uilts.clientHttp(imgPath);
         DownloadedContent jpg = saveContent("PNG", response.body(), 600, 600);
 
         CarouselTemplate carouselTemplate = new CarouselTemplate(
@@ -734,26 +735,20 @@ public class HelloController {
      */
 
     private void abyssLineBot(String replyToken, Event event, TextMessageContent content) throws IOException {
-        String text = content.getText().trim(); // 傳進來的文字
+        // 傳進來的文字
+        String text = content.getText().trim();
         // 判斷指令
         if (text.contains("安安-天氣") || text.contains("!天氣") || text.contains("！天氣")) {
-            // 台灣城市 start
-            Map<String, String> cityToId = timerUilts.getTempCity4Id();
-            String city = null;
-            for (String key : cityToId.keySet()) {
-                if (text.contains(key)) {
-                    city = cityToId.get(key);
-                }
-            }
-            // 台灣城市 end
+            @Cleanup Jedis jedis = JedisFactory.getJedis();
+            text = text.replaceAll("(安安-天氣|!天氣|！天氣|\\s)","");
+            String city = jedis.get(text);
             // 找台灣城市
-            if (city != null) {
-                service.doCityTemp(replyToken, event, content, city);
-                return;
+            if (ObjectUtils.isEmpty(city)) {
+                // 找不到城市就輸出
+                //改成模板 按模版 選擇想要觀看的東西
+                service.doWeather(replyToken, event, content);
             }
-            // 找不到城市就輸出
-            //改成模板 按模版 選擇想要觀看的東西
-            service.doWeather(replyToken, event, content);
+            service.doCityTemp(replyToken, event, content, city);
         } else if (text.matches("(台中|豐原|彰化|大甲|新社|苑裡)(吃什麼)[-|_|\\s]?[a-zA-Z0-9\\u4e00-\\u9fa5]*")) {
             String[] strings = service.doGoogleMapSearch(replyToken, event, content);
             if (strings == null) {
