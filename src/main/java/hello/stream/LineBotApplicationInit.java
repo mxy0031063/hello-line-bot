@@ -1,5 +1,6 @@
 package hello.stream;
 
+import hello.DofuncServiceImpl;
 import hello.dao.StaticConfigDAO;
 import hello.entity.City;
 import hello.entity.CurrencyKeyMap;
@@ -7,6 +8,7 @@ import hello.utils.JedisFactory;
 import hello.utils.SQLSessionFactory;
 import hello.utils.ThreadPool;
 import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -27,7 +29,11 @@ import static hello.utils.Uilts.checkSexStatus;
  */
 @Component
 @Order(value = 1)
+@Slf4j
 public class LineBotApplicationInit implements ApplicationRunner {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DofuncServiceImpl.class);
+
     @Override
     public void run(ApplicationArguments applicationArguments) throws Exception {
         // 應用啟動加載
@@ -40,12 +46,12 @@ public class LineBotApplicationInit implements ApplicationRunner {
             @Cleanup SqlSession session = SQLSessionFactory.getSession();
             StaticConfigDAO staticConfigDAO = session.getMapper(StaticConfigDAO.class);
             List<CurrencyKeyMap>currencyKeyMaps =  staticConfigDAO.selectCurrAll();
-            System.out.println(currencyKeyMaps.size());
+            LOG.info(currencyKeyMaps.size()+"");
             currencyKeyMaps.forEach((curr)->
                 jedis.set(curr.getCurrKey(),curr.getCurrValue())
             );
             List<City> citys = staticConfigDAO.selectCityAll();
-            System.out.println(citys.size());
+            LOG.info(citys.size()+"");
             citys.forEach((city)->
                 jedis.set(city.getCityKey(),city.getCityValue())
             );
