@@ -42,6 +42,7 @@ public class LineBotApplicationInit implements ApplicationRunner {
         加載匯率數據與城市ID
          */
         thread.submit(() ->{
+            System.out.println(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
             @Cleanup Jedis jedis = JedisFactory.getJedis();
             @Cleanup SqlSession session = SQLSessionFactory.getSession();
             StaticConfigDAO staticConfigDAO = session.getMapper(StaticConfigDAO.class);
@@ -55,7 +56,7 @@ public class LineBotApplicationInit implements ApplicationRunner {
             citys.forEach((city)->
                 jedis.set(city.getCityKey(),city.getCityValue())
             );
-            SQLSessionFactory.getSession().close();
+            session.close();
         });
         /*
         西施抽卡緩加載調用
