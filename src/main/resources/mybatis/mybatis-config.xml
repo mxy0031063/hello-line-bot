@@ -13,12 +13,6 @@
                 <property name="url" value="jdbc:postgresql://ec2-54-243-49-82.compute-1.amazonaws.com:5432/d8ebsarq3a1aso"/>
                 <property name="username" value="ppffuulkcnvelr"/>
                 <property name="password" value="fdff2d71f7abaeb910ee96292d9a67319e214bf2031463a23ae8fa02edfb87e2"/>
-                <property name="maxActive" value="10"/>
-                <property name="minIdle" value="3"/>
-                <property name="maxIdle" value="5"/>
-                <property name="maxWait" value="2000"/>
-                <property name="removeAbandoned" value="true"/>
-                <property name="removeAbandonedTimeout" value="60"/>
             </dataSource>
         </environment>
     </environments>
