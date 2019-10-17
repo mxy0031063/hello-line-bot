@@ -47,14 +47,11 @@ public class LineBotApplicationInit implements ApplicationRunner {
             SqlSession session = SQLSessionFactory.getSession();
             StaticConfigDAO staticConfigDAO = session.getMapper(StaticConfigDAO.class);
             List<CurrencyKeyMap>currencyKeyMaps =  staticConfigDAO.selectCurrAll();
-            currencyKeyMaps.forEach(System.out::println);
             LOG.info(currencyKeyMaps.size()+"");
             currencyKeyMaps.forEach((curr)->
                 jedis.set(curr.getCurrKey(),curr.getCurrValue())
             );
             List<City> citys = staticConfigDAO.selectCityAll();
-            citys.forEach(System.out::println);
-            LOG.info(citys.size()+"");
             citys.forEach((city)->
                 jedis.set(city.getCityKey(),city.getCityValue())
             );

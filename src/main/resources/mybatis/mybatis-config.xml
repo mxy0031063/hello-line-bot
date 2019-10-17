@@ -19,5 +19,6 @@
     <!--配置 Mapper的位置-->
     <mappers>
         <mapper resource="mybatis/userMapper.xml"/>
+        <mapper class="hello.dao.StaticConfigDAO"/>
     </mappers>
 </configuration>
