@@ -49,11 +49,11 @@ public class LineBotApplicationInit implements ApplicationRunner {
             List<CurrencyKeyMap>currencyKeyMaps =  staticConfigDAO.selectCurrAll();
             LOG.info(currencyKeyMaps.size()+"");
             currencyKeyMaps.forEach((curr)->
-                jedis.set(curr.getCurrKey(),curr.getCurrValue())
+                jedis.set(curr.getCurrKey().trim(),curr.getCurrValue().trim())
             );
             List<City> citys = staticConfigDAO.selectCityAll();
             citys.forEach((city)->
-                jedis.set(city.getCityKey(),city.getCityValue())
+                jedis.set(city.getCityKey().trim(),city.getCityValue().trim())
             );
             session.close();
         });
