@@ -27,9 +27,12 @@ import com.linecorp.bot.model.profile.UserProfileResponse;
 import com.linecorp.bot.model.response.BotApiResponse;
 import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
-import hello.dao.PostgresqlDAO;
+import hello.dao.IdInfoDAO;
 import hello.dao.TestDao;
-import hello.utils.*;
+import hello.utils.JDBCUtil;
+import hello.utils.JedisFactory;
+import hello.utils.SQLSessionFactory;
+import hello.utils.Utils;
 import lombok.Cleanup;
 import lombok.NonNull;
 import lombok.Value;
@@ -41,7 +44,6 @@ import org.apache.ibatis.session.SqlSession;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -107,21 +109,15 @@ public class HelloController {
      */
     private static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
 
-
-    private final Uilts uilts;
-
     private final LineMessagingService lineMessagingService;
 
     private final DofuncServiceImpl service;
 
-    private final PostgresqlDAO postgresqlDAO;
 
     @Autowired
-    public HelloController(Uilts uilts, LineMessagingService lineMessagingService, DofuncServiceImpl service, @Qualifier("postgresql") PostgresqlDAO postgresqlDAO) {
-        this.uilts = uilts;
+    public HelloController( LineMessagingService lineMessagingService, DofuncServiceImpl service) {
         this.lineMessagingService = lineMessagingService;
         this.service = service;
-        this.postgresqlDAO = postgresqlDAO;
     }
 
 
@@ -307,7 +303,9 @@ public class HelloController {
         String date = dtf.format(zonedDateTime);
         String id = event.getSource().getUserId();
         String type = "user";
-        postgresqlDAO.joinAction(type, id, date);
+        @Cleanup SqlSession idInfoSession = SQLSessionFactory.getSession();
+        IdInfoDAO idInfoDAO = idInfoSession.getMapper(IdInfoDAO.class);
+        idInfoDAO.joinEvent(type,id,date);
         LOG.info("\n\nGot follow event: {}", event);
         String replyToken = event.getReplyToken();
         try {
@@ -331,16 +329,18 @@ public class HelloController {
         ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String date = dtf.format(zonedDateTime);
+        @Cleanup SqlSession idInfoSession = SQLSessionFactory.getSession();
+        IdInfoDAO idInfoDAO = idInfoSession.getMapper(IdInfoDAO.class);
         if (source instanceof GroupSource) {
             String type = "group";
             String id = ((GroupSource) source).getGroupId();
-            postgresqlDAO.joinAction(type, id, date);
+            idInfoDAO.joinEvent(type,id,date);
             LOG.info("\n\njoin Group ID : {}", id);
             this.replyText(replyToken, "大家安安");
         } else if (source instanceof RoomSource) {
             String type = "room";
             String id = ((RoomSource) source).getRoomId();
-            postgresqlDAO.joinAction(type, id, date);
+            idInfoDAO.joinEvent(type,id,date);
             LOG.info("\n\njoin Room ID : {}", id);
             this.replyText(replyToken, " 拉我進這什麼房間");
         } else {
@@ -352,8 +352,6 @@ public class HelloController {
      * 處理 post 語意 其中post 值
      * 大多是由模板給定的 -- 為用戶不可見
      *
-     * @param event
-     * @throws IOException
      */
     @EventMapping
     public void handlePostbackEvent(PostbackEvent event) throws IOException {
@@ -451,7 +449,7 @@ public class HelloController {
             return;
         }
         // 不存在則更新
-        okhttp3.Response response = uilts.clientHttp(CONSTELLATION_PATH);
+        okhttp3.Response response = Utils.clientHttp(CONSTELLATION_PATH);
         String returnText = response.body().string();
         //返回的星座列表
         JSONArray pageReturn = JSONArray.parseArray(returnText);
@@ -527,7 +525,7 @@ public class HelloController {
      * 發送圖片
      */
     private void showImg(String replyToken, String path) throws IOException {
-        okhttp3.Response response = uilts.clientHttp(path);
+        okhttp3.Response response = Utils.clientHttp(path);
         DownloadedContent jpg = saveContent("jpg", response.body());
         this.reply(replyToken, new ImageMessage(jpg.getUri(), jpg.getUri()));
     }
@@ -540,7 +538,7 @@ public class HelloController {
     private void showSexImage(String replyToken, String[] sex) {
         int ImageWidth = 1040;
         int ImageHeight = 1040;
-        okhttp3.Response response = uilts.clientHttp(sex[0]);
+        okhttp3.Response response = Utils.clientHttp(sex[0]);
         DownloadedContent jpg = saveContent("PNG", response.body(), ImageWidth, ImageHeight);
         this.reply(replyToken,
                 new ImagemapMessage(
@@ -567,7 +565,7 @@ public class HelloController {
         String firstImg = firstItem.get(1);
         List<Message> totol = new ArrayList<>();
         if (firstImg.length() != 0) {
-            okhttp3.Response response = uilts.clientHttp(firstImg);
+            okhttp3.Response response = Utils.clientHttp(firstImg);
             DownloadedContent jpg = saveContent("jpg", response.body());
             // 默認的第一張圖片
             totol.add(new ImageMessage(jpg.getUri(), jpg.getUri()));
@@ -595,7 +593,7 @@ public class HelloController {
             imgPath = createUri("/static/buttons/googleSearchFood.jpg");
         }
         LOG.info("imgPath : " + imgPath);
-        okhttp3.Response response = uilts.clientHttp(imgPath);
+        okhttp3.Response response = Utils.clientHttp(imgPath);
         DownloadedContent jpg = saveContent("PNG", response.body(), 600, 600);
 
         CarouselTemplate carouselTemplate = new CarouselTemplate(
@@ -768,7 +766,11 @@ public class HelloController {
             }
             String type = strings[1];
             String message = strings[2];
-            service.doPushMessage2Type(new TextMessage(message), event, type);
+            String date = null ;
+            if (strings.length > 3){
+                date = strings[3];
+            }
+            service.doPushMessage2Type(new TextMessage(message), event, type,date);
         } else if (text.contains("全球天氣")) {
             /** 世界天氣api */
             service.doWorldTemp(replyToken, event, content);

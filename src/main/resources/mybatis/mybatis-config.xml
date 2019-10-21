@@ -20,5 +20,8 @@
     <mappers>
         <mapper resource="mybatis/userMapper.xml"/>
         <mapper class="hello.dao.StaticConfigDAO"/>
+        <mapper class="hello.dao.AccountingDAO"/>
+        <mapper class="hello.dao.IdInfoDAO"/>
+        <mapper class="hello.dao.UtilsDAO"/>
     </mappers>
 </configuration>

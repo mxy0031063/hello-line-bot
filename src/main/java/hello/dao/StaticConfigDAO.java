@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
+ * 項目啟動時加載執行
  * @author Administrator
  */
 @Repository

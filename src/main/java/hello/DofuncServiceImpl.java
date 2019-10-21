@@ -19,14 +19,18 @@ import com.linecorp.bot.model.message.template.ButtonsTemplate;
 import com.linecorp.bot.model.message.template.CarouselColumn;
 import com.linecorp.bot.model.message.template.CarouselTemplate;
 import com.linecorp.bot.model.response.BotApiResponse;
+import hello.dao.AccountingDAO;
+import hello.dao.IdInfoDAO;
+import hello.entity.Accounting;
 import hello.utils.JedisFactory;
-import hello.dao.PostgresqlDAO;
+import hello.utils.SQLSessionFactory;
 import hello.utils.ThreadPool;
-import hello.utils.Uilts;
+import hello.utils.Utils;
 import lombok.Cleanup;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.session.SqlSession;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.labels.StandardCategoryItemLabelGenerator;
@@ -44,9 +48,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import redis.clients.jedis.Jedis;
 import retrofit2.Response;
@@ -55,8 +59,6 @@ import java.awt.*;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDate;
@@ -73,7 +75,6 @@ import java.util.concurrent.ExecutorService;
 public class DofuncServiceImpl implements DofuncService {
 
     private final LineMessagingService lineMessagingService;
-    private final Uilts uilts;
 
 //    private static List<String> grilImgUrlList = new ArrayList<>();
 
@@ -91,14 +92,9 @@ public class DofuncServiceImpl implements DofuncService {
 
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DofuncServiceImpl.class);
 
-    private final PostgresqlDAO postgresqlDAO;
-
-
     @Autowired
-    public DofuncServiceImpl(@Qualifier("postgresql") PostgresqlDAO postgresqlDAO, LineMessagingService lineMessagingService, Uilts uilts) {
-        this.postgresqlDAO = postgresqlDAO;
+    public DofuncServiceImpl(LineMessagingService lineMessagingService) {
         this.lineMessagingService = lineMessagingService;
-        this.uilts = uilts;
     }
 
     @Override
@@ -149,7 +145,7 @@ public class DofuncServiceImpl implements DofuncService {
             return;
         }
 
-        okhttp3.Response response = uilts.clientHttp(OIL_PRICE_PATH);
+        okhttp3.Response response = Utils.clientHttp(OIL_PRICE_PATH);
         String returnText = response.body().string();
         StringBuilder outText = new StringBuilder();
 
@@ -202,7 +198,7 @@ public class DofuncServiceImpl implements DofuncService {
     @SneakyThrows(IOException.class)
     public void doCurrency(String replyToken, Event event, TextMessageContent content) {
         if (currencyReturnText == null) {
-            okhttp3.Response response = uilts.clientHttp(EXRATE_PATH);
+            okhttp3.Response response = Utils.clientHttp(EXRATE_PATH);
             currencyReturnText = response.body().string();
         }
         String returnText = currencyReturnText;
@@ -420,13 +416,13 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public String[] doSex(Event event, TextMessageContent content) {
         @Cleanup Jedis jedis = JedisFactory.getJedis();
-        String url ;
-        switch (uilts.checkSexStatus(jedis)) {
-            case SEX_STATUS_SUCCESS:{
+        String url;
+        switch (Utils.checkSexStatus(jedis)) {
+            case SEX_STATUS_SUCCESS: {
                 // 存在直接返回
                 return getSexUrl(jedis).split("%");
             }
-            case SEX_STATUS_TIMEOUT:{
+            case SEX_STATUS_TIMEOUT: {
                 // 超時 先返回後加載
                 url = getSexUrl(jedis);
 
@@ -448,7 +444,7 @@ public class DofuncServiceImpl implements DofuncService {
                 });
                 return url.split("%");
             }
-            case SEX_STATUS_ISNOTEXISTS:{
+            case SEX_STATUS_ISNOTEXISTS: {
                 // 不存在 先加載後返回
                 dccardSexInit(DCCARD_SEX_PATH, 150, jedis);
                 dccardSexInit(DCARD_SEX_NEW_PATH, 300, jedis);
@@ -461,7 +457,7 @@ public class DofuncServiceImpl implements DofuncService {
         }
     }
 
-    private String getSexUrl(@NonNull Jedis jedis){
+    private String getSexUrl(@NonNull Jedis jedis) {
         int sexLength = jedis.llen("sex").intValue();
         Random random = new Random();
         int index = random.nextInt(sexLength);
@@ -537,7 +533,7 @@ public class DofuncServiceImpl implements DofuncService {
         if (listSize <= 3) {
             return lists;
         }
-        int[] index = uilts.getRandomArrayByValue(3, listSize);
+        int[] index = Utils.getRandomArrayByValue(3, listSize);
         for (int i : index) {
             returnList.add(lists.get(i));
         }
@@ -724,15 +720,17 @@ public class DofuncServiceImpl implements DofuncService {
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String date = dtf.format(zonedDateTime);
             String tableName = getTableName(event);
-            int insertRow;
 
+            @Cleanup SqlSession accountingSession = SQLSessionFactory.getSession();
+            AccountingDAO accountingDAO = accountingSession.getMapper(AccountingDAO.class);
+            String remarks;
             if (strings.length < 3) {
-                insertRow = postgresqlDAO.insertDatabase(tableName, type, money, "沒有輸入備註", date);
+                remarks = "沒有輸入備註";
             } else {
-                String remarks = strings[2];
-                insertRow = postgresqlDAO.insertDatabase(tableName, type, money, remarks, date);
+                remarks = strings[2];
             }
 
+            int insertRow = accountingDAO.accountingInsert(tableName, type, Integer.parseInt(money), remarks, date);
             if (insertRow == 0) {
                 this.replyText(replyToken, "出錯拉~");
                 LOG.info("\n TYPE : " + type + " MONEY : " + money + "\n");
@@ -828,7 +826,9 @@ public class DofuncServiceImpl implements DofuncService {
         ZonedDateTime zonedDateTime = event.getTimestamp().atZone(ZoneId.of("UTC+08:00"));
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String date = dtf.format(zonedDateTime);
-        int insertRow = postgresqlDAO.insertDatabase(oldtableName, moneyType, money, remorks, date);
+        @Cleanup SqlSession accountSession = SQLSessionFactory.getSession();
+        AccountingDAO accountingDAO = accountSession.getMapper(AccountingDAO.class);
+        int insertRow = accountingDAO.accountingInsert(oldtableName, moneyType, Integer.parseInt(money), remorks, date);
         if (insertRow == 0) {
             this.replyText(replyToken, "出錯拉~");
             return;
@@ -846,54 +846,40 @@ public class DofuncServiceImpl implements DofuncService {
         LocalDate localDate = LocalDate.now();
         String nowDate = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
 
-        try (ResultSet resultSet = postgresqlDAO.selectAccounting4Month(tableName, nowDate)) {
-            if (!postgresqlDAO.checkTableExits(tableName)) {
-                this.replyText(replyToken, "你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
-                return null;
-            }
-            Map<String, Map<String, Integer>> dateMap = postgresqlDAO.resultSet2Map(resultSet);
-            if (dateMap.isEmpty()) {
-                this.replyText(replyToken, "這個月還沒有記錄喔");
-                return null;
-            }
-            // 拿到这个月的统计数据
-            Map<String, Integer> nowDate4Accounting = dateMap.get(nowDate);
-            DefaultPieDataset dataset = new DefaultPieDataset();
-            for (String key : nowDate4Accounting.keySet()) {
-                dataset.setValue(key, nowDate4Accounting.get(key));
-            }
-            JFreeChart chart = ChartFactory.createPieChart3D("Accounting Text", dataset, true, false, false);
-            chart.setTitle(new TextTitle("Accounting Text", new Font("宋体", Font.ITALIC, 22)));
-            chart.setBackgroundPaint(Color.white);
-            //設定圖的部分
-            PiePlot plot = (PiePlot) chart.getPlot();
-            plot.setBackgroundImage(Toolkit.getDefaultToolkit().getImage("AccountingImage1.jpg"));
-            plot.setBackgroundAlpha(0.9f);
-            plot.setForegroundAlpha(0.80f);
-            plot.setCircular(true);
-            // 图片中显示百分比:自定义方式，{0} 表示选项， {1} 表示数值， {2} 表示所占比例 ,小数点后两位
-            plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} : {1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
-            // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
-            plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
-            return chart;
-            /*
-            下方為輸出文本訊息
-             */
-//            StringBuilder sb = new StringBuilder();
-//            sb.append(" -----  記帳本  ----- \n\n");
-//            // 全部数据
-//            for (String Key : dateMap.keySet()) {
-//                // month
-//                sb.append(Key).append("  ： \n");
-//                for (String key : dateMap.get(Key).keySet()) {
-//                    sb.append(key).append(" ：").append(dateMap.get(Key).get(key)).append("\n");
-//                }
-//            }
-//            this.replyText(replyToken,sb.toString());
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (!Utils.tableExits(tableName)) {
+            this.replyText(replyToken, "你還沒有建立你的記帳本 先建立一個吧ＱＡＱ \n ( $money+空格+備註)");
+            return null;
         }
-        return null;
+
+        @Cleanup SqlSession accounting = SQLSessionFactory.getSession();
+        AccountingDAO accountingDAO = accounting.getMapper(AccountingDAO.class);
+        List<Accounting> accountingListByMonth = accountingDAO.selectAccounting4Month(tableName, nowDate);
+
+        Map<String, Map<String, Integer>> dateMap = Utils.accountingResult2Map(accountingListByMonth);
+        if (dateMap.isEmpty()) {
+            this.replyText(replyToken, "這個月還沒有記錄喔");
+            return null;
+        }
+        // 拿到这个月的统计数据
+        Map<String, Integer> nowDate4Accounting = dateMap.get(nowDate);
+        DefaultPieDataset dataset = new DefaultPieDataset();
+        for (String key : nowDate4Accounting.keySet()) {
+            dataset.setValue(key, nowDate4Accounting.get(key));
+        }
+        JFreeChart chart = ChartFactory.createPieChart3D("Accounting Text", dataset, true, false, false);
+        chart.setTitle(new TextTitle("Accounting Text", new Font("宋体", Font.ITALIC, 22)));
+        chart.setBackgroundPaint(Color.white);
+        //設定圖的部分
+        PiePlot plot = (PiePlot) chart.getPlot();
+        plot.setBackgroundImage(Toolkit.getDefaultToolkit().getImage("AccountingImage1.jpg"));
+        plot.setBackgroundAlpha(0.9f);
+        plot.setForegroundAlpha(0.80f);
+        plot.setCircular(true);
+        // 图片中显示百分比:自定义方式，{0} 表示选项， {1} 表示数值， {2} 表示所占比例 ,小数点后两位
+        plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} : {1}({2})", NumberFormat.getNumberInstance(), new DecimalFormat("0.00%")));
+        // 图例显示百分比:自定义方式， {0} 表示选项， {1} 表示数值， {2} 表示所占比例
+        plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
+        return chart;
     }
 
     /**
@@ -903,7 +889,7 @@ public class DofuncServiceImpl implements DofuncService {
     public void doAccountingOperating(String replyToken, Event event, TextMessageContent content) {
         String tableName = getTableName(event);
 
-        if (!postgresqlDAO.checkTableExits(tableName)) {
+        if (!Utils.tableExits(tableName)) {
             this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
             return;
         }
@@ -939,32 +925,32 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public void doShowAccountingMonth4Detailed(String replyToken, Event event) {
         String tableName = getTableName(event);
-        if (!postgresqlDAO.checkTableExits(tableName)) {
+        if (!Utils.tableExits(tableName)) {
             this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
             return;
         }
         LocalDate localDate = LocalDate.now();
         String time = localDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
-        try (ResultSet resultSet = postgresqlDAO.selectAccounting4Month(tableName, time)) {
-            if (null == resultSet) {
-                this.replyText(replyToken, "出錯拉~");
-                return;
-            }
-            StringBuilder outputText = new StringBuilder();
-            outputText.append("當前月 您的詳細記錄 ：如想操作紀錄指令再次輸入你的紀錄ID\n")
-                    .append("刪除操作 ： !del ID\n更新操作 ：!update ID $123 晚餐 Food\n")
-                    .append("ID  . 類型  . 金額  . 備註 . 日期\n");
-            while (resultSet.next()) {
-                outputText.append(resultSet.getString("id")).append(" /")
-                        .append(resultSet.getString("money_type")).append(" / ")
-                        .append(resultSet.getString("money")).append(" / ")
-                        .append(resultSet.getString("remarks")).append(" / ")
-                        .append(resultSet.getString("insert_time")).append("\n");
-            }
-            this.replyText(replyToken, outputText.toString());
-        } catch (SQLException e) {
-            e.printStackTrace();
+        @Cleanup SqlSession accountingSession = SQLSessionFactory.getSession();
+        AccountingDAO accountingDAO = accountingSession.getMapper(AccountingDAO.class);
+        List<Accounting> accountingList = accountingDAO.selectAccounting4Month(tableName, time);
+
+        if (ObjectUtils.isEmpty(accountingList)) {
+            this.replyText(replyToken, "出錯拉~");
+            return;
         }
+        StringBuilder outputText = new StringBuilder();
+        outputText.append("當前月 您的詳細記錄 ：如想操作紀錄指令再次輸入你的紀錄ID\n")
+                .append("刪除操作 ： !del ID\n更新操作 ：!update ID $123 晚餐 Food\n")
+                .append("ID  . 類型  . 金額  . 備註 . 日期\n");
+
+        accountingList.forEach(accounting -> outputText.append(accounting.getId()).append(" /")
+                .append(accounting.getMoneyType()).append(" / ")
+                .append(accounting.getMoney()).append(" / ")
+                .append(accounting.getRemarks()).append(" / ")
+                .append(accounting.getDate()).append("\n"));
+
+        this.replyText(replyToken, outputText.toString());
     }
 
     /**
@@ -973,63 +959,62 @@ public class DofuncServiceImpl implements DofuncService {
     @Override
     public JFreeChart doShowAllAccountByUser(String replyToken, Event event) {
         String tableName = getTableName(event);
-        if (!postgresqlDAO.checkTableExits(tableName)) {
+
+        if ( ! Utils.tableExits(tableName)) {
             this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
             return null;
         }
         // 拿到數據
-        try (ResultSet resultSet = postgresqlDAO.selectAccountingUser(tableName)) {
-            Map<String, Map<String, Integer>> dateMap = new TreeMap<>(String::compareTo);
-            dateMap.putAll(postgresqlDAO.resultSet2Map(resultSet));
-            String[] rowKey = {"Food", "Clothing", "Housing", "Transportation", "Play", "Other"}; //6
-            DefaultCategoryDataset defaultCategoryDataset = new DefaultCategoryDataset();
+        @Cleanup SqlSession accounting = SQLSessionFactory.getSession();
+        AccountingDAO accountingDAO = accounting.getMapper(AccountingDAO.class);
+        List<Accounting> userList = accountingDAO.selecAccountingByUser(tableName);
+        Map<String, Map<String, Integer>> dateMap = new TreeMap<>(String::compareTo);
+        dateMap.putAll(Utils.accountingResult2Map(userList));
+        String[] rowKey = {"Food", "Clothing", "Housing", "Transportation", "Play", "Other"};
+        DefaultCategoryDataset defaultCategoryDataset = new DefaultCategoryDataset();
 
-            // key dateMap中的時間月份
-            for (String key : dateMap.keySet()) {
-                // 拿到種類 : 錢
-                Map<String, Integer> typeMap = dateMap.get(key);
-                // type 6個種類的錢
-                for (String type : rowKey) {
-                    // 拿到這個月的種類是否有錢 由於默認類型默認寫入小寫 所以get要小寫處理
-                    Integer money = typeMap.get(type.toLowerCase());
-                    // 沒錢就給0
-                    if (money == null) {
-                        money = 0;
-                    }
-                    LOG.info("\n\n 順序 : " + money + " - " + type + " - " + key);
-                    defaultCategoryDataset.addValue(money, type, key);
+        // key dateMap中的時間月份
+        for (String key : dateMap.keySet()) {
+            // 拿到種類 : 錢
+            Map<String, Integer> typeMap = dateMap.get(key);
+            // type 6個種類的錢
+            for (String type : rowKey) {
+                // 拿到這個月的種類是否有錢 由於默認類型默認寫入小寫 所以get要小寫處理
+                Integer money = typeMap.get(type.toLowerCase());
+                // 沒錢就給0
+                if (money == null) {
+                    money = 0;
                 }
+                LOG.info("\n\n 順序 : " + money + " - " + type + " - " + key);
+                defaultCategoryDataset.addValue(money, type, key);
             }
-
-            JFreeChart jFreeChart = ChartFactory.createLineChart("User Accounting Line Chart",
-                    "year/month",
-                    "total of money",
-                    defaultCategoryDataset,
-                    PlotOrientation.VERTICAL,
-                    true,
-                    true,
-                    false);
-            jFreeChart.setBackgroundPaint(Color.WHITE);
-            CategoryPlot plot = (CategoryPlot) jFreeChart.getPlot();
-            // 背景色 透明度
-            plot.setBackgroundAlpha(0.5f);
-            // 前景色 透明度
-            plot.setForegroundAlpha(0.9f);
-            // 其他设置 参考 CategoryPlot类
-            LineAndShapeRenderer renderer = (LineAndShapeRenderer) plot.getRenderer();
-            // series 点（即数据点）可见
-            renderer.setBaseShapesVisible(true);
-            // series 点（即数据点）间有连线可见
-            renderer.setBaseLinesVisible(true);
-            // 设置偏移量
-            renderer.setUseSeriesOffset(true);
-            renderer.setBaseItemLabelGenerator(new StandardCategoryItemLabelGenerator());
-            renderer.setBaseItemLabelsVisible(true);
-            return jFreeChart;
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-        return null;
+
+        JFreeChart jFreeChart = ChartFactory.createLineChart("User Accounting Line Chart",
+                "year/month",
+                "total of money",
+                defaultCategoryDataset,
+                PlotOrientation.VERTICAL,
+                true,
+                true,
+                false);
+        jFreeChart.setBackgroundPaint(Color.WHITE);
+        CategoryPlot plot = (CategoryPlot) jFreeChart.getPlot();
+        // 背景色 透明度
+        plot.setBackgroundAlpha(0.5f);
+        // 前景色 透明度
+        plot.setForegroundAlpha(0.9f);
+        // 其他设置 参考 CategoryPlot类
+        LineAndShapeRenderer renderer = (LineAndShapeRenderer) plot.getRenderer();
+        // series 点（即数据点）可见
+        renderer.setBaseShapesVisible(true);
+        // series 点（即数据点）间有连线可见
+        renderer.setBaseLinesVisible(true);
+        // 设置偏移量
+        renderer.setUseSeriesOffset(true);
+        renderer.setBaseItemLabelGenerator(new StandardCategoryItemLabelGenerator());
+        renderer.setBaseItemLabelsVisible(true);
+        return jFreeChart;
     }
 
     /**
@@ -1047,7 +1032,10 @@ public class DofuncServiceImpl implements DofuncService {
         String[] strings = text.split("[_|\\s]");
         String id = strings[1];
         // util
-        int delCount = postgresqlDAO.delByRowId(tableName, id);
+        @Cleanup SqlSession accountingSession = SQLSessionFactory.getSession();
+        AccountingDAO accountingDAO = accountingSession.getMapper(AccountingDAO.class);
+        int delCount = accountingDAO.deteleById(tableName, id);
+
         if (delCount == 0) {
             LOG.info("\n\n ERROR \ndoAccountingDelete : " + text + "\n");
             this.replyText(replyToken, "刪除出錯拉~");
@@ -1070,12 +1058,25 @@ public class DofuncServiceImpl implements DofuncService {
         String tableName = getTableName(event);
         String[] strings = text.split("[_|\\s]");
         String rowId = strings[1];
+        if (StringUtils.isEmpty(rowId)){
+            this.replyText(replyToken, "請正確鍵入行ID");
+            return;
+        }
         String money = strings[2].replaceAll("[$]", "");
         // 寫入時默認類型小寫
         String type = strings[3].toLowerCase();
         String remarks = strings[4];
-        // util
-        int updateConut = postgresqlDAO.updateByRowId(tableName, rowId, money, type, remarks);
+
+        @Cleanup SqlSession accountingSession = SQLSessionFactory.getSession();
+        AccountingDAO accountingDAO = accountingSession.getMapper(AccountingDAO.class);
+        // 要更新的資料
+        Accounting user = new Accounting();
+        user.setId(Long.parseLong(rowId));
+        user.setMoneyType(type);
+        user.setMoney(Integer.parseInt(money));
+        user.setRemarks(remarks);
+
+        int updateConut = accountingDAO.updateAccountingByRowId(tableName,user);
         if (updateConut == 0) {
             LOG.info("\n\n ERROR \ndoAccountingUpdate : " + text + "\n");
             this.replyText(replyToken, "更新出錯拉");
@@ -1089,12 +1090,15 @@ public class DofuncServiceImpl implements DofuncService {
      */
     @Override
     public void doPushMessage4All(Message message, Event event) {
-        try (ResultSet resultSet = postgresqlDAO.selectIdInfo()) {
-            pushMessage(resultSet, message, event);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        @Cleanup SqlSession idInfoSession = SQLSessionFactory.getSession();
+        IdInfoDAO idInfoDAO = idInfoSession.getMapper(IdInfoDAO.class);
+        List<String> idList = idInfoDAO.selectId();
+        pushMessage( idList, message, event);
     }
+
+
+
+
 
     /**
      * 拿id 發送消息
@@ -1102,39 +1106,41 @@ public class DofuncServiceImpl implements DofuncService {
      * @param resultSet 結果ID
      * @param message   要發送的消息
      */
-    @SneakyThrows({SQLException.class, IOException.class})
-    private void pushMessage(ResultSet resultSet, Message message, Event event) {
-        if (resultSet == null) {
+    @SneakyThrows(IOException.class)
+    private void pushMessage(List<String> resultSet, Message message, Event event) {
+        if (ObjectUtils.isEmpty(resultSet)) {
             PushMessage pushMessage = new PushMessage(event.getSource().getUserId(), new TextMessage("ERROR : result = null"));
             Response<BotApiResponse> apiResponse;
             apiResponse = lineMessagingService
                     .pushMessage(pushMessage)
                     .execute();
             LOG.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
-
             return;
         }
-        while (resultSet.next()) {
-            String id = resultSet.getString("id");
+        resultSet.forEach( id ->{
             PushMessage pushMessage = new PushMessage(id, message);
             Response<BotApiResponse> apiResponse;
             apiResponse = lineMessagingService
                     .pushMessage(pushMessage)
                     .execute();
             LOG.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
-        }
+        });
     }
 
     /**
      * 處理群發消息 依分類 獲得結果
      */
     @Override
-    public void doPushMessage2Type(Message message, Event event, String... args) {
-        try (ResultSet resultSet = postgresqlDAO.selectIdInfo(args)) {
-            pushMessage(resultSet, message, event);
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public void doPushMessage2Type(Message message, Event event, String type, String date) {
+        @Cleanup SqlSession idInfoSession = SQLSessionFactory.getSession();
+        IdInfoDAO idInfoDAO = idInfoSession.getMapper(IdInfoDAO.class);
+        List<String> idList = idInfoDAO.selectIdByArg(type,date);
+        if (ObjectUtils.isEmpty(idList)){
+            LOG.info("數據錯誤　： type -> "+type+"\n date -> "+date);
+            return;
         }
+        pushMessage(idList, message, event);
+
     }
 
     /**

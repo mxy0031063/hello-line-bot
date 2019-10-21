@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutorService;
 import static hello.DofuncService.DCARD_SEX_NEW_PATH;
 import static hello.DofuncService.DCCARD_SEX_PATH;
 import static hello.DofuncServiceImpl.*;
-import static hello.utils.Uilts.checkSexStatus;
+import static hello.utils.Utils.checkSexStatus;
 
 /**
  * @author Administrator

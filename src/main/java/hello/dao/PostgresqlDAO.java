@@ -7,8 +7,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Administrator
@@ -102,43 +100,43 @@ public class PostgresqlDAO {
      * @return 轉換完成的MAP
      * @throws SQLException 拋出sql異常
      */
-    public Map<String, Map<String, Integer>> resultSet2Map(ResultSet resultSet) throws SQLException {
-        // 各月份里面有类型,钱 size = 月份数量
-        Map<String, Map<String, Integer>> dateMap = new ConcurrentHashMap<>(10);
-        while (resultSet.next()) {
-            // 每条数据
-            String date = resultSet.getString("insert_time");
-            Integer money = resultSet.getInt("money");
-            String remarks = resultSet.getString("remarks");
-            String type = resultSet.getString("money_type");
-            // 把每条数据根据月份放集合<?>Map<date,Map<type,money>> 最终
-            // 需要 月份集合算钱总和?
-            // 判断有没有这个月份的资料 没有则新增 有就在判断
-            Map<String, Integer> typeMoneyMap = dateMap.get(date);
-            if (typeMoneyMap != null) {
-                // 月份分组 月份已存在
-                Map<String, Integer> map = dateMap.get(date);
-                // 找类型
-                Integer oldMoney = map.get(type);
-                //map Key -> type : value -> sum(money)
-                if (oldMoney != null) {
-                    // 类型存在 加总
-                    Integer newMoney = oldMoney + money;
-                    // 加完把钱跟类型放回去
-                    map.put(type, newMoney);
-                } else {
-                    // 类型不存在 新增
-                    map.put(type, money);
-                }
-            } else {
-                // 月份不存在 新增
-                Map<String, Integer> newType = new ConcurrentHashMap<>(10);
-                newType.put(type, money);
-                dateMap.put(date, newType);
-            }
-        }
-        return dateMap;
-    }
+//    public Map<String, Map<String, Integer>> resultSet2Map(ResultSet resultSet) throws SQLException {
+//        // 各月份里面有类型,钱 size = 月份数量
+//        Map<String, Map<String, Integer>> dateMap = new ConcurrentHashMap<>(10);
+//        while (resultSet.next()) {
+//            // 每条数据
+//            String date = resultSet.getString("insert_time");
+//            Integer money = resultSet.getInt("money");
+//            String remarks = resultSet.getString("remarks");
+//            String type = resultSet.getString("money_type");
+//            // 把每条数据根据月份放集合<?>Map<date,Map<type,money>> 最终
+//            // 需要 月份集合算钱总和?
+//            // 判断有没有这个月份的资料 没有则新增 有就在判断
+//            Map<String, Integer> typeMoneyMap = dateMap.get(date);
+//            if (typeMoneyMap != null) {
+//                // 月份分组 月份已存在
+//                Map<String, Integer> map = dateMap.get(date);
+//                // 找类型
+//                Integer oldMoney = map.get(type);
+//                //map Key -> type : value -> sum(money)
+//                if (oldMoney != null) {
+//                    // 类型存在 加总
+//                    Integer newMoney = oldMoney + money;
+//                    // 加完把钱跟类型放回去
+//                    map.put(type, newMoney);
+//                } else {
+//                    // 类型不存在 新增
+//                    map.put(type, money);
+//                }
+//            } else {
+//                // 月份不存在 新增
+//                Map<String, Integer> newType = new ConcurrentHashMap<>(10);
+//                newType.put(type, money);
+//                dateMap.put(date, newType);
+//            }
+//        }
+//        return dateMap;
+//    }
 
     /**
      * 數據庫 刪除操作

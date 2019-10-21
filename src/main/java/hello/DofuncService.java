@@ -143,7 +143,7 @@ public interface DofuncService {
     /**
      * 群發消息處理 - 依分類
      */
-    void doPushMessage2Type(Message message, Event event, String... args);
+    void doPushMessage2Type(Message message, Event event, String type, String date);
     /**
      * 處理google map api 搜尋
      */
