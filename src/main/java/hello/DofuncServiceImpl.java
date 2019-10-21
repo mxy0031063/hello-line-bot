@@ -960,7 +960,7 @@ public class DofuncServiceImpl implements DofuncService {
     public JFreeChart doShowAllAccountByUser(String replyToken, Event event) {
         String tableName = getTableName(event);
 
-        if ( ! Utils.tableExits(tableName)) {
+        if (!Utils.tableExits(tableName)) {
             this.replyText(replyToken, "先屬於你的帳本吧～ 範例：$200 晚餐 或是 $200 food 晚餐");
             return null;
         }
@@ -1058,7 +1058,7 @@ public class DofuncServiceImpl implements DofuncService {
         String tableName = getTableName(event);
         String[] strings = text.split("[_|\\s]");
         String rowId = strings[1];
-        if (StringUtils.isEmpty(rowId)){
+        if (StringUtils.isEmpty(rowId)) {
             this.replyText(replyToken, "請正確鍵入行ID");
             return;
         }
@@ -1076,7 +1076,7 @@ public class DofuncServiceImpl implements DofuncService {
         user.setMoney(Integer.parseInt(money));
         user.setRemarks(remarks);
 
-        int updateConut = accountingDAO.updateAccountingByRowId(tableName,user);
+        int updateConut = accountingDAO.updateAccountingByRowId(tableName, user);
         if (updateConut == 0) {
             LOG.info("\n\n ERROR \ndoAccountingUpdate : " + text + "\n");
             this.replyText(replyToken, "更新出錯拉");
@@ -1093,11 +1093,8 @@ public class DofuncServiceImpl implements DofuncService {
         @Cleanup SqlSession idInfoSession = SQLSessionFactory.getSession();
         IdInfoDAO idInfoDAO = idInfoSession.getMapper(IdInfoDAO.class);
         List<String> idList = idInfoDAO.selectId();
-        pushMessage( idList, message, event);
+        pushMessage(idList, message, event);
     }
-
-
-
 
 
     /**
@@ -1117,14 +1114,15 @@ public class DofuncServiceImpl implements DofuncService {
             LOG.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
             return;
         }
-        resultSet.forEach( id ->{
+        for (String id : resultSet) {
             PushMessage pushMessage = new PushMessage(id, message);
             Response<BotApiResponse> apiResponse;
+
             apiResponse = lineMessagingService
                     .pushMessage(pushMessage)
                     .execute();
             LOG.info(String.format("Sent messages: %s %s", apiResponse.message(), apiResponse.code()));
-        });
+        }
     }
 
     /**
@@ -1134,9 +1132,9 @@ public class DofuncServiceImpl implements DofuncService {
     public void doPushMessage2Type(Message message, Event event, String type, String date) {
         @Cleanup SqlSession idInfoSession = SQLSessionFactory.getSession();
         IdInfoDAO idInfoDAO = idInfoSession.getMapper(IdInfoDAO.class);
-        List<String> idList = idInfoDAO.selectIdByArg(type,date);
-        if (ObjectUtils.isEmpty(idList)){
-            LOG.info("數據錯誤　： type -> "+type+"\n date -> "+date);
+        List<String> idList = idInfoDAO.selectIdByArg(type, date);
+        if (ObjectUtils.isEmpty(idList)) {
+            LOG.info("數據錯誤　： type -> " + type + "\n date -> " + date);
             return;
         }
         pushMessage(idList, message, event);
