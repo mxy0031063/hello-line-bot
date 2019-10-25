@@ -47,16 +47,20 @@ dependencies {
     compile group: 'jfree', name: 'jfreechart', version: '1.0.13'
     // https://mvnrepository.com/artifact/org.apache.tomcat/tomcat-jdbc
     compile group: 'org.apache.tomcat', name: 'tomcat-jdbc', version: '9.0.26'
-
+// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-tomcat
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '1.2.1.RELEASE'
 }
 
 jar {
+    manifest{
+        attributes "Main-Class" : "hello.HelloApplication"
+    }
     baseName = 'gs-gradle'
     version = '0.1.0'
 }
 
 // used to `bootRun -Dline.bot.channelToken=YOUR_CHANNEL_TOKEN -Dline.bot.channelSecret=YOUR_CHANNEL_SECRET`
 bootRun {
-    systemProperties System.properties
+    systemProperties System.properties as Map<String, ?>
 }
 
