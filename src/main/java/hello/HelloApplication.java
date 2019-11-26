@@ -18,6 +18,7 @@ import java.nio.file.Path;
 public class HelloApplication {
     static Path downloadedContentDir;
     public static void main(String[] args) throws IOException {
+        System.setProperty("user.timezone","GMT+08");
         downloadedContentDir = Files.createTempDirectory("line-bot");
         SpringApplication.run(HelloApplication.class, args);
     }

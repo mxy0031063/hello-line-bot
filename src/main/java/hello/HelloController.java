@@ -116,7 +116,7 @@ public class HelloController {
     /**
      * 每天早上9點
      */
-    private static final String PUNCH_CARD_TIME = "0 32 16 * * ? *";
+    private static final String PUNCH_CARD_TIME = "0 47 16 * * ? *";
 
     private final LineMessagingService lineMessagingService;
 
@@ -226,7 +226,7 @@ public class HelloController {
         Scheduler scheduler = schedulerFactory.getScheduler();
         scheduler.scheduleJob(jobDetail,trigger);
         scheduler.start();
-        return "scheduler is working + " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        return "scheduler is working + " + LocalDateTime.now();
     }
 
     @RequestMapping("/abyss")
