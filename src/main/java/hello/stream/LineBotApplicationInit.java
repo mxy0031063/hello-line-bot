@@ -34,6 +34,8 @@ public class LineBotApplicationInit implements ApplicationRunner {
 
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DofuncServiceImpl.class);
 
+    private final String OPEN_DATA_API_PATH = "https://data.ntpc.gov.tw/api/v1/rest/datastore/382000000A-000077-002";
+
     @Override
     public void run(ApplicationArguments applicationArguments) throws Exception {
         // 應用啟動加載
@@ -41,19 +43,19 @@ public class LineBotApplicationInit implements ApplicationRunner {
         /*
         加載匯率數據與城市ID
          */
-        thread.submit(() ->{
+        thread.submit(() -> {
             System.out.println(Thread.currentThread().getName() + " is doing" + Thread.currentThread().getId());
             @Cleanup Jedis jedis = JedisFactory.getJedis();
             SqlSession session = SQLSessionFactory.getSession();
             StaticConfigDAO staticConfigDAO = session.getMapper(StaticConfigDAO.class);
-            List<CurrencyKeyMap>currencyKeyMaps =  staticConfigDAO.selectCurrAll();
-            LOG.info(currencyKeyMaps.size()+"");
-            currencyKeyMaps.forEach((curr)->
-                jedis.set(curr.getCurrKey(),curr.getCurrValue())
+            List<CurrencyKeyMap> currencyKeyMaps = staticConfigDAO.selectCurrAll();
+            LOG.info(currencyKeyMaps.size() + "");
+            currencyKeyMaps.forEach((curr) ->
+                    jedis.set(curr.getCurrKey(), curr.getCurrValue())
             );
             List<City> citys = staticConfigDAO.selectCityAll();
-            citys.forEach((city)->
-                jedis.set(city.getCityKey(),city.getCityValue())
+            citys.forEach((city) ->
+                    jedis.set(city.getCityKey(), city.getCityValue())
             );
             session.close();
         });
@@ -81,7 +83,7 @@ public class LineBotApplicationInit implements ApplicationRunner {
                     break;
                 }
             }
-            return null ;
+            return null;
         });
         /*
         表特抽卡加載調用
@@ -91,5 +93,9 @@ public class LineBotApplicationInit implements ApplicationRunner {
             beautyInit();
             itubaInit();
         });
+        /*
+        假期api調用
+         */
+        thread.submit(DofuncServiceImpl::holidayInit);
     }
 }

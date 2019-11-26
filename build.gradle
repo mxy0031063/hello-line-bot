@@ -49,6 +49,10 @@ dependencies {
     compile group: 'org.apache.tomcat', name: 'tomcat-jdbc', version: '9.0.26'
 // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-tomcat
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '1.2.1.RELEASE'
+    compile group: 'org.quartz-scheduler', name: 'quartz', version: '2.3.2'
+    compile group: 'org.quartz-scheduler', name: 'quartz-jobs', version: '2.3.2'
+    // https://mvnrepository.com/artifact/org.springframework/spring-context-support
+    compile group: 'org.springframework', name: 'spring-context-support', version: '5.2.1.RELEASE'
 }
 
 jar {

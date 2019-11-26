@@ -29,6 +29,7 @@ import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
 import hello.dao.IdInfoDAO;
 import hello.dao.TestDao;
+import hello.job.ScheduledJob;
 import hello.utils.JDBCUtil;
 import hello.utils.JedisFactory;
 import hello.utils.SQLSessionFactory;
@@ -43,6 +44,8 @@ import okhttp3.ResponseBody;
 import org.apache.ibatis.session.SqlSession;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
+import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -109,6 +112,11 @@ public class HelloController {
      * Return JSON
      */
     private static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
+
+    /**
+     * 每天早上9點
+     */
+    private static final String PUNCH_CARD_TIME = "0 32 16 * * ? *";
 
     private final LineMessagingService lineMessagingService;
 
@@ -208,11 +216,17 @@ public class HelloController {
     }
 
     @RequestMapping("/")
-    public String index(HttpServletRequest request, HttpServletResponse response) {
-        SqlSession sqlSession = SQLSessionFactory.getSession();
-        TestDao testDao = sqlSession.getMapper(TestDao.class);
-        //Greeter greeter = new Greeter();
-        return testDao.funcTest().toString();
+    public String index(HttpServletRequest request, HttpServletResponse response) throws SchedulerException {
+        JobDetail jobDetail = JobBuilder.newJob(ScheduledJob.class).withIdentity("myjob","myGroup")
+                .usingJobData("name","nameValue")
+                .build();
+        Trigger trigger = TriggerBuilder.newTrigger().withIdentity("tiggerName","tiggerGroup")
+                .withSchedule(CronScheduleBuilder.cronSchedule(PUNCH_CARD_TIME)).build();
+        SchedulerFactory schedulerFactory = new StdSchedulerFactory();
+        Scheduler scheduler = schedulerFactory.getScheduler();
+        scheduler.scheduleJob(jobDetail,trigger);
+        scheduler.start();
+        return "scheduler is working + " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
     @RequestMapping("/abyss")

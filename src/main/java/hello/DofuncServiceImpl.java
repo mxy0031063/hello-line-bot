@@ -22,6 +22,7 @@ import com.linecorp.bot.model.response.BotApiResponse;
 import hello.dao.AccountingDAO;
 import hello.dao.IdInfoDAO;
 import hello.entity.Accounting;
+import hello.job.Holiday;
 import hello.utils.JedisFactory;
 import hello.utils.SQLSessionFactory;
 import hello.utils.ThreadPool;
@@ -1086,6 +1087,21 @@ public class DofuncServiceImpl implements DofuncService {
     }
 
     /**
+     * 處理打卡定時任務
+     */
+    public static void doPunchCard(Message message,String type,String date){
+        @Cleanup SqlSession idInfoSession = SQLSessionFactory.getSession();
+        IdInfoDAO idInfoDAO = idInfoSession.getMapper(IdInfoDAO.class);
+        List<String> idList = idInfoDAO.selectIdByArg(type, date);
+        if (ObjectUtils.isEmpty(idList)) {
+            LOG.info("數據錯誤　： type -> " + type + "\n date -> " + date);
+            return;
+        }
+
+
+    }
+
+    /**
      * 處理群發消息 全部 獲得結果集
      */
     @Override
@@ -1587,6 +1603,35 @@ public class DofuncServiceImpl implements DofuncService {
             }
         });
 
+    }
+
+    public static void holidayInit(){
+        Document document = jsoupClient(OPEN_DATA_API_PATH);
+        String jsonData = document.body().text();
+        JSONObject jsonObject = JSONObject.parseObject(jsonData);
+        boolean flag = jsonObject.getBoolean("success");
+        if (!flag){
+            // 錯誤返回
+            log.error("公開日曆初始化發生未知錯誤 Flag = "+flag);
+            return;
+        }
+        JSONObject result = jsonObject.getJSONObject("result");
+        int total = result.getInteger("total");
+        int limit = result.getInteger("limit");
+        if (limit < total){
+            // 錯誤返回
+            log.error("公開日曆初始化發生未知錯誤 總數量大於限制數量");
+            return;
+        }
+        // 一年大約有 120 天 假期
+        int dataFindIndex = total - 240 ;
+        JSONArray records = result.getJSONArray("records");
+        @Cleanup Jedis jedis = JedisFactory.getJedis();
+        for (int i = dataFindIndex; i < records.size() ; i++){
+            JSONObject data = records.getJSONObject(i);
+            Holiday holiday = new Holiday(data);
+            jedis.hset("holiday",holiday.getDate().toString(),holiday.toString());
+        }
     }
 
     /**

@@ -59,7 +59,10 @@ public interface DofuncService {
     GoogleMap API Redis Food
      */
     String GOOGLE_MAP_API_REDIS_FOOD = "googlemap4food";
-
+    /**
+     行政機關OPEN DATA 公開日曆
+     */
+    String OPEN_DATA_API_PATH = "https://data.ntpc.gov.tw/api/v1/rest/datastore/382000000A-000077-002";
     /**
      * 處理天氣
      */
