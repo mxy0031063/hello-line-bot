@@ -26,6 +26,7 @@ public class ScheduledJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         // 得到今天的時間
         String date = LocalDate.now().toString();
+        System.out.println("JOB "+date);
         @Cleanup Jedis jedis = JedisFactory.getJedis();
         // 獲得今天是否假日
         String holiday = jedis.hget("holiday", date);

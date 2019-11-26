@@ -41,7 +41,7 @@ public class LineBotApplicationInit implements ApplicationRunner {
     /**
      * 每天早上9點
      */
-    private static final String PUNCH_CARD_TIME = "0 58 08 * * ? *";
+    private static final String PUNCH_CARD_TIME = "0 5 9 * * ? *";
 
     @Override
     public void run(ApplicationArguments applicationArguments) throws Exception {
