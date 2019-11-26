@@ -4,12 +4,15 @@ import hello.DofuncServiceImpl;
 import hello.dao.StaticConfigDAO;
 import hello.entity.City;
 import hello.entity.CurrencyKeyMap;
+import hello.job.ScheduledJob;
 import hello.utils.JedisFactory;
 import hello.utils.SQLSessionFactory;
 import hello.utils.ThreadPool;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
+import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
@@ -35,6 +38,10 @@ public class LineBotApplicationInit implements ApplicationRunner {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DofuncServiceImpl.class);
 
     private final String OPEN_DATA_API_PATH = "https://data.ntpc.gov.tw/api/v1/rest/datastore/382000000A-000077-002";
+    /**
+     * 每天早上9點
+     */
+    private static final String PUNCH_CARD_TIME = "0 58 08 * * ? *";
 
     @Override
     public void run(ApplicationArguments applicationArguments) throws Exception {
@@ -96,6 +103,22 @@ public class LineBotApplicationInit implements ApplicationRunner {
         /*
         假期api調用
          */
-        thread.submit(DofuncServiceImpl::holidayInit);
+        thread.submit(()->{
+            DofuncServiceImpl.holidayInit();
+            JobDetail jobDetail = JobBuilder.newJob(ScheduledJob.class).withIdentity("myjob", "myGroup")
+                    .usingJobData("name", "nameValue")
+                    .build();
+            Trigger trigger = TriggerBuilder.newTrigger().withIdentity("tiggerName", "tiggerGroup")
+                    .withSchedule(CronScheduleBuilder.cronSchedule(PUNCH_CARD_TIME)).build();
+            SchedulerFactory schedulerFactory = new StdSchedulerFactory();
+            Scheduler scheduler = null;
+            try {
+                scheduler = schedulerFactory.getScheduler();
+                scheduler.scheduleJob(jobDetail, trigger);
+                scheduler.start();
+            } catch (SchedulerException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

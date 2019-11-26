@@ -113,10 +113,7 @@ public class HelloController {
      */
     private static final String CONSTELLATION_PATH = "https://horoscope-crawler.herokuapp.com/api/horoscope";
 
-    /**
-     * 每天早上9點
-     */
-    private static final String PUNCH_CARD_TIME = "0 47 16 * * ? *";
+
 
     private final LineMessagingService lineMessagingService;
 
@@ -217,15 +214,6 @@ public class HelloController {
 
     @RequestMapping("/")
     public String index(HttpServletRequest request, HttpServletResponse response) throws SchedulerException {
-        JobDetail jobDetail = JobBuilder.newJob(ScheduledJob.class).withIdentity("myjob","myGroup")
-                .usingJobData("name","nameValue")
-                .build();
-        Trigger trigger = TriggerBuilder.newTrigger().withIdentity("tiggerName","tiggerGroup")
-                .withSchedule(CronScheduleBuilder.cronSchedule(PUNCH_CARD_TIME)).build();
-        SchedulerFactory schedulerFactory = new StdSchedulerFactory();
-        Scheduler scheduler = schedulerFactory.getScheduler();
-        scheduler.scheduleJob(jobDetail,trigger);
-        scheduler.start();
         return "scheduler is working + " + LocalDateTime.now();
     }
 
