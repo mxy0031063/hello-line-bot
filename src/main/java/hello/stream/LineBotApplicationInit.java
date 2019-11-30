@@ -105,20 +105,7 @@ public class LineBotApplicationInit implements ApplicationRunner {
          */
         thread.submit(()->{
             DofuncServiceImpl.holidayInit();
-            JobDetail jobDetail = JobBuilder.newJob(ScheduledJob.class).withIdentity("myjob", "myGroup")
-                    .usingJobData("name", "nameValue")
-                    .build();
-            Trigger trigger = TriggerBuilder.newTrigger().withIdentity("tiggerName", "tiggerGroup")
-                    .withSchedule(CronScheduleBuilder.cronSchedule(PUNCH_CARD_TIME)).build();
-            SchedulerFactory schedulerFactory = new StdSchedulerFactory();
-            Scheduler scheduler = null;
-            try {
-                scheduler = schedulerFactory.getScheduler();
-                scheduler.scheduleJob(jobDetail, trigger);
-                scheduler.start();
-            } catch (SchedulerException e) {
-                e.printStackTrace();
-            }
+
         });
     }
 }

@@ -43,7 +43,6 @@ public class ScheduledJob implements Job {
                 "今天是 " + ("".equals(name) ? data.getHolidayType() : name) +
                         "放假詳細 : " + data.getDescription();
         dofuncService.doPushMessage2Type(new TextMessage(returnText), null, "user", null);
-        return;
 
     }
 }
