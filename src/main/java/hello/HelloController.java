@@ -627,7 +627,7 @@ public class HelloController {
     @EventMapping
     public void handleStickerMessageEvent(MessageEvent<StickerMessageContent> event) {
         LOG.info("Got sticker event: {}", event);
-        handleSticker(event.getReplyToken(), event.getMessage());
+        //handleSticker(event.getReplyToken(), event.getMessage());
     }
 
     /**
